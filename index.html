@@ -268,6 +268,86 @@
     font-size: 11.5px;
   }
 
+  /* ---------- Duel (défis) screen ---------- */
+
+  .duel-screen {
+    display: flex;
+    flex-direction: column;
+    padding: 22px 0 28px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .duel-screen-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    flex: none;
+  }
+
+  .duel-screen-head h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .duel-screen-body { padding: 16px 20px 0; flex: 1; }
+
+  .duel-screen .duel-panel { margin: 0 0 18px; }
+
+  .duel-empty {
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+
+  .duel-empty-text { margin: 0 0 14px; color: var(--text-dim); font-size: 13.5px; }
+
+  .duel-history { margin-top: 22px; }
+
+  .duel-history-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .duel-history-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .duel-history-flag { font-size: 24px; line-height: 1; flex: none; }
+
+  .duel-history-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+  .duel-history-name { font-weight: 700; font-size: 13.5px; }
+
+  .duel-history-sub {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .flag-rail {
     display: flex;
     gap: 8px;
@@ -309,7 +389,7 @@
     height: 250px;
     display: flex;
     align-items: center;
-    margin-top: 4px;
+    margin-top: 20px;
   }
 
   .carousel-viewport {
@@ -807,25 +887,6 @@
       </div>
     </div>
 
-    <div class="duel-panel" id="duelPanel" hidden>
-      <div class="duel-panel-head">
-        <span class="duel-flag" id="duelFlag"></span>
-        <div>
-          <div class="duel-title" id="duelTitle"></div>
-          <div class="duel-sub" id="duelSub"></div>
-        </div>
-        <button class="duel-close" id="duelCloseBtn" type="button" title="Quitter ce défi">✕</button>
-      </div>
-      <div class="duel-participants" id="duelParticipants"></div>
-      <div class="duel-actions">
-        <button class="cta ghost small" id="duelCopyBtn" type="button">Copier le lien du défi</button>
-        <button class="cta ghost small" id="duelReplayBtn" type="button" hidden>Revoir en fantôme</button>
-      </div>
-      <div class="duel-link-fallback" id="duelLinkFallback" hidden>
-        <input type="text" id="duelLinkInput" readonly>
-      </div>
-    </div>
-
     <div class="flag-rail" id="flagRail"></div>
 
     <div class="carousel-wrap">
@@ -840,7 +901,7 @@
       <div class="carousel-counter" id="carouselCounter"></div>
       <button class="cta" id="launchBtn">Lancer la course</button>
       <button class="cta ghost" id="historyBtn">Voir l'historique</button>
-      <button class="cta ghost" id="challengeBtn" title="Défier un ami sur ce circuit">Défier un ami</button>
+      <button class="cta ghost" id="challengeBtn" title="Voir mes défis">Défis</button>
     </div>
 
     <div class="overlay" id="historyOverlay">
@@ -864,6 +925,44 @@
           <div class="account-auth-row">🔵 Connexion avec Google — bientôt disponible</div>
         </div>
         <button class="cta" id="closeAccountBtn">Fermer</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenDuel" class="screen duel-screen" hidden>
+    <div class="duel-screen-head">
+      <button class="hud-btn" id="duelBackBtn" title="Retour au menu">&larr;</button>
+      <h2>Défis</h2>
+    </div>
+
+    <div class="duel-screen-body">
+      <div class="duel-panel" id="duelPanel" hidden>
+        <div class="duel-panel-head">
+          <span class="duel-flag" id="duelFlag"></span>
+          <div>
+            <div class="duel-title" id="duelTitle"></div>
+            <div class="duel-sub" id="duelSub"></div>
+          </div>
+          <button class="duel-close" id="duelCloseBtn" type="button" title="Quitter ce défi">✕</button>
+        </div>
+        <div class="duel-participants" id="duelParticipants"></div>
+        <div class="duel-actions">
+          <button class="cta ghost small" id="duelCopyBtn" type="button">Partager le défi</button>
+          <button class="cta ghost small" id="duelReplayBtn" type="button" hidden>Revoir en fantôme</button>
+        </div>
+        <div class="duel-link-fallback" id="duelLinkFallback" hidden>
+          <input type="text" id="duelLinkInput" readonly>
+        </div>
+      </div>
+
+      <div class="duel-empty" id="duelEmpty">
+        <p class="duel-empty-text">Aucun défi en cours pour <strong id="duelEmptyCircuit"></strong>.</p>
+        <button class="cta" id="duelCreateBtn" type="button">Défier un ami sur ce circuit</button>
+      </div>
+
+      <div class="duel-history" id="duelHistorySection" hidden>
+        <div class="duel-history-title">Défis récents</div>
+        <div id="duelHistoryList"></div>
       </div>
     </div>
   </section>
@@ -897,7 +996,7 @@
         <div class="duel-panel duel-result-panel" id="duelResultPanel" hidden>
           <div class="duel-participants" id="duelResultParticipants"></div>
           <div class="duel-actions">
-            <button class="cta ghost small" id="duelResultCopyBtn" type="button">Copier le lien du défi</button>
+            <button class="cta ghost small" id="duelResultCopyBtn" type="button">Partager le résultat</button>
             <button class="cta ghost small" id="duelResultReplayBtn" type="button" hidden>Revoir en fantôme</button>
           </div>
         </div>
@@ -990,6 +1089,13 @@
 
   const screenMenu = document.getElementById('screenMenu');
   const screenRace = document.getElementById('screenRace');
+  const screenDuel = document.getElementById('screenDuel');
+  const duelBackBtn = document.getElementById('duelBackBtn');
+  const duelEmpty = document.getElementById('duelEmpty');
+  const duelEmptyCircuit = document.getElementById('duelEmptyCircuit');
+  const duelCreateBtn = document.getElementById('duelCreateBtn');
+  const duelHistorySection = document.getElementById('duelHistorySection');
+  const duelHistoryList = document.getElementById('duelHistoryList');
   const difficultySeg = document.getElementById('difficultySeg');
   const directionSeg = document.getElementById('directionSeg');
   const lapsSeg = document.getElementById('lapsSeg');
@@ -1088,7 +1194,8 @@
   let heldPoint = null;
   let telemetry = []; // [t, x, y] samples, logical space — toujours enregistré, réutilisé si la course devient un défi
   let lastTelemetryPush = 0;
-  let ghostTele = null; // tracé de la meilleure course perso pour ce circuit/réglages, ou null
+  let ghostTele = null; // tracé rejoué en fantôme pendant la course (adversaire du défi en priorité, sinon meilleur temps perso)
+  let ghostLabel = '';  // nom affiché pour ce fantôme ("ton record" ou le prénom de l'adversaire)
   let posBuffer = [];
   let lastCarRenderPos = null;
   let rafId = null;
@@ -1108,6 +1215,35 @@
   let replayRafId = null;
   let replayStartPerf = 0;
   let replayCarEls = [];
+
+  function makeDuelId() {
+    return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+  }
+
+  // ---------------- Historique local des défis ----------------
+  // Sans serveur, on ne peut pas "pousser" un défi vers l'écran Défis d'un ami — mais on peut
+  // au moins garder, sur CET appareil, la liste des défis déjà créés ou ouverts, pour les
+  // retrouver facilement sans ressaisir le lien d'origine.
+  const DUEL_HISTORY_KEY = 'sur-la-corde:duelHistory';
+  const DUEL_HISTORY_MAX = 12;
+
+  function loadDuelHistory() {
+    try {
+      const raw = localStorage.getItem(DUEL_HISTORY_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveDuelToHistory(duel) {
+    if (!duel || !duel.id) return;
+    let list = loadDuelHistory().filter(d => d.id !== duel.id);
+    list.unshift(duel);
+    if (list.length > DUEL_HISTORY_MAX) list = list.slice(0, DUEL_HISTORY_MAX);
+    try { localStorage.setItem(DUEL_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+  }
 
   function mid(a, b) { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
 
@@ -1378,6 +1514,7 @@
     countdownAbort = true;
     hideCarSprite();
     screenRace.hidden = true;
+    screenDuel.hidden = true;
     screenMenu.hidden = false;
     renderCarousel();
   }
@@ -1486,10 +1623,28 @@
     hudPenChip.style.display = '';
     screenMenu.hidden = true;
     screenRace.hidden = false;
+    // Fantôme : si on relève un défi sur ce circuit, l'adversaire (le temps le plus rapide
+    // parmi les autres participants) passe devant le record perso — c'est lui qu'on veut voir.
+    ghostTele = null;
+    ghostLabel = '';
+    if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
+      const others = activeDuel.runs.filter(r => r.name !== playerName && r.tele && r.tele.length);
+      const pool = others.length ? others : activeDuel.runs.filter(r => r.tele && r.tele.length);
+      if (pool.length) {
+        const best = pool.slice().sort((a, b) => a.time - b.time)[0];
+        ghostTele = best.tele;
+        ghostLabel = best.name;
+      }
+    }
+    if (!ghostTele) {
+      const bestTele = getBestTele(country.id, selectedDifficulty, selectedDirection, selectedLaps);
+      if (bestTele) {
+        ghostTele = bestTele.tele;
+        ghostLabel = 'ton record';
+      }
+    }
     hudCountryChip.textContent = country.flag + ' ' + country.name + ' · ' + diff.label +
-      (activeDuel ? ' · Défi' : '');
-    const bestTele = getBestTele(country.id, selectedDifficulty, selectedDirection, selectedLaps);
-    ghostTele = bestTele ? bestTele.tele : null;
+      (activeDuel ? ' · Défi' : '') + (ghostTele ? ' · 👻 ' + ghostLabel : '');
     drawMask();
     resizeCanvas();
     resetRun();
@@ -2131,6 +2286,8 @@
   function renderDuelPanel() {
     if (!activeDuel) { duelPanel.hidden = true; return; }
     const duel = activeDuel;
+    if (!duel.id) duel.id = makeDuelId();
+    saveDuelToHistory(duel);
     duelPanel.hidden = false;
     const country = COUNTRIES.find(c => c.id === duel.cid);
     duelFlag.textContent = (country && country.flag) || '🏁';
@@ -2143,6 +2300,62 @@
     duelLinkFallback.hidden = true;
   }
 
+  function renderDuelScreen() {
+    renderDuelPanel();
+    const hasActive = !!activeDuel;
+    duelEmpty.hidden = hasActive;
+    if (!hasActive) {
+      const country = COUNTRIES[menuIndex] || COUNTRIES[0];
+      duelEmptyCircuit.textContent = country ? (country.flag + ' ' + country.name) : '';
+    }
+    renderDuelHistoryList();
+  }
+
+  function showDuelScreen() {
+    state = 'duel';
+    screenMenu.hidden = true;
+    screenRace.hidden = true;
+    screenDuel.hidden = false;
+    renderDuelScreen();
+  }
+
+  function enterDuel(duel) {
+    activeDuel = duel;
+    selectedDifficulty = duel.diff || selectedDifficulty;
+    selectedDirection = duel.dir || selectedDirection;
+    selectedLaps = duel.laps || selectedLaps;
+    syncSegUI();
+    const idx = COUNTRIES.findIndex(c => c.id === duel.cid);
+    if (idx >= 0) { menuIndex = idx; renderCarousel(); }
+    encodeDuelToHash(duel);
+    showDuelScreen();
+  }
+
+  function duelHistoryRowHtml(entry) {
+    const country = COUNTRIES.find(c => c.id === entry.cid);
+    const flag = (country && country.flag) || '🏁';
+    const name = country ? country.name : entry.cid;
+    const n = (entry.runs || []).length;
+    const sub = n === 0 ? 'Aucun temps posé' : (n + (n > 1 ? ' participants' : ' participant'));
+    return '<div class="duel-history-row" data-id="' + entry.id + '">' +
+      '<span class="duel-history-flag">' + flag + '</span>' +
+      '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(name) + '</span>' +
+      '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span></div>';
+  }
+
+  function renderDuelHistoryList() {
+    const list = loadDuelHistory().filter(d => !activeDuel || d.id !== activeDuel.id);
+    if (!list.length) { duelHistorySection.hidden = true; duelHistoryList.innerHTML = ''; return; }
+    duelHistorySection.hidden = false;
+    duelHistoryList.innerHTML = list.map(duelHistoryRowHtml).join('');
+    Array.from(duelHistoryList.querySelectorAll('.duel-history-row')).forEach(row => {
+      row.addEventListener('click', () => {
+        const entry = list.find(d => d.id === row.dataset.id);
+        if (entry) enterDuel(entry);
+      });
+    });
+  }
+
   function renderDuelResultPanel() {
     if (!activeDuel || activeDuel.runs.length === 0) { duelResultPanel.hidden = true; return; }
     duelResultPanel.hidden = false;
@@ -2153,6 +2366,8 @@
   function applyHashDuel() {
     const duel = decodeDuelFromHash();
     if (!duel) return;
+    if (!duel.id) duel.id = makeDuelId();
+    // Un ami qui ouvre un lien de défi arrive directement sur l'écran Défis, pas sur le menu.
     activeDuel = duel;
     selectedDifficulty = duel.diff || selectedDifficulty;
     selectedDirection = duel.dir || selectedDirection;
@@ -2160,18 +2375,31 @@
     syncSegUI();
     const idx = COUNTRIES.findIndex(c => c.id === duel.cid);
     if (idx >= 0) { menuIndex = idx; renderCarousel(); }
-    renderDuelPanel();
+    showDuelScreen();
   }
 
   function shareCurrentDuelLink(btn, fallbackEl, inputEl) {
     const url = window.location.href;
-    const done = () => {
+    const restoreLabel = () => {
       if (!btn) return;
-      const original = btn.textContent;
-      btn.textContent = 'Lien copié !';
+      const original = btn.dataset.label || btn.textContent;
+      btn.dataset.label = original;
+      return original;
+    };
+    const flashLabel = (text) => {
+      if (!btn) return;
+      const original = restoreLabel();
+      btn.textContent = text;
       setTimeout(() => { btn.textContent = original; }, 1800);
     };
-    const fallback = () => {
+    const clipboardFallback = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => flashLabel('Lien copié !')).catch(promptFallback);
+      } else {
+        promptFallback();
+      }
+    };
+    const promptFallback = () => {
       if (fallbackEl && inputEl) {
         inputEl.value = url;
         fallbackEl.hidden = false;
@@ -2181,18 +2409,28 @@
         window.prompt('Copie ce lien pour défier ton ami :', url);
       }
     };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(done).catch(fallback);
+    // Le partage natif (mail, SMS, WhatsApp...) est prioritaire ; le presse-papiers puis
+    // une invite à copier manuellement servent de filet de secours si le partage n'existe
+    // pas sur ce navigateur/appareil, ou s'il échoue pour une autre raison qu'une annulation.
+    if (navigator.share) {
+      navigator.share({
+        title: 'Défi F1 Finger Race',
+        text: 'Je te défie sur ce circuit dans F1 Finger Race !',
+        url: url
+      }).catch(err => {
+        if (err && err.name === 'AbortError') return; // annulé volontairement — rien à faire
+        clipboardFallback();
+      });
     } else {
-      fallback();
+      clipboardFallback();
     }
   }
 
   function startDuelInvite(country) {
-    // Prépare une invitation pour ce circuit (encore aucun temps posé) et copie le lien.
-    activeDuel = { v: 1, cid: country.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: [] };
+    // Prépare une invitation pour ce circuit (encore aucun temps posé) et partage le lien.
+    activeDuel = { v: 1, id: makeDuelId(), cid: country.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: [] };
     encodeDuelToHash(activeDuel);
-    renderDuelPanel();
+    renderDuelScreen();
     shareCurrentDuelLink(duelCopyBtn, duelLinkFallback, duelLinkInput);
     if (typeof duelPanel.scrollIntoView === 'function') {
       duelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2201,7 +2439,7 @@
 
   function addRunToActiveDuel(name, result) {
     if (!activeDuel || activeDuel.cid !== current.id) {
-      activeDuel = { v: 1, cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: [] };
+      activeDuel = { v: 1, id: makeDuelId(), cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: [] };
     }
     const tele = resampleTelemetry(telemetry, DUEL_TELE_POINTS);
     const existingIdx = activeDuel.runs.findIndex(r => r.name === name);
@@ -2365,13 +2603,15 @@
   historyBtn.addEventListener('click', openHistoryModal);
   closeHistoryBtn.addEventListener('click', () => historyOverlay.classList.remove('show'));
 
-  challengeBtn.addEventListener('click', () => startDuelInvite(COUNTRIES[menuIndex]));
+  challengeBtn.addEventListener('click', () => showDuelScreen());
+  duelCreateBtn.addEventListener('click', () => startDuelInvite(COUNTRIES[menuIndex]));
+  duelBackBtn.addEventListener('click', () => showMenu());
   duelCopyBtn.addEventListener('click', () => shareCurrentDuelLink(duelCopyBtn, duelLinkFallback, duelLinkInput));
   duelReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
   duelCloseBtn.addEventListener('click', () => {
     activeDuel = null;
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
-    duelPanel.hidden = true;
+    renderDuelScreen();
   });
   replayCloseBtn.addEventListener('click', closeReplay);
 

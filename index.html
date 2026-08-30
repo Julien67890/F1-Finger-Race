@@ -419,6 +419,28 @@
     margin-bottom: 8px;
   }
 
+  .duel-history-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .duel-history-title-row .duel-history-title { margin-bottom: 0; }
+
+  .public-duel-filter {
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    max-width: 56%;
+  }
+
   .duel-history-row {
     display: flex;
     align-items: center;
@@ -1133,7 +1155,10 @@
       </div>
 
       <div class="duel-history" id="publicDuelSection" hidden>
-        <div class="duel-history-title">Défis publics ouverts — <span id="publicDuelCircuitName"></span></div>
+        <div class="duel-history-title-row">
+          <div class="duel-history-title">Défis publics ouverts</div>
+          <select class="public-duel-filter" id="publicDuelFilter"></select>
+        </div>
         <div id="publicDuelList"></div>
       </div>
 
@@ -1280,7 +1305,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-30-k';
+  const BUILD_TAG = '2026-08-30-l';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1302,8 +1327,8 @@
       points: [[401,477],[544,351],[607,325],[629,288],[701,284],[741,262],[809,163],[816,110],[781,90],[665,178],[562,289],[477,339],[462,375],[422,382],[384,425],[348,412],[248,443],[188,478],[184,522],[226,530],[282,481]] },
     { id: 'australie', name: 'Australie', flag: '🇦🇺', width: 54,
       points: [[405,524],[733,519],[765,510],[775,470],[795,453],[875,463],[930,372],[914,344],[776,274],[643,283],[591,327],[529,332],[472,319],[415,275],[341,148],[286,108],[226,96],[116,147],[78,249],[70,322],[126,380],[129,403],[109,435],[125,457],[247,481],[359,481]] },
-    { id: 'japon', name: 'Japon', flag: '🇯🇵', width: 50,
-      points: [[445,401],[252,428],[115,448],[74,456],[101,511],[184,530],[308,524],[418,511],[506,478],[541,414],[522,360],[569,304],[541,250],[582,208],[632,236],[643,291],[596,310],[569,263],[596,216],[643,172],[720,140],[802,112],[885,90],[926,106],[899,140],[816,162],[734,194],[651,222],[582,332]] },
+    { id: 'japon', name: 'Japon', flag: '🇯🇵', width: 42,
+      points: [[838,529],[930,518],[924,425],[884,333],[815,252],[849,206],[791,171],[745,212],[688,171],[607,189],[526,206],[434,171],[330,125],[214,96],[110,91],[70,114],[110,160],[214,189],[330,212],[434,206],[526,206],[584,287],[641,368],[699,449],[768,506]] },
     { id: 'chine', name: 'Chine', flag: '🇨🇳', width: 56,
       points: [[166,527],[776,530],[810,517],[827,500],[837,476],[833,447],[798,421],[765,427],[744,469],[546,462],[531,455],[522,431],[536,416],[587,418],[615,391],[618,361],[584,292],[600,243],[633,229],[756,233],[794,218],[802,202],[785,187],[681,162],[572,175],[562,153],[568,127],[561,108],[539,93],[513,90],[470,124],[343,473],[334,484],[192,492],[163,509]] },
     { id: 'miami', name: 'Miami', flag: '🇺🇸', width: 46,
@@ -1363,8 +1388,12 @@
   const duelCreateBtn = document.getElementById('duelCreateBtn');
   const duelCreatePublicBtn = document.getElementById('duelCreatePublicBtn');
   const publicDuelSection = document.getElementById('publicDuelSection');
-  const publicDuelCircuitName = document.getElementById('publicDuelCircuitName');
+  const publicDuelFilter = document.getElementById('publicDuelFilter');
   const publicDuelList = document.getElementById('publicDuelList');
+  // undefined tant que le joueur n'a jamais touché le filtre : le tableau suit alors le circuit
+  // actuellement affiché dans le carrousel. Dès qu'il choisit une valeur ("tous" ou un autre
+  // circuit précis), ce choix est mémorisé et reste actif même en changeant de circuit.
+  let publicDuelFilterCid;
   const duelToPlaySection = document.getElementById('duelToPlaySection');
   const duelToPlayList = document.getElementById('duelToPlayList');
   const duelHistorySection = document.getElementById('duelHistorySection');
@@ -2069,6 +2098,7 @@
     clearTimeout(countdownTimer);
     countdownAbort = true;
     hideCarSprite();
+    requestGameFullscreen();
     screenRace.hidden = true;
     screenDuel.hidden = true;
     screenMenu.hidden = false;
@@ -2176,12 +2206,34 @@
     // un mieux pour ceux qui jouent directement depuis un onglet du navigateur. On ignore
     // silencieusement tout échec : certains navigateurs mobiles refusent ou ne supportent pas
     // l'API, et ça ne doit jamais bloquer le lancement d'une course.
+    //
+    // Le navigateur n'accepte requestFullscreen() que si l'appel part directement d'un geste
+    // utilisateur (clic/tap) sans détour asynchrone avant — d'où les nombreux points d'appel
+    // (lancement de course, retour au menu, tout premier tap de la session) plutôt qu'un seul
+    // appel à l'ouverture : si l'un échoue silencieusement selon le navigateur, un autre passera.
     try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) return;
       const el = document.documentElement;
       const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-      if (req && !document.fullscreenElement) req.call(el).catch(function () {});
+      if (!req) return;
+      const res = req.call(el);
+      if (res && typeof res.catch === 'function') res.catch(function () {});
     } catch (e) {}
   }
+
+  // Tout premier tap/clic de la session : encore une chance de déclencher le plein écran,
+  // au cas où l'appel fait depuis enterRace() n'ait pas été accepté par le navigateur (certains
+  // Android exigent que ce soit littéralement le tout premier geste de la page). Se retire
+  // après le premier essai, réussi ou non — ça ne doit jamais gêner les interactions normales.
+  (function () {
+    function tryOnce() {
+      document.removeEventListener('pointerdown', tryOnce, true);
+      document.removeEventListener('touchstart', tryOnce, true);
+      requestGameFullscreen();
+    }
+    document.addEventListener('pointerdown', tryOnce, true);
+    document.addEventListener('touchstart', tryOnce, true);
+  })();
 
   function enterRace(country) {
     requestGameFullscreen();
@@ -3184,30 +3236,59 @@
     duelLinkFallback.hidden = true;
   }
 
-  function publicDuelRowHtml(entry) {
+  function publicDuelRowHtml(entry, showCircuit) {
     const runs = entry.runs || [];
     const n = runs.length;
     const sub = n === 0 ? 'Aucun temps posé — sois le premier !' :
       (n + (n > 1 ? ' participants' : ' participant') + ' déjà inscrit' + (n > 1 ? 's' : ''));
+    const country = showCircuit ? COUNTRIES.find(c => c.id === entry.cid) : null;
+    const flag = country ? country.flag : '🌍';
+    const label = country ? (country.name + ' — Défi public') : 'Défi public';
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
-      '<span class="duel-history-flag">🌍</span>' +
-      '<span class="duel-history-info"><span class="duel-history-name">Défi public</span>' +
+      '<span class="duel-history-flag">' + flag + '</span>' +
+      '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(label) + '</span>' +
       '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span>' +
       '<span class="duel-history-arrow">→</span></div>';
   }
 
+  function populatePublicDuelFilter() {
+    // Rempli une seule fois : "Tous les circuits" en tête, puis un par circuit dans l'ordre
+    // du jeu — permet de retrouver un défi public sans devoir parcourir le carrousel circuit
+    // par circuit.
+    if (!publicDuelFilter || publicDuelFilter.dataset.filled) return;
+    publicDuelFilter.dataset.filled = '1';
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = 'Tous les circuits';
+    publicDuelFilter.appendChild(optAll);
+    COUNTRIES.forEach(function (c) {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.flag + ' ' + c.name;
+      publicDuelFilter.appendChild(opt);
+    });
+    publicDuelFilter.addEventListener('change', function () {
+      publicDuelFilterCid = publicDuelFilter.value; // '' = tous ; sinon un id de circuit précis
+      renderPublicDuelBoard(publicDuelFilterCid);
+    });
+  }
+
   function renderPublicDuelBoard(cid) {
-    // Liste, pour le circuit actuellement affiché dans le carrousel, les défis publics encore
-    // ouverts que n'importe quel joueur peut relever (contrairement à "duels", qui n'est
-    // accessible qu'à qui a reçu le lien précis — voir firestore.rules).
-    if (!publicDuelList || !cid) return;
-    const country = COUNTRIES.find(c => c.id === cid);
-    publicDuelCircuitName.textContent = country ? (country.flag + ' ' + country.name) : '';
+    // Liste les défis publics encore ouverts que n'importe quel joueur peut relever
+    // (contrairement à "duels", qui n'est accessible qu'à qui a reçu le lien précis — voir
+    // firestore.rules). cid === '' (ou falsy autre que undefined) signifie "tous les circuits" ;
+    // sinon un id de circuit précis limite la liste à celui-ci.
+    if (!publicDuelList) return;
+    populatePublicDuelFilter();
+    const showAll = !cid;
+    publicDuelFilter.value = cid || '';
     if (!db) { publicDuelSection.hidden = true; return; }
     publicDuelSection.hidden = false;
     publicDuelList.innerHTML = '<div class="history-empty">Chargement…</div>';
     const requestToken = (renderPublicDuelBoard._token = (renderPublicDuelBoard._token || 0) + 1);
-    db.collection('public_duels').where('cid', '==', cid).orderBy('createdAt', 'desc').limit(20).get()
+    let query = db.collection('public_duels');
+    query = showAll ? query.orderBy('createdAt', 'desc') : query.where('cid', '==', cid).orderBy('createdAt', 'desc');
+    query.limit(20).get()
       .then(function (snap) {
         if (requestToken !== renderPublicDuelBoard._token) return; // une requête plus récente a pris le relais
         const entries = [];
@@ -3221,10 +3302,12 @@
           entries.push({ id: doc.id, cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, public: true, runs: runs });
         });
         if (!entries.length) {
-          publicDuelList.innerHTML = '<div class="history-empty">Aucun défi public ouvert sur ce circuit pour l\'instant — lance-toi !</div>';
+          publicDuelList.innerHTML = '<div class="history-empty">' +
+            (showAll ? 'Aucun défi public ouvert pour l\'instant — lance-toi !' : 'Aucun défi public ouvert sur ce circuit pour l\'instant — lance-toi !') +
+            '</div>';
           return;
         }
-        publicDuelList.innerHTML = entries.map(publicDuelRowHtml).join('');
+        publicDuelList.innerHTML = entries.map(function (e) { return publicDuelRowHtml(e, showAll); }).join('');
         Array.from(publicDuelList.querySelectorAll('.duel-history-row')).forEach(function (row) {
           row.addEventListener('click', function () {
             const entry = entries.find(function (d) { return d.id === row.dataset.id; });
@@ -3250,7 +3333,10 @@
     if (!hasActive) {
       duelEmptyCircuit.textContent = country ? (country.flag + ' ' + country.name) : '';
     }
-    if (country) renderPublicDuelBoard(country.id);
+    // Tant que le joueur n'a jamais touché le filtre, le tableau des défis publics suit le
+    // circuit affiché dans le carrousel ; dès qu'il a choisi une valeur, elle reste active.
+    const cidToShow = publicDuelFilterCid !== undefined ? publicDuelFilterCid : (country ? country.id : '');
+    renderPublicDuelBoard(cidToShow);
     renderDuelHistoryList();
   }
 

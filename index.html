@@ -911,6 +911,28 @@
     text-align: left;
   }
 
+  .leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    padding: 4px 0;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .leaderboard-row .rank { flex: none; width: 18px; font-weight: 700; }
+  .leaderboard-row .name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+  }
+  .leaderboard-row .val { color: var(--text); font-weight: 600; white-space: nowrap; }
+  .leaderboard-row.rank-1 .rank, .leaderboard-row.rank-1 .val { color: var(--good); }
+  .leaderboard-row.mine .name { color: var(--accent); }
+
   .car-sprite {
     position: fixed;
     width: 22px;
@@ -1007,7 +1029,7 @@
     <div class="menu-foot">
       <div class="carousel-counter" id="carouselCounter"></div>
       <button class="cta" id="launchBtn">Lancer la course</button>
-      <button class="cta ghost" id="historyBtn">Voir l'historique</button>
+      <button class="cta ghost" id="historyBtn">Records</button>
       <button class="cta ghost" id="challengeBtn" title="Voir mes défis">Défis</button>
     </div>
 
@@ -1016,6 +1038,10 @@
         <h2 id="historyTitle">Historique</h2>
         <div class="sub" id="historySub"></div>
         <div class="history-list" id="menuHistoryList"></div>
+        <div class="history-list" id="leaderboardSection">
+          <div class="history-title">Classement de la semaine</div>
+          <div id="leaderboardList"></div>
+        </div>
         <button class="cta ghost" id="closeHistoryBtn">Fermer</button>
       </div>
     </div>
@@ -1276,6 +1302,8 @@
   const historyTitle = document.getElementById('historyTitle');
   const historySub = document.getElementById('historySub');
   const menuHistoryList = document.getElementById('menuHistoryList');
+  const leaderboardSection = document.getElementById('leaderboardSection');
+  const leaderboardList = document.getElementById('leaderboardList');
   const closeHistoryBtn = document.getElementById('closeHistoryBtn');
   const playerNameInput = document.getElementById('playerNameInput');
   const accountChip = document.getElementById('accountChip');
@@ -1421,6 +1449,113 @@
   function currentRunKey() {
     const user = auth && auth.currentUser;
     return (user && user.uid) || getGuestId();
+  }
+
+  // ---------------- Classement hebdomadaire (toutes les courses) ----------------
+  // Chaque course terminée (solo ou défi) est enregistrée dans Firestore (collection
+  // "races"), pour un classement partagé entre tous les joueurs. Comme le projet reste sur
+  // le plan Firebase gratuit (pas de Cloud Functions ni de tâche planifiée possible sans
+  // passer sur un plan payant), la "remise à zéro" du dimanche 23h59 heure de Paris n'efface
+  // rien : elle est simulée en ne classant que les courses dont le "weekId" correspond à la
+  // semaine en cours — les anciennes semaines restent en base mais disparaissent du
+  // classement affiché, ce qui revient au même pour le joueur.
+  function weekIdForDate(date) {
+    // Identifiant de la semaine en cours (lundi 00h00 heure de Paris — la remise à zéro du
+    // dimanche 23h59 revient en pratique au même moment, à une minute près).
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short'
+    }).formatToParts(date);
+    const map = {};
+    parts.forEach(function (p) { map[p.type] = p.value; });
+    const y = parseInt(map.year, 10), mo = parseInt(map.month, 10), d = parseInt(map.day, 10);
+    const weekdayMap = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+    const isoWeekday = weekdayMap[map.weekday] || 1;
+    const monday = new Date(Date.UTC(y, mo - 1, d));
+    monday.setUTCDate(monday.getUTCDate() - (isoWeekday - 1));
+    return monday.getUTCFullYear() + '-' + String(monday.getUTCMonth() + 1).padStart(2, '0') + '-' + String(monday.getUTCDate()).padStart(2, '0');
+  }
+
+  function currentWeekId() { return weekIdForDate(new Date()); }
+
+  function raceKeyFor(cid, diff, dir, laps) { return cid + '_' + diff + '_' + dir + '_' + laps; }
+
+  function recordRaceCloud(cid, diff, dir, laps, time, pen) {
+    if (!db) return;
+    const user = auth && auth.currentUser;
+    const name = (playerName || (user && user.displayName) || 'Joueur').trim() || 'Joueur';
+    const rk = raceKeyFor(cid, diff, dir, laps);
+    db.collection('races').add({
+      uid: (user && user.uid) || null,
+      email: (user && user.email) || null,
+      name: name,
+      cid: cid, diff: diff, dir: dir, laps: laps,
+      time: time, pen: pen,
+      raceKey: rk,
+      weekId: currentWeekId(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function (err) { console.error('Enregistrement de la course (classement) impossible', err); });
+
+    if (user) {
+      // Records personnels liés au compte (retrouvables sur tous les appareils, contrairement
+      // aux meilleurs temps "invité" qui restent locaux à l'appareil). Une transaction évite
+      // qu'une écriture depuis deux appareils au même moment n'écrase un meilleur temps.
+      const userRef = db.collection('users').doc(user.uid);
+      db.runTransaction(function (tx) {
+        return tx.get(userRef).then(function (snap) {
+          const bests = (snap.exists && snap.data().bests) || {};
+          const cur = bests[rk];
+          if (!cur || time < cur.time) {
+            const update = {};
+            update['bests.' + rk] = { time: time, pen: pen, cid: cid, diff: diff, dir: dir, laps: laps };
+            tx.set(userRef, update, { merge: true });
+          }
+        });
+      }).catch(function (err) { console.error('Enregistrement du record personnel (compte) impossible', err); });
+    }
+  }
+
+  function leaderboardRowHtml(entry, rank, isMine) {
+    return '<div class="leaderboard-row' + (rank === 1 ? ' rank-1' : '') + (isMine ? ' mine' : '') + '">' +
+      '<span class="rank">' + rank + '</span>' +
+      '<span class="name">' + escapeHtml(entry.name || 'Joueur') + '</span>' +
+      '<span class="val">' + fmt(entry.time) + '</span></div>';
+  }
+
+  function renderLeaderboard(cid, diff, dir, laps) {
+    if (!leaderboardList) return;
+    if (!db) {
+      leaderboardList.innerHTML = '<div class="history-empty">Classement indisponible hors connexion.</div>';
+      return;
+    }
+    leaderboardList.innerHTML = '<div class="history-empty">Chargement du classement…</div>';
+    const rk = raceKeyFor(cid, diff, dir, laps);
+    const wk = currentWeekId();
+    const myUid = auth && auth.currentUser && auth.currentUser.uid;
+    const requestToken = (renderLeaderboard._token = (renderLeaderboard._token || 0) + 1);
+    db.collection('races').where('weekId', '==', wk).where('raceKey', '==', rk)
+      .orderBy('time', 'asc').limit(20).get().then(function (snap) {
+        if (requestToken !== renderLeaderboard._token) return; // une requête plus récente a pris le relais
+        if (snap.empty) {
+          leaderboardList.innerHTML = '<div class="history-empty">Personne n\'a encore couru cette combinaison cette semaine.</div>';
+          return;
+        }
+        const rows = [];
+        let rank = 0;
+        snap.forEach(function (doc) {
+          rank++;
+          const d = doc.data();
+          rows.push(leaderboardRowHtml(d, rank, !!(myUid && d.uid === myUid)));
+        });
+        leaderboardList.innerHTML = rows.join('');
+      }).catch(function (err) {
+        if (requestToken !== renderLeaderboard._token) return;
+        console.error('Classement : lecture impossible', err);
+        if (err && err.code === 'failed-precondition') {
+          leaderboardList.innerHTML = '<div class="history-empty">Classement pas encore activé : un index Firestore doit être créé une fois (lien dans la console du navigateur).</div>';
+        } else {
+          leaderboardList.innerHTML = '<div class="history-empty">Impossible de charger le classement pour le moment.</div>';
+        }
+      });
   }
 
   // ---------------- Duel (défier un ami) state ----------------
@@ -2380,6 +2515,8 @@
     if (isNewBest) {
       saveBestTele(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, penalties, telemetry);
     }
+    // Chaque course (solo ou défi) compte pour le classement hebdomadaire partagé.
+    recordRaceCloud(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, penalties);
 
     resultTitle.textContent = 'Arrivée !';
     resultSub.textContent = current.flag + ' ' + current.name;
@@ -2440,9 +2577,10 @@
     historyTitle.textContent = c.flag + ' ' + c.name;
     historySub.textContent = settingsLabel();
     const history = getHistory(c.id, selectedDifficulty, selectedDirection, selectedLaps);
-    menuHistoryList.innerHTML = history.length
+    menuHistoryList.innerHTML = '<div class="history-title">Mes records</div>' + (history.length
       ? historyRowsHtml(history)
-      : '<div class="history-empty">Aucun temps enregistré avec ces réglages pour le moment. Change la difficulté, le sens ou le nombre de tours ci-dessus pour voir un autre historique.</div>';
+      : '<div class="history-empty">Aucun temps enregistré avec ces réglages pour le moment. Change la difficulté, le sens ou le nombre de tours ci-dessus pour voir un autre historique.</div>');
+    renderLeaderboard(c.id, selectedDifficulty, selectedDirection, selectedLaps);
     historyOverlay.classList.add('show');
   }
 
@@ -2939,8 +3077,8 @@
     });
   }
 
-  function renderDuelHistoryList() {
-    const list = loadDuelHistory().filter(d => !activeDuel || d.id !== activeDuel.id);
+  function buildDuelHistoryLists(rawList) {
+    const list = rawList.filter(d => !activeDuel || d.id !== activeDuel.id);
     // On distingue ce qu'il reste à jouer (le joueur de cet appareil n'a pas encore posé de
     // temps) de ce qui est déjà réalisé, pour retrouver facilement les résultats des défis
     // qu'on a déjà courus.
@@ -2954,6 +3092,31 @@
     duelHistorySection.hidden = done.length === 0;
     duelHistoryList.innerHTML = done.map(duelHistoryRowHtml).join('');
     wireDuelHistoryRows(duelHistoryList, done);
+  }
+
+  function renderDuelHistoryList() {
+    const cached = loadDuelHistory();
+    buildDuelHistoryLists(cached);
+    if (!db || !cached.length) return;
+    // Le cache local d'un défi n'est mis à jour que quand on ouvre CE défi précis (voir
+    // renderDuelPanel/saveDuelToHistory) — un défi qu'on n'a pas rouvert depuis que l'autre
+    // joueur a couru restait donc affiché avec un résultat périmé (son temps manquant), même
+    // si "Actualiser" marchait pour le défi ouvert. On rafraîchit ici TOUTE la liste depuis
+    // Firestore à chaque passage sur l'écran Défis, pour que "Défis réalisés" soit à jour.
+    Promise.all(cached.map(function (entry) {
+      return duelDocRef(entry.id).get().then(function (snap) {
+        if (!snap.exists) return entry;
+        const data = snap.data() || {};
+        const runsMap = data.runs || {};
+        const runs = Object.keys(runsMap).map(function (k) { return Object.assign({ key: k }, runsMap[k]); });
+        const updated = Object.assign({}, entry, { cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, runs: runs });
+        saveDuelToHistory(updated);
+        return updated;
+      }).catch(function () { return entry; });
+    })).then(function (freshList) {
+      if (screenDuel.hidden) return; // on a déjà quitté l'écran Défis entre-temps
+      buildDuelHistoryLists(freshList);
+    });
   }
 
   function renderDuelResultPanel() {

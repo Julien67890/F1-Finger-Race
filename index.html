@@ -101,16 +101,80 @@
     white-space: nowrap;
   }
 
-  .account-auth-soon { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .account-auth { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 
-  .account-auth-row {
-    background: rgba(255,255,255,0.03);
-    border: 1px dashed var(--border);
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 12.5px;
+  .account-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
     color: var(--text-dim);
+    font-size: 11.5px;
+  }
+  .account-divider::before, .account-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .account-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+  }
+  .account-input::placeholder { color: var(--text-dim); }
+
+  .account-auth-buttons { display: flex; gap: 8px; margin-top: 2px; }
+  .account-auth-buttons .cta.small { margin-top: 0; padding: 9px 10px; font-size: 12.5px; flex: 1; }
+
+  .account-auth-error {
+    background: rgba(255,90,90,0.12);
+    border: 1px solid rgba(255,90,90,0.4);
+    color: #ffb3b3;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
     text-align: left;
+  }
+
+  .account-signed-in-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 14px 0;
+    text-align: left;
+  }
+
+  .account-avatar-lg {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1a0d05;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    flex: none;
+    overflow: hidden;
+  }
+  .account-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+
+  .account-signed-in-text { min-width: 0; }
+  .account-signed-in-name { font-weight: 700; font-size: 15px; }
+  .account-signed-in-email {
+    color: var(--text-dim);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .eyebrow {
@@ -722,6 +786,9 @@
     padding: 24px 28px;
     width: 100%;
     max-width: 340px;
+    max-height: 88vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     text-align: center;
   }
 
@@ -1029,14 +1096,37 @@
   <div class="overlay" id="accountOverlay">
     <div class="result-card">
       <h2>Mon compte</h2>
-      <div class="sub">Ton prénom sert au classement dans les défis entre amis.</div>
-      <div class="player-name-row">
-        <input type="text" id="playerNameInput" placeholder="Ton prénom" maxlength="18" autocomplete="off">
+
+      <div id="accountSignedOut">
+        <div class="sub">Ton prénom sert au classement dans les défis entre amis. Connecte-toi pour le retrouver sur tous tes appareils.</div>
+        <div class="player-name-row">
+          <input type="text" id="playerNameInput" placeholder="Ton prénom" maxlength="18" autocomplete="off">
+        </div>
+
+        <div class="account-auth">
+          <button class="cta ghost" id="googleSignInBtn" type="button">🔵 Continuer avec Google</button>
+          <div class="account-divider"><span>ou par e-mail</span></div>
+          <input type="email" id="authEmailInput" class="account-input" placeholder="E-mail" autocomplete="email">
+          <input type="password" id="authPasswordInput" class="account-input" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
+          <div class="account-auth-buttons">
+            <button class="cta ghost small" id="emailSignInBtn" type="button">Se connecter</button>
+            <button class="cta ghost small" id="emailSignUpBtn" type="button">Créer un compte</button>
+          </div>
+          <div class="account-auth-error" id="accountAuthError" hidden></div>
+        </div>
       </div>
-      <div class="account-auth-soon">
-        <div class="account-auth-row">📧 Connexion par e-mail — bientôt disponible</div>
-        <div class="account-auth-row">🔵 Connexion avec Google — bientôt disponible</div>
+
+      <div id="accountSignedIn" hidden>
+        <div class="account-signed-in-row">
+          <div class="account-avatar-lg" id="accountAvatarLg"></div>
+          <div class="account-signed-in-text">
+            <div class="account-signed-in-name" id="accountSignedInName"></div>
+            <div class="account-signed-in-email" id="accountSignedInEmail"></div>
+          </div>
+        </div>
+        <button class="cta ghost" id="signOutBtn" type="button">Se déconnecter</button>
       </div>
+
       <button class="cta" id="closeAccountBtn">Fermer</button>
     </div>
   </div>
@@ -1051,6 +1141,27 @@
   <div class="body"></div>
   <div class="glass"></div>
 </div>
+
+<!-- Firebase (compte + défis partagés) — SDK "compat" pour rester en scripts classiques,
+     sans étape de build. Chargé avant le script du jeu : firebase.initializeApp() a déjà
+     tourné quand le script principal s'exécute. Si un bloqueur de script ou une coupure
+     réseau empêche ce chargement, le jeu continue de fonctionner en solo (voir plus bas :
+     tout ce qui touche à Firebase vérifie sa présence avant de s'en servir). -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp({
+      apiKey: "AIzaSyDizcAQw5w2d-C7WBEiGz2x4M_AzrSuMC4",
+      authDomain: "f1-finger-race.firebaseapp.com",
+      projectId: "f1-finger-race",
+      storageBucket: "f1-finger-race.firebasestorage.app",
+      messagingSenderId: "268367210331",
+      appId: "1:268367210331:web:5ee262b17201477b2f5c7e"
+    });
+  }
+</script>
 
 <script>
 (function () {
@@ -1144,6 +1255,18 @@
   const accountChipName = document.getElementById('accountChipName');
   const accountOverlay = document.getElementById('accountOverlay');
   const closeAccountBtn = document.getElementById('closeAccountBtn');
+  const accountSignedOut = document.getElementById('accountSignedOut');
+  const accountSignedIn = document.getElementById('accountSignedIn');
+  const googleSignInBtn = document.getElementById('googleSignInBtn');
+  const authEmailInput = document.getElementById('authEmailInput');
+  const authPasswordInput = document.getElementById('authPasswordInput');
+  const emailSignInBtn = document.getElementById('emailSignInBtn');
+  const emailSignUpBtn = document.getElementById('emailSignUpBtn');
+  const accountAuthError = document.getElementById('accountAuthError');
+  const accountAvatarLg = document.getElementById('accountAvatarLg');
+  const accountSignedInName = document.getElementById('accountSignedInName');
+  const accountSignedInEmail = document.getElementById('accountSignedInEmail');
+  const signOutBtn = document.getElementById('signOutBtn');
   const challengeBtn = document.getElementById('challengeBtn');
   const duelPanel = document.getElementById('duelPanel');
   const duelFlag = document.getElementById('duelFlag');
@@ -1242,24 +1365,84 @@
   let countdownTimer = null;
   let countdownAbort = false;
 
+  // ---------------- Firebase (compte + défis partagés) ----------------
+  // Les scripts firebase-*-compat sont chargés avant ce script (voir <head>), donc `firebase`
+  // est déjà initialisé ici. auth/db restent null si un bloqueur de script ou une coupure
+  // réseau a empêché Firebase de se charger — tout le code ci-dessous vérifie leur présence
+  // avant de s'en servir, pour que le jeu en solo continue de fonctionner hors-ligne.
+  const auth = (typeof firebase !== 'undefined' && firebase.apps.length) ? firebase.auth() : null;
+  const db = (typeof firebase !== 'undefined' && firebase.apps.length) ? firebase.firestore() : null;
+
+  function getGuestId() {
+    try {
+      let g = localStorage.getItem('sur-la-corde:guestId');
+      if (!g) {
+        g = 'g' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+        localStorage.setItem('sur-la-corde:guestId', g);
+      }
+      return g;
+    } catch (e) { return 'guest'; }
+  }
+
+  // Identifie qui poste un temps dans un défi : l'UID Firebase si connecté, sinon un
+  // identifiant invité stable sur cet appareil — pour ne jamais confondre deux joueurs qui
+  // auraient tapé le même prénom.
+  function currentRunKey() {
+    const user = auth && auth.currentUser;
+    return (user && user.uid) || getGuestId();
+  }
+
   // ---------------- Duel (défier un ami) state ----------------
-  // Le défi est entièrement encodé dans l'URL (#race=...) — aucun serveur, aucune
-  // dépendance à une capacité d'hébergement particulière : ça marche sur n'importe
-  // quelle page statique (GitHub Pages compris).
+  // Chaque défi est un document Firestore (collection "duels") — le lien partagé ne contient
+  // que son identifiant (#duel=<id>), et les deux joueurs voient le résultat de l'autre en
+  // direct grâce à un abonnement Firestore (onSnapshot), sans avoir à se renvoyer de lien.
   const DUEL_COLORS = ['#ff7a3d', '#4dd9ff', '#c792ff', '#ffe066'];
-  // Le défi étant fondamentalement 1 contre 1, on limite le nombre de temps embarqués dans le
-  // lien à 2 — chaque temps ajouté (avec son tracé) alourdit beaucoup le lien à partager.
-  const DUEL_MAX_RUNS = 2;
-  const DUEL_TELE_POINTS = 40; // points ré-échantillonnés pour garder le lien de partage court
-  let activeDuel = null;        // { v, cid, diff, dir, laps, runs:[{name,time,pen,tele}] } ou null
+  const DUEL_TELE_POINTS = 150; // le lien ne contient plus le tracé : on peut se permettre plus de points
+  let activeDuel = null;        // { id, cid, diff, dir, laps, runs:[{key,name,time,pen,tele}] } ou null
+  let duelUnsub = null;         // désabonnement de l'écoute Firestore du défi actif
   let lastResult = null;        // { time, penalties } de la dernière course terminée
   let playerName = '';
   let replayRafId = null;
   let replayStartPerf = 0;
   let replayCarEls = [];
 
-  function makeDuelId() {
-    return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+  function duelDocRef(id) { return db.collection('duels').doc(id); }
+
+  function buildDuelShareUrl(id) {
+    return window.location.origin + window.location.pathname + window.location.search + '#duel=' + id;
+  }
+
+  function parseDuelIdFromHash() {
+    const m = /duel=([A-Za-z0-9_-]+)/.exec(window.location.hash || '');
+    return m ? m[1] : null;
+  }
+
+  function stopWatchingDuel() {
+    if (duelUnsub) { duelUnsub(); duelUnsub = null; }
+  }
+
+  function watchDuel(id) {
+    stopWatchingDuel();
+    if (!db) return;
+    duelUnsub = duelDocRef(id).onSnapshot(function (snap) {
+      if (!snap.exists) return;
+      const data = snap.data() || {};
+      const runsMap = data.runs || {};
+      activeDuel = {
+        id: id,
+        cid: data.cid,
+        diff: data.diff,
+        dir: data.dir,
+        laps: data.laps,
+        runs: Object.keys(runsMap).map(function (k) {
+          return Object.assign({ key: k }, runsMap[k]);
+        })
+      };
+      if (!screenDuel.hidden) renderDuelScreen();
+      if (!screenRace.hidden) renderDuelResultPanel();
+    }, function (err) {
+      console.error('Défi : lecture Firestore impossible', err);
+    });
   }
 
   // ---------------- Historique local des défis ----------------
@@ -1676,7 +1859,8 @@
     ghostLabel = '';
     ghostScale = 1;
     if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
-      const others = activeDuel.runs.filter(r => r.name !== playerName && r.tele && r.tele.length);
+      const myKey = currentRunKey();
+      const others = activeDuel.runs.filter(r => r.key !== myKey && r.tele && r.tele.length);
       const pool = others.length ? others : activeDuel.runs.filter(r => r.tele && r.tele.length);
       if (pool.length) {
         const best = pool.slice().sort((a, b) => a.time - b.time)[0];
@@ -2339,22 +2523,6 @@
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  function b64urlEncode(str) {
-    const bytes = new TextEncoder().encode(str);
-    let bin = '';
-    bytes.forEach(b => { bin += String.fromCharCode(b); });
-    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-
-  function b64urlDecode(b64url) {
-    let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-    while (b64.length % 4) b64 += '=';
-    const bin = atob(b64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-
   function resampleTelemetry(tele, maxPoints) {
     if (!tele || !tele.length) return [];
     if (tele.length <= maxPoints) return tele.map(p => [p[0], p[1], p[2]]);
@@ -2367,69 +2535,6 @@
     return out;
   }
 
-  // Le tracé est de loin ce qui pèse le plus dans le lien à partager. Au lieu d'un tableau
-  // JSON de triplets ([t,x,y],[t,x,y],...  — beaucoup de crochets et de virgules répétés),
-  // on le sérialise en une seule chaîne de nombres séparés par des virgules : même précision,
-  // beaucoup moins de caractères de ponctuation.
-  function packTele(tele) {
-    if (!tele || !tele.length) return '';
-    const parts = [];
-    for (let i = 0; i < tele.length; i++) { parts.push(tele[i][0], tele[i][1], tele[i][2]); }
-    return parts.join(',');
-  }
-
-  function unpackTele(str) {
-    if (!str) return [];
-    const nums = str.split(',').map(Number);
-    const out = [];
-    for (let i = 0; i + 2 < nums.length; i += 3) out.push([nums[i], nums[i + 1], nums[i + 2]]);
-    return out;
-  }
-
-  function duelWireString(duel) {
-    // Format "sur le fil" à clés courtes — uniquement pour la sérialisation dans le lien.
-    // Partout ailleurs dans le code, un défi garde ses noms de champs complets et lisibles
-    // (cid, diff, dir, laps, runs[].name/time/pen/tele) : decodeDuelFromHash reconstruit ça.
-    const wire = {
-      v: duel.v || 1,
-      g: duel.id,
-      c: duel.cid,
-      d: duel.diff,
-      i: duel.dir,
-      l: duel.laps,
-      r: (duel.runs || []).map(r => ({ n: r.name, t: r.time, p: r.pen, k: packTele(r.tele) }))
-    };
-    return b64urlEncode(JSON.stringify(wire));
-  }
-
-  function buildDuelUrl(duel) {
-    // On construit l'URL à partager sans jamais toucher à la barre d'adresse elle-même —
-    // sinon actualiser la page retombe systématiquement sur ce défi (ce que Julien a signalé).
-    try {
-      return window.location.origin + window.location.pathname + window.location.search +
-        '#race=' + duelWireString(duel);
-    } catch (e) { return window.location.href; }
-  }
-
-  function decodeDuelFromHash() {
-    const m = /race=([A-Za-z0-9_-]+)/.exec(window.location.hash || '');
-    if (!m) return null;
-    try {
-      const wire = JSON.parse(b64urlDecode(m[1]));
-      if (!wire || !wire.c || !Array.isArray(wire.r)) return null;
-      return {
-        v: wire.v || 1,
-        id: wire.g,
-        cid: wire.c,
-        diff: wire.d,
-        dir: wire.i,
-        laps: wire.l,
-        runs: wire.r.map(r => ({ name: r.n, time: r.t, pen: r.p, tele: unpackTele(r.k) }))
-      };
-    } catch (e) { /* lien invalide ou tronqué — on l'ignore silencieusement */ }
-    return null;
-  }
-
   function ensurePlayerName() {
     playerName = (playerNameInput.value || '').trim();
     return playerName.length > 0;
@@ -2438,6 +2543,7 @@
   function flagPlayerNameNeeded() {
     // L'input du prénom vit dans la fenêtre "Compte" — il faut l'ouvrir avant de pouvoir
     // le mettre en avant, sinon rien de visible ne se passe pour le joueur.
+    renderAccountOverlay();
     accountOverlay.classList.add('show');
     playerNameInput.focus();
     playerNameInput.style.borderColor = 'var(--danger)';
@@ -2459,6 +2565,17 @@
   }
 
   function updateAccountChip() {
+    const user = auth && auth.currentUser;
+    if (user) {
+      const label = user.displayName || playerName || (user.email ? user.email.split('@')[0] : 'Compte');
+      if (user.photoURL) {
+        accountAvatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
+      } else {
+        accountAvatar.textContent = label[0].toUpperCase();
+      }
+      accountChipName.textContent = label;
+      return;
+    }
     const name = (playerName || '').trim();
     if (name) {
       accountAvatar.textContent = name[0].toUpperCase();
@@ -2466,6 +2583,50 @@
     } else {
       accountAvatar.textContent = '👤';
       accountChipName.textContent = 'Compte';
+    }
+  }
+
+  // ---------------- Connexion (Google / e-mail) ----------------
+  function authErrorMessage(err) {
+    const code = err && err.code;
+    const map = {
+      'auth/email-already-in-use': "Un compte existe déjà avec cet e-mail — essaie de te connecter plutôt.",
+      'auth/invalid-email': 'Adresse e-mail invalide.',
+      'auth/weak-password': 'Le mot de passe doit faire au moins 6 caractères.',
+      'auth/wrong-password': 'Mot de passe incorrect.',
+      'auth/user-not-found': "Aucun compte avec cet e-mail — crée un compte d'abord.",
+      'auth/invalid-credential': 'E-mail ou mot de passe incorrect.',
+      'auth/popup-closed-by-user': null,
+      'auth/cancelled-popup-request': null,
+      'auth/network-request-failed': 'Connexion impossible — vérifie ta connexion internet.'
+    };
+    if (code && Object.prototype.hasOwnProperty.call(map, code)) return map[code];
+    return (err && err.message) || 'Une erreur est survenue.';
+  }
+
+  function showAccountAuthError(text) {
+    if (!text) { accountAuthError.hidden = true; accountAuthError.textContent = ''; return; }
+    accountAuthError.hidden = false;
+    accountAuthError.textContent = text;
+  }
+
+  function renderAccountOverlay() {
+    const user = auth && auth.currentUser;
+    if (user) {
+      accountSignedOut.hidden = true;
+      accountSignedIn.hidden = false;
+      const label = user.displayName || (user.email ? user.email.split('@')[0] : 'Joueur');
+      accountSignedInName.textContent = label;
+      accountSignedInEmail.textContent = user.email || '';
+      if (user.photoURL) {
+        accountAvatarLg.innerHTML = '<img src="' + user.photoURL + '" alt="">';
+      } else {
+        accountAvatarLg.textContent = label[0].toUpperCase();
+      }
+    } else {
+      accountSignedOut.hidden = false;
+      accountSignedIn.hidden = true;
+      showAccountAuthError('');
     }
   }
 
@@ -2490,17 +2651,29 @@
   }
 
   function playerHasRunDuel(duel) {
-    const name = (playerName || (playerNameInput && playerNameInput.value) || '').trim();
-    if (!name) return false;
-    return (duel.runs || []).some(r => r.name === name);
+    const key = currentRunKey();
+    return (duel.runs || []).some(r => r.key === key);
   }
 
   function renderDuelPanel() {
     if (!activeDuel) { duelPanel.hidden = true; return; }
     const duel = activeDuel;
-    if (!duel.id) duel.id = makeDuelId();
-    saveDuelToHistory(duel);
     duelPanel.hidden = false;
+    if (!duel.cid) {
+      // Abonnement Firestore pas encore établi (juste après avoir ouvert un lien ou un
+      // historique) — court état de chargement, le temps que le premier instantané arrive.
+      duelFlag.textContent = '⏳';
+      duelTitle.textContent = 'Chargement du défi…';
+      duelSub.textContent = '';
+      duelTag.textContent = '';
+      duelParticipants.innerHTML = '';
+      duelPlayBtn.hidden = true;
+      duelReplayBtn.hidden = true;
+      duelLinkFallback.hidden = true;
+      return;
+    }
+    saveDuelToHistory(duel);
+    duelPlayBtn.hidden = false;
     const country = COUNTRIES.find(c => c.id === duel.cid);
     duelFlag.textContent = (country && country.flag) || '🏁';
     duelTitle.textContent = 'Défi — ' + (country ? country.name : duel.cid);
@@ -2540,14 +2713,22 @@
     renderDuelScreen();
   }
 
-  function enterDuel(duel) {
-    activeDuel = duel;
-    selectedDifficulty = duel.diff || selectedDifficulty;
-    selectedDirection = duel.dir || selectedDirection;
-    selectedLaps = duel.laps || selectedLaps;
+  function enterDuel(duelRef) {
+    // duelRef vient soit de l'historique local (peut être périmé), soit d'un lien reçu (juste
+    // un id) — dans les deux cas on se réabonne en direct à Firestore, qui reste la source de
+    // vérité. On affiche d'abord ce qu'on a sous la main pour éviter un écran vide le temps
+    // que le premier instantané arrive.
+    selectedDifficulty = duelRef.diff || selectedDifficulty;
+    selectedDirection = duelRef.dir || selectedDirection;
+    selectedLaps = duelRef.laps || selectedLaps;
     syncSegUI();
-    const idx = COUNTRIES.findIndex(c => c.id === duel.cid);
+    const idx = COUNTRIES.findIndex(c => c.id === duelRef.cid);
     if (idx >= 0) { menuIndex = idx; renderCarousel(); }
+    activeDuel = {
+      id: duelRef.id, cid: duelRef.cid, diff: duelRef.diff, dir: duelRef.dir,
+      laps: duelRef.laps, runs: duelRef.runs || []
+    };
+    watchDuel(duelRef.id);
     showDuelScreen();
   }
 
@@ -2562,8 +2743,8 @@
       sub = 'Aucun temps posé';
     } else if (playerHasRunDuel(entry)) {
       const sorted = runs.slice().sort((a, b) => a.time - b.time);
-      const myName = (playerName || (playerNameInput && playerNameInput.value) || '').trim();
-      const rank = sorted.findIndex(r => r.name === myName);
+      const key = currentRunKey();
+      const rank = sorted.findIndex(r => r.key === key);
       const mine = rank >= 0 ? sorted[rank] : runs[0];
       sub = 'Ton temps : ' + fmt(mine.time) + (sorted.length > 1 ? (rank === 0 ? ' 🏆' : ' · ' + (rank + 1) + 'e') : '');
     } else {
@@ -2602,33 +2783,31 @@
   }
 
   function renderDuelResultPanel() {
-    if (!activeDuel || activeDuel.runs.length === 0) { duelResultPanel.hidden = true; return; }
+    if (!activeDuel || !activeDuel.cid || activeDuel.runs.length === 0) { duelResultPanel.hidden = true; return; }
     duelResultPanel.hidden = false;
     duelResultParticipants.innerHTML = duelRowsHtml(activeDuel.runs);
     duelResultReplayBtn.hidden = activeDuel.runs.length < 2;
   }
 
   function applyHashDuel() {
-    const duel = decodeDuelFromHash();
-    if (!duel) return;
-    if (!duel.id) duel.id = makeDuelId();
-    // On consomme le lien une seule fois : on retire tout de suite #race=... de la barre
+    const id = parseDuelIdFromHash();
+    if (!id) return;
+    // On consomme le lien une seule fois : on retire tout de suite #duel=... de la barre
     // d'adresse, sinon actualiser la page rouvrirait ce même défi indéfiniment.
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
+    if (!db) {
+      alert('Impossible de charger ce défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      return;
+    }
     // Un ami qui ouvre un lien de défi arrive directement sur l'écran Défis, pas sur le menu.
-    activeDuel = duel;
-    selectedDifficulty = duel.diff || selectedDifficulty;
-    selectedDirection = duel.dir || selectedDirection;
-    selectedLaps = duel.laps || selectedLaps;
-    syncSegUI();
-    const idx = COUNTRIES.findIndex(c => c.id === duel.cid);
-    if (idx >= 0) { menuIndex = idx; renderCarousel(); }
+    activeDuel = { id: id, cid: null, diff: null, dir: null, laps: null, runs: [] };
+    watchDuel(id);
     showDuelScreen();
   }
 
   function shareCurrentDuelLink(duel, btn, fallbackEl, inputEl) {
-    if (!duel) return;
-    const url = buildDuelUrl(duel);
+    if (!duel || !duel.id) return;
+    const url = buildDuelShareUrl(duel.id);
     const restoreLabel = () => {
       if (!btn) return;
       const original = btn.dataset.label || btn.textContent;
@@ -2676,33 +2855,64 @@
   }
 
   function startDuelInvite(country) {
-    // Prépare une invitation pour ce circuit (encore aucun temps posé) et partage le lien.
-    activeDuel = { v: 1, id: makeDuelId(), cid: country.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: [] };
-    renderDuelScreen();
-    shareCurrentDuelLink(activeDuel, duelCopyBtn, duelLinkFallback, duelLinkInput);
-    if (typeof duelPanel.scrollIntoView === 'function') {
-      duelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Crée un nouveau défi (document Firestore, encore aucun temps posé) et partage le lien —
+    // qui ne contient que l'identifiant du document, pas les données de la course.
+    if (!db) {
+      alert('Impossible de créer un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      return;
     }
+    const ref = db.collection('duels').doc();
+    ref.set({
+      cid: country.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      runs: {}
+    }).then(function () {
+      watchDuel(ref.id);
+      renderDuelScreen();
+      shareCurrentDuelLink({ id: ref.id }, duelCopyBtn, duelLinkFallback, duelLinkInput);
+      if (typeof duelPanel.scrollIntoView === 'function') {
+        duelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }).catch(function (err) {
+      console.error(err);
+      alert('Impossible de créer le défi (' + err.message + ').');
+    });
   }
 
   function addRunToActiveDuel(name, result) {
-    if (!activeDuel || activeDuel.cid !== current.id) {
-      activeDuel = { v: 1, id: makeDuelId(), cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: [] };
+    if (!db) {
+      alert('Impossible d\'enregistrer ce temps dans un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      return;
     }
+    const key = currentRunKey();
     const tele = resampleTelemetry(telemetry, DUEL_TELE_POINTS);
-    const existingIdx = activeDuel.runs.findIndex(r => r.name === name);
-    const existing = existingIdx >= 0 ? activeDuel.runs[existingIdx] : null;
-    if (!existing || result.time < existing.time) {
-      const run = { name: name, time: result.time, pen: result.penalties, tele: tele };
-      if (existingIdx >= 0) {
-        activeDuel.runs[existingIdx] = run;
-      } else {
-        activeDuel.runs.push(run);
-        if (activeDuel.runs.length > DUEL_MAX_RUNS) activeDuel.runs.shift();
-      }
+    const run = { name: name, time: result.time, pen: result.penalties, tele: tele };
+    const runsUpdate = {};
+    runsUpdate['runs.' + key] = run;
+
+    if (activeDuel && activeDuel.cid === current.id && activeDuel.id) {
+      // Un défi est déjà en cours sur ce circuit : on y ajoute/actualise notre temps.
+      // L'écran se rafraîchit tout seul via l'abonnement Firestore (watchDuel) déjà en place.
+      duelDocRef(activeDuel.id).set(runsUpdate, { merge: true }).catch(function (err) {
+        console.error(err);
+        alert('Impossible d\'enregistrer ton temps (' + err.message + ').');
+      });
+    } else {
+      // "Défier un ami avec ce temps" depuis une course normale : on crée un nouveau défi
+      // qui contient déjà ce premier temps.
+      const ref = db.collection('duels').doc();
+      ref.set({
+        cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        runs: { [key]: run }
+      }).then(function () {
+        watchDuel(ref.id);
+        shareCurrentDuelLink({ id: ref.id }, duelResultCopyBtn, null, null);
+      }).catch(function (err) {
+        console.error(err);
+        alert('Impossible de créer le défi (' + err.message + ').');
+      });
     }
-    renderDuelPanel();
-    renderDuelResultPanel();
   }
 
   // ---------------- Ghost replay (rejeu des deux courses) ----------------
@@ -2862,6 +3072,7 @@
   duelCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelCopyBtn, duelLinkFallback, duelLinkInput));
   duelReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
   duelCloseBtn.addEventListener('click', () => {
+    stopWatchingDuel();
     activeDuel = null;
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
     renderDuelScreen();
@@ -2878,6 +3089,7 @@
   duelResultReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
 
   accountChip.addEventListener('click', () => {
+    renderAccountOverlay();
     accountOverlay.classList.add('show');
     playerNameInput.focus();
   });
@@ -2891,6 +3103,56 @@
     playerName = playerNameInput.value.trim();
     try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
     updateAccountChip();
+  });
+
+  if (auth) {
+    auth.onAuthStateChanged(function (user) {
+      if (user && user.displayName) {
+        playerName = user.displayName;
+        playerNameInput.value = playerName;
+        try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
+      }
+      updateAccountChip();
+      renderAccountOverlay();
+    });
+  }
+
+  googleSignInBtn.addEventListener('click', () => {
+    if (!auth) { showAccountAuthError('Connexion indisponible (Firebase non chargé).'); return; }
+    showAccountAuthError('');
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => {
+      const msg = authErrorMessage(err);
+      if (msg) showAccountAuthError(msg);
+    });
+  });
+
+  emailSignInBtn.addEventListener('click', () => {
+    if (!auth) { showAccountAuthError('Connexion indisponible (Firebase non chargé).'); return; }
+    const email = authEmailInput.value.trim();
+    const pass = authPasswordInput.value;
+    if (!email || !pass) { showAccountAuthError('Renseigne ton e-mail et ton mot de passe.'); return; }
+    showAccountAuthError('');
+    auth.signInWithEmailAndPassword(email, pass).catch(err => showAccountAuthError(authErrorMessage(err)));
+  });
+
+  emailSignUpBtn.addEventListener('click', () => {
+    if (!auth) { showAccountAuthError('Connexion indisponible (Firebase non chargé).'); return; }
+    const email = authEmailInput.value.trim();
+    const pass = authPasswordInput.value;
+    const name = playerNameInput.value.trim();
+    if (!email || !pass) { showAccountAuthError('Renseigne ton e-mail et ton mot de passe.'); return; }
+    if (!name) { showAccountAuthError("Choisis d'abord ton prénom ci-dessus."); return; }
+    showAccountAuthError('');
+    auth.createUserWithEmailAndPassword(email, pass).then(cred => cred.user.updateProfile({ displayName: name })).then(() => {
+      playerName = name;
+      try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
+      updateAccountChip();
+      renderAccountOverlay();
+    }).catch(err => showAccountAuthError(authErrorMessage(err)));
+  });
+
+  signOutBtn.addEventListener('click', () => {
+    if (auth) auth.signOut();
   });
   try {
     playerName = localStorage.getItem('sur-la-corde:playerName') || '';

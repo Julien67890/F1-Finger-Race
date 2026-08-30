@@ -1505,9 +1505,12 @@
           const bests = (snap.exists && snap.data().bests) || {};
           const cur = bests[rk];
           if (!cur || time < cur.time) {
-            const update = {};
-            update['bests.' + rk] = { time: time, pen: pen, cid: cid, diff: diff, dir: dir, laps: laps };
-            tx.set(userRef, update, { merge: true });
+            // Objet réellement imbriqué (pas une clé à point) : avec {merge:true}, Firestore
+            // fusionne récursivement dans la map "bests" sans toucher aux autres clés — et ça
+            // marche même si le document n'existe pas encore (contrairement à .update()).
+            const bestsUpdate = {};
+            bestsUpdate[rk] = { time: time, pen: pen, cid: cid, diff: diff, dir: dir, laps: laps };
+            tx.set(userRef, { bests: bestsUpdate }, { merge: true });
           }
         });
       }).catch(function (err) { console.error('Enregistrement du record personnel (compte) impossible', err); });
@@ -3235,7 +3238,10 @@
       activeDuel = Object.assign({}, activeDuel, { runs: others.concat([Object.assign({ key: key }, run)]) });
       if (!screenDuel.hidden) renderDuelScreen();
       if (!screenRace.hidden) renderDuelResultPanel();
-      duelDocRef(activeDuel.id).set(runsUpdate, { merge: true }).then(function () {
+      // .update() (et non .set(..., {merge:true})) : c'est la façon documentée et fiable de
+      // cibler UNE clé précise d'un champ map ("runs.<id>") sans risquer d'écraser toute la
+      // map ni de créer par erreur un champ littéralement nommé "runs.<id>".
+      duelDocRef(activeDuel.id).update(runsUpdate).then(function () {
         refreshActiveDuel();
       }).catch(function (err) {
         console.error(err);

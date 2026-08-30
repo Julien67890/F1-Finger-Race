@@ -1224,6 +1224,18 @@
   let lastTelemetryPush = 0;
   let ghostTele = null; // tracé rejoué en fantôme pendant la course (adversaire du défi en priorité, sinon meilleur temps perso)
   let ghostLabel = '';  // nom affiché pour ce fantôme ("ton record" ou le prénom de l'adversaire)
+  let ghostScale = 1;   // étire le temps du fantôme pour que son avancement reflète aussi ses pénalités
+
+  // Un fantôme est enregistré sans pénalité "rejouée" dans son tracé (le tracé, c'est juste le
+  // doigt) — mais son temps officiel inclut ses pénalités. On étire donc son avancement dans le
+  // temps pour qu'il mette exactement son vrai temps total (course + pénalités) à afficher tout
+  // son tracé, au lieu de sembler plus rapide qu'il ne l'a réellement été.
+  function ghostTimeScale(tele, pen) {
+    if (!tele || !tele.length || !pen) return 1;
+    const raceDuration = tele[tele.length - 1][0];
+    if (!raceDuration) return 1;
+    return raceDuration / (raceDuration + pen * PENALTY_SECONDS);
+  }
   let posBuffer = [];
   let lastCarRenderPos = null;
   let rafId = null;
@@ -1235,8 +1247,10 @@
   // dépendance à une capacité d'hébergement particulière : ça marche sur n'importe
   // quelle page statique (GitHub Pages compris).
   const DUEL_COLORS = ['#ff7a3d', '#4dd9ff', '#c792ff', '#ffe066'];
-  const DUEL_MAX_RUNS = DUEL_COLORS.length;
-  const DUEL_TELE_POINTS = 120; // points ré-échantillonnés pour garder le lien court
+  // Le défi étant fondamentalement 1 contre 1, on limite le nombre de temps embarqués dans le
+  // lien à 2 — chaque temps ajouté (avec son tracé) alourdit beaucoup le lien à partager.
+  const DUEL_MAX_RUNS = 2;
+  const DUEL_TELE_POINTS = 40; // points ré-échantillonnés pour garder le lien de partage court
   let activeDuel = null;        // { v, cid, diff, dir, laps, runs:[{name,time,pen,tele}] } ou null
   let lastResult = null;        // { time, penalties } de la dernière course terminée
   let playerName = '';
@@ -1332,10 +1346,11 @@
     return null;
   }
 
-  function saveBestTele(id, diff, dir, laps, time, tele) {
+  function saveBestTele(id, diff, dir, laps, time, pen, tele) {
     try {
       localStorage.setItem(bestTeleKey(id, diff, dir, laps), JSON.stringify({
         time: time,
+        pen: pen || 0,
         tele: resampleTelemetry(tele, GHOST_TELE_POINTS)
       }));
     } catch (e) {}
@@ -1659,6 +1674,7 @@
     // parmi les autres participants) passe devant le record perso — c'est lui qu'on veut voir.
     ghostTele = null;
     ghostLabel = '';
+    ghostScale = 1;
     if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
       const others = activeDuel.runs.filter(r => r.name !== playerName && r.tele && r.tele.length);
       const pool = others.length ? others : activeDuel.runs.filter(r => r.tele && r.tele.length);
@@ -1666,6 +1682,7 @@
         const best = pool.slice().sort((a, b) => a.time - b.time)[0];
         ghostTele = best.tele;
         ghostLabel = best.name;
+        ghostScale = ghostTimeScale(ghostTele, best.pen || 0);
       }
     }
     if (!ghostTele) {
@@ -1673,6 +1690,7 @@
       if (bestTele) {
         ghostTele = bestTele.tele;
         ghostLabel = 'ton record';
+        ghostScale = ghostTimeScale(ghostTele, bestTele.pen || 0);
       }
     }
     hudCountryChip.textContent = country.flag + ' ' + country.name + ' · ' + diff.label +
@@ -1870,11 +1888,95 @@
     lightEls.forEach(l => l.classList.remove('on'));
     hideCarSprite();
     hideGhostSprite();
+    stopEngineSound();
     if (rafId) cancelAnimationFrame(rafId);
     clearTimeout(countdownTimer);
     countdownAbort = true;
     drawScene();
     setBanner('Pose le doigt sur le point DÉPART / ARRIVÉE et reste appuyé, immobile');
+  }
+
+  // ---------------- Son (feux de départ façon F1 + moteur qui suit la vitesse) ----------------
+  // Tout est synthétisé avec la Web Audio API (pas de fichier audio à charger) — l'AudioContext
+  // ne peut démarrer que suite à un geste de l'utilisateur, ce qu'on a de toute façon dès qu'il
+  // pose le doigt sur le point de départ.
+  let audioCtx = null;
+  let engineOsc = null, engineOsc2 = null, engineGain = null;
+  let engineSpeed = 0;      // vitesse lissée utilisée pour moduler le son moteur
+  let lastMoveT = 0, lastMoveX = 0, lastMoveY = 0, instSpeed = 0;
+
+  function ensureAudioCtx() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    }
+    if (audioCtx.state === 'suspended') { audioCtx.resume().catch(() => {}); }
+    return audioCtx;
+  }
+
+  function playBeep(freq, duration, type) {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + duration + 0.03);
+  }
+
+  function playLightOnBeep() { playBeep(950, 0.09, 'square'); }
+  function playLightsOutBeep() { playBeep(240, 0.4, 'sawtooth'); }
+
+  function startEngineSound() {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    stopEngineSound();
+    engineGain = ctx.createGain();
+    engineGain.gain.value = 0.0001;
+    engineOsc = ctx.createOscillator();
+    engineOsc.type = 'sawtooth';
+    engineOsc.frequency.value = 55;
+    engineOsc2 = ctx.createOscillator();
+    engineOsc2.type = 'square';
+    engineOsc2.frequency.value = 55;
+    engineOsc.connect(engineGain);
+    engineOsc2.connect(engineGain);
+    engineGain.connect(ctx.destination);
+    engineOsc.start();
+    engineOsc2.start();
+    engineSpeed = 0;
+  }
+
+  function stopEngineSound() {
+    if (engineGain && audioCtx) {
+      const t = audioCtx.currentTime;
+      try {
+        engineGain.gain.cancelScheduledValues(t);
+        engineGain.gain.setValueAtTime(engineGain.gain.value, t);
+        engineGain.gain.linearRampToValueAtTime(0.0001, t + 0.08);
+      } catch (e) {}
+    }
+    const osc1 = engineOsc, osc2 = engineOsc2;
+    setTimeout(() => { try { if (osc1) osc1.stop(); if (osc2) osc2.stop(); } catch (e) {} }, 120);
+    engineOsc = null; engineOsc2 = null; engineGain = null;
+  }
+
+  function updateEngineSound(rawSpeed) {
+    if (!engineOsc || !engineGain || !audioCtx) return;
+    engineSpeed += (rawSpeed - engineSpeed) * 0.2; // lissage — évite les à-coups de fréquence
+    const t = audioCtx.currentTime;
+    const level = Math.min(1, engineSpeed / 900); // 900 = vitesse logique "pied au plancher"
+    const freq = 55 + level * 260;
+    const vol = 0.05 + level * 0.15;
+    engineOsc.frequency.setTargetAtTime(freq, t, 0.05);
+    engineOsc2.frequency.setTargetAtTime(freq * 1.008, t, 0.05); // léger désaccord, timbre plus riche
+    engineGain.gain.setTargetAtTime(vol, t, 0.08);
   }
 
   function tickTimer() {
@@ -1883,6 +1985,8 @@
     hudTime.textContent = fmt(elapsed);
     renderCarSprite();
     if (ghostTele) renderGhostSprite(elapsed);
+    if (performance.now() - lastMoveT > 120) { instSpeed *= 0.85; }
+    updateEngineSound(instSpeed);
     rafId = requestAnimationFrame(tickTimer);
   }
 
@@ -1897,6 +2001,7 @@
       if (countdownAbort) return;
       if (i < lightEls.length) {
         lightEls[i].classList.add('on');
+        playLightOnBeep();
         i += 1;
         countdownTimer = setTimeout(step, 550);
       } else {
@@ -1910,6 +2015,7 @@
     if (countdownAbort) return;
     lightEls.forEach(l => l.classList.remove('on'));
     lightsEl.classList.remove('show');
+    playLightsOutBeep();
     beginRace();
   }
 
@@ -1918,7 +2024,12 @@
     startTime = performance.now();
     onTrack = true;
     lastPoint = heldPoint;
+    lastMoveT = performance.now();
+    lastMoveX = heldPoint ? heldPoint[0] : 0;
+    lastMoveY = heldPoint ? heldPoint[1] : 0;
+    instSpeed = 0;
     setBanner('En course — reste sur la piste');
+    startEngineSound();
     rafId = requestAnimationFrame(tickTimer);
   }
 
@@ -1930,6 +2041,7 @@
     if (rafId) cancelAnimationFrame(rafId);
     hideCarSprite();
     hideGhostSprite();
+    stopEngineSound();
     setBanner('');
 
     const best = getBest(current.id, selectedDifficulty, selectedDirection, selectedLaps);
@@ -1937,7 +2049,7 @@
     const history = addHistory(current.id, selectedDifficulty, selectedDirection, selectedLaps,
       { time: total, penalties: penalties, date: Date.now() });
     if (isNewBest) {
-      saveBestTele(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, telemetry);
+      saveBestTele(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, penalties, telemetry);
     }
 
     resultTitle.textContent = 'Arrivée !';
@@ -2012,6 +2124,7 @@
     countdownAbort = true;
     lightsEl.classList.remove('show');
     hideCarSprite();
+    stopEngineSound();
     setBanner('');
     resultTitle.textContent = 'Raté !';
     resultSub.textContent = current.flag + ' ' + current.name;
@@ -2046,7 +2159,7 @@
   // le même temps écoulé que la course en cours — sampleTelemetryAt/logicalToScreen sont
   // définis plus bas (section défi), mais les déclarations de fonction sont hissées.
   function renderGhostSprite(elapsed) {
-    const pos = sampleTelemetryAt(ghostTele, elapsed);
+    const pos = sampleTelemetryAt(ghostTele, elapsed * ghostScale);
     if (!pos) return;
     const [sx, sy] = logicalToScreen(pos.x, pos.y);
     ghostSprite.style.display = 'block';
@@ -2103,6 +2216,7 @@
       return;
     }
     view.setPointerCapture(evt.pointerId);
+    ensureAudioCtx(); // geste utilisateur — c'est le seul moment sûr pour démarrer l'audio
     resetRun();
     heldPoint = [lx, ly];
     pushPos(evt.clientX, evt.clientY);
@@ -2130,6 +2244,17 @@
 
     heldPoint = [lx, ly];
     if (state !== 'racing') return;
+
+    {
+      const nowT = performance.now();
+      const dt = (nowT - lastMoveT) / 1000;
+      if (lastMoveT && dt > 0.001) {
+        instSpeed = dist(lx, ly, [lastMoveX, lastMoveY]) / dt;
+      }
+      lastMoveT = nowT;
+      lastMoveX = lx;
+      lastMoveY = ly;
+    }
 
     const onNow = isOnTrack(lx, ly);
     if (lastPoint) {
@@ -2242,19 +2367,65 @@
     return out;
   }
 
-  function encodeDuelToHash(duel) {
+  // Le tracé est de loin ce qui pèse le plus dans le lien à partager. Au lieu d'un tableau
+  // JSON de triplets ([t,x,y],[t,x,y],...  — beaucoup de crochets et de virgules répétés),
+  // on le sérialise en une seule chaîne de nombres séparés par des virgules : même précision,
+  // beaucoup moins de caractères de ponctuation.
+  function packTele(tele) {
+    if (!tele || !tele.length) return '';
+    const parts = [];
+    for (let i = 0; i < tele.length; i++) { parts.push(tele[i][0], tele[i][1], tele[i][2]); }
+    return parts.join(',');
+  }
+
+  function unpackTele(str) {
+    if (!str) return [];
+    const nums = str.split(',').map(Number);
+    const out = [];
+    for (let i = 0; i + 2 < nums.length; i += 3) out.push([nums[i], nums[i + 1], nums[i + 2]]);
+    return out;
+  }
+
+  function duelWireString(duel) {
+    // Format "sur le fil" à clés courtes — uniquement pour la sérialisation dans le lien.
+    // Partout ailleurs dans le code, un défi garde ses noms de champs complets et lisibles
+    // (cid, diff, dir, laps, runs[].name/time/pen/tele) : decodeDuelFromHash reconstruit ça.
+    const wire = {
+      v: duel.v || 1,
+      g: duel.id,
+      c: duel.cid,
+      d: duel.diff,
+      i: duel.dir,
+      l: duel.laps,
+      r: (duel.runs || []).map(r => ({ n: r.name, t: r.time, p: r.pen, k: packTele(r.tele) }))
+    };
+    return b64urlEncode(JSON.stringify(wire));
+  }
+
+  function buildDuelUrl(duel) {
+    // On construit l'URL à partager sans jamais toucher à la barre d'adresse elle-même —
+    // sinon actualiser la page retombe systématiquement sur ce défi (ce que Julien a signalé).
     try {
-      window.location.hash = 'race=' + b64urlEncode(JSON.stringify(duel));
-      return true;
-    } catch (e) { return false; }
+      return window.location.origin + window.location.pathname + window.location.search +
+        '#race=' + duelWireString(duel);
+    } catch (e) { return window.location.href; }
   }
 
   function decodeDuelFromHash() {
     const m = /race=([A-Za-z0-9_-]+)/.exec(window.location.hash || '');
     if (!m) return null;
     try {
-      const duel = JSON.parse(b64urlDecode(m[1]));
-      if (duel && duel.cid && Array.isArray(duel.runs)) return duel;
+      const wire = JSON.parse(b64urlDecode(m[1]));
+      if (!wire || !wire.c || !Array.isArray(wire.r)) return null;
+      return {
+        v: wire.v || 1,
+        id: wire.g,
+        cid: wire.c,
+        diff: wire.d,
+        dir: wire.i,
+        laps: wire.l,
+        runs: wire.r.map(r => ({ name: r.n, time: r.t, pen: r.p, tele: unpackTele(r.k) }))
+      };
     } catch (e) { /* lien invalide ou tronqué — on l'ignore silencieusement */ }
     return null;
   }
@@ -2377,7 +2548,6 @@
     syncSegUI();
     const idx = COUNTRIES.findIndex(c => c.id === duel.cid);
     if (idx >= 0) { menuIndex = idx; renderCarousel(); }
-    encodeDuelToHash(duel);
     showDuelScreen();
   }
 
@@ -2442,6 +2612,9 @@
     const duel = decodeDuelFromHash();
     if (!duel) return;
     if (!duel.id) duel.id = makeDuelId();
+    // On consomme le lien une seule fois : on retire tout de suite #race=... de la barre
+    // d'adresse, sinon actualiser la page rouvrirait ce même défi indéfiniment.
+    try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
     // Un ami qui ouvre un lien de défi arrive directement sur l'écran Défis, pas sur le menu.
     activeDuel = duel;
     selectedDifficulty = duel.diff || selectedDifficulty;
@@ -2453,8 +2626,9 @@
     showDuelScreen();
   }
 
-  function shareCurrentDuelLink(btn, fallbackEl, inputEl) {
-    const url = window.location.href;
+  function shareCurrentDuelLink(duel, btn, fallbackEl, inputEl) {
+    if (!duel) return;
+    const url = buildDuelUrl(duel);
     const restoreLabel = () => {
       if (!btn) return;
       const original = btn.dataset.label || btn.textContent;
@@ -2504,9 +2678,8 @@
   function startDuelInvite(country) {
     // Prépare une invitation pour ce circuit (encore aucun temps posé) et partage le lien.
     activeDuel = { v: 1, id: makeDuelId(), cid: country.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: [] };
-    encodeDuelToHash(activeDuel);
     renderDuelScreen();
-    shareCurrentDuelLink(duelCopyBtn, duelLinkFallback, duelLinkInput);
+    shareCurrentDuelLink(activeDuel, duelCopyBtn, duelLinkFallback, duelLinkInput);
     if (typeof duelPanel.scrollIntoView === 'function') {
       duelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -2528,7 +2701,6 @@
         if (activeDuel.runs.length > DUEL_MAX_RUNS) activeDuel.runs.shift();
       }
     }
-    encodeDuelToHash(activeDuel);
     renderDuelPanel();
     renderDuelResultPanel();
   }
@@ -2612,7 +2784,10 @@
     if (!enterReplay(duel)) return;
 
     const sorted = duel.runs.slice().sort((a, b) => a.time - b.time);
-    const runs = sorted.map((r, i) => Object.assign({}, r, { color: DUEL_COLORS[i % DUEL_COLORS.length] }));
+    const runs = sorted.map((r, i) => Object.assign({}, r, {
+      color: DUEL_COLORS[i % DUEL_COLORS.length],
+      scale: ghostTimeScale(r.tele, r.pen || 0)
+    }));
 
     runs.forEach(r => {
       const tele = r.tele || [];
@@ -2636,16 +2811,13 @@
     ).join('');
     replayHud.hidden = false;
 
-    const maxT = Math.max.apply(null, runs.map(r => {
-      const tele = r.tele;
-      return (tele && tele.length) ? tele[tele.length - 1][0] : 0;
-    })) + 0.6;
+    const maxT = Math.max.apply(null, runs.map(r => r.time || 0)) + 0.6;
 
     replayStartPerf = performance.now();
     function tick() {
       const elapsed = (performance.now() - replayStartPerf) / 1000;
       runs.forEach((r, i) => {
-        const pos = sampleTelemetryAt(r.tele, elapsed);
+        const pos = sampleTelemetryAt(r.tele, elapsed * r.scale);
         if (!pos) return;
         const el = replayCarEls[i];
         el.style.display = 'block';
@@ -2687,7 +2859,7 @@
   duelCreateBtn.addEventListener('click', () => startDuelInvite(COUNTRIES[menuIndex]));
   duelBackBtn.addEventListener('click', () => showMenu());
   duelPlayBtn.addEventListener('click', () => { if (activeDuel) startDuelRace(); });
-  duelCopyBtn.addEventListener('click', () => shareCurrentDuelLink(duelCopyBtn, duelLinkFallback, duelLinkInput));
+  duelCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelCopyBtn, duelLinkFallback, duelLinkInput));
   duelReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
   duelCloseBtn.addEventListener('click', () => {
     activeDuel = null;
@@ -2702,7 +2874,7 @@
     addRunToActiveDuel(name, lastResult);
     challengeResultBtn.hidden = true;
   });
-  duelResultCopyBtn.addEventListener('click', () => shareCurrentDuelLink(duelResultCopyBtn, null, null));
+  duelResultCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelResultCopyBtn, null, null));
   duelResultReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
 
   accountChip.addEventListener('click', () => {

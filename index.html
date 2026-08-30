@@ -177,6 +177,15 @@
     white-space: nowrap;
   }
 
+  .account-pseudo-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 0 14px;
+    text-align: left;
+  }
+  .account-pseudo-row .cta.small { margin-top: 0; padding: 9px 10px; font-size: 12.5px; }
+
   .eyebrow {
     font-size: 12px;
     letter-spacing: 0.12em;
@@ -426,6 +435,20 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  .duel-history-delete {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .duel-history-delete:active { background: rgba(255,90,90,0.18); color: #ffb3b3; border-color: rgba(255,90,90,0.4); }
 
   .flag-rail {
     display: flex;
@@ -1020,6 +1043,7 @@
         <div class="duel-actions">
           <button class="cta ghost small" id="duelCopyBtn" type="button">Partager le défi</button>
           <button class="cta ghost small" id="duelReplayBtn" type="button" hidden>Revoir en fantôme</button>
+          <button class="cta ghost small" id="duelRefreshBtn" type="button" title="Recharger ce défi">🔄 Actualiser</button>
         </div>
         <div class="duel-link-fallback" id="duelLinkFallback" hidden>
           <input type="text" id="duelLinkInput" readonly>
@@ -1123,6 +1147,10 @@
             <div class="account-signed-in-name" id="accountSignedInName"></div>
             <div class="account-signed-in-email" id="accountSignedInEmail"></div>
           </div>
+        </div>
+        <div class="account-pseudo-row">
+          <input type="text" id="pseudoInput" class="account-input" placeholder="Pseudo affiché dans les défis" maxlength="18" autocomplete="off">
+          <button class="cta ghost small" id="savePseudoBtn" type="button">Enregistrer le pseudo</button>
         </div>
         <button class="cta ghost" id="signOutBtn" type="button">Se déconnecter</button>
       </div>
@@ -1267,6 +1295,8 @@
   const accountSignedInName = document.getElementById('accountSignedInName');
   const accountSignedInEmail = document.getElementById('accountSignedInEmail');
   const signOutBtn = document.getElementById('signOutBtn');
+  const pseudoInput = document.getElementById('pseudoInput');
+  const savePseudoBtn = document.getElementById('savePseudoBtn');
   const challengeBtn = document.getElementById('challengeBtn');
   const duelPanel = document.getElementById('duelPanel');
   const duelFlag = document.getElementById('duelFlag');
@@ -1278,6 +1308,7 @@
   const duelPlayBtn = document.getElementById('duelPlayBtn');
   const duelCopyBtn = document.getElementById('duelCopyBtn');
   const duelReplayBtn = document.getElementById('duelReplayBtn');
+  const duelRefreshBtn = document.getElementById('duelRefreshBtn');
   const duelLinkFallback = document.getElementById('duelLinkFallback');
   const duelLinkInput = document.getElementById('duelLinkInput');
 
@@ -1421,27 +1452,55 @@
     if (duelUnsub) { duelUnsub(); duelUnsub = null; }
   }
 
+  function applyDuelSnapshot(id, data) {
+    const runsMap = data.runs || {};
+    activeDuel = {
+      id: id,
+      cid: data.cid,
+      diff: data.diff,
+      dir: data.dir,
+      laps: data.laps,
+      runs: Object.keys(runsMap).map(function (k) {
+        return Object.assign({ key: k }, runsMap[k]);
+      })
+    };
+    if (!screenDuel.hidden) renderDuelScreen();
+    if (!screenRace.hidden) renderDuelResultPanel();
+  }
+
   function watchDuel(id) {
     stopWatchingDuel();
     if (!db) return;
     duelUnsub = duelDocRef(id).onSnapshot(function (snap) {
       if (!snap.exists) return;
-      const data = snap.data() || {};
-      const runsMap = data.runs || {};
-      activeDuel = {
-        id: id,
-        cid: data.cid,
-        diff: data.diff,
-        dir: data.dir,
-        laps: data.laps,
-        runs: Object.keys(runsMap).map(function (k) {
-          return Object.assign({ key: k }, runsMap[k]);
-        })
-      };
-      if (!screenDuel.hidden) renderDuelScreen();
-      if (!screenRace.hidden) renderDuelResultPanel();
+      applyDuelSnapshot(id, snap.data() || {});
     }, function (err) {
+      // Le direct (onSnapshot) peut se couper sans bruit sur mobile (appli en arrière-plan,
+      // réseau coupé un instant...). On le signale sur l'écran Défis plutôt que de laisser
+      // croire que tout va bien, avec un bouton "Actualiser" pour reprendre la main.
       console.error('Défi : lecture Firestore impossible', err);
+      if (!screenDuel.hidden && duelTag) {
+        duelTag.textContent = '⚠️ Connexion perdue — appuie sur Actualiser';
+        duelTag.className = 'duel-tag to-play';
+      }
+    });
+  }
+
+  function refreshActiveDuel(showFeedback) {
+    // Recharge le défi une fois, en plus du direct (onSnapshot) : filet de secours si le
+    // direct s'est coupé sans le signaler, ou pour forcer une mise à jour immédiate.
+    if (!activeDuel || !activeDuel.id || !db) return;
+    const btn = duelRefreshBtn;
+    const original = btn && btn.textContent;
+    if (btn) btn.textContent = '⏳ ...';
+    duelDocRef(activeDuel.id).get({ source: 'server' }).then(function (snap) {
+      if (btn) btn.textContent = original;
+      if (!snap.exists) return;
+      applyDuelSnapshot(activeDuel.id, snap.data() || {});
+    }).catch(function (err) {
+      console.error('Défi : actualisation impossible', err);
+      if (btn) btn.textContent = original;
+      if (showFeedback) alert('Impossible d\'actualiser ce défi (' + err.message + ').');
     });
   }
 
@@ -1467,6 +1526,13 @@
     let list = loadDuelHistory().filter(d => d.id !== duel.id);
     list.unshift(duel);
     if (list.length > DUEL_HISTORY_MAX) list = list.slice(0, DUEL_HISTORY_MAX);
+    try { localStorage.setItem(DUEL_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+
+  function removeDuelFromHistory(id) {
+    // Retire juste ce défi de la liste sur CET appareil — le défi lui-même (et les temps posés)
+    // reste consultable par les autres joueurs qui ont le lien, seul cet appareil ne l'affiche plus.
+    const list = loadDuelHistory().filter(d => d.id !== id);
     try { localStorage.setItem(DUEL_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
   }
 
@@ -2086,6 +2152,7 @@
   // pose le doigt sur le point de départ.
   let audioCtx = null;
   let engineOsc = null, engineOsc2 = null, engineGain = null;
+  let engineFilter = null, engineWhine = null, engineWhineGain = null, engineNoise = null, engineNoiseGain = null;
   let engineSpeed = 0;      // vitesse lissée utilisée pour moduler le son moteur
   let lastMoveT = 0, lastMoveX = 0, lastMoveY = 0, instSpeed = 0;
 
@@ -2098,24 +2165,58 @@
   }
 
   function playBeep(freq, duration, type) {
+    // Bip "feux de départ" : un ton propre (sinus) passé dans un filtre passe-bas, plutôt
+    // qu'un carré brut — plus net et plus moderne, moins "vieux jouet électronique".
     const ctx = ensureAudioCtx();
     if (!ctx) return;
     const t = ctx.currentTime;
     const osc = ctx.createOscillator();
+    const filt = ctx.createBiquadFilter();
     const gain = ctx.createGain();
-    osc.type = type || 'square';
+    osc.type = type || 'sine';
     osc.frequency.setValueAtTime(freq, t);
+    filt.type = 'lowpass';
+    filt.frequency.setValueAtTime(freq * 2.4, t);
+    filt.Q.value = 0.6;
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.28, t + 0.006);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-    osc.connect(gain);
+    osc.connect(filt);
+    filt.connect(gain);
     gain.connect(ctx.destination);
     osc.start(t);
     osc.stop(t + duration + 0.03);
   }
 
-  function playLightOnBeep() { playBeep(950, 0.09, 'square'); }
-  function playLightsOutBeep() { playBeep(240, 0.4, 'sawtooth'); }
+  function playLightOnBeep() { playBeep(1250, 0.065, 'sine'); }
+
+  function playLightsOutBeep() {
+    // Signal de départ : deux impulsions qui plongent en fréquence, plus percutant qu'un
+    // simple bip — se rapproche du "vrooom" de lancement plutôt que d'un bip électronique.
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [{ delay: 0, f0: 560 }, { delay: 0.1, f0: 340 }].forEach(function (part) {
+      const osc = ctx.createOscillator();
+      const filt = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      const start = t + part.delay;
+      osc.type = 'sawtooth';
+      filt.type = 'lowpass';
+      filt.frequency.setValueAtTime(2200, start);
+      filt.frequency.exponentialRampToValueAtTime(500, start + 0.25);
+      osc.frequency.setValueAtTime(part.f0, start);
+      osc.frequency.exponentialRampToValueAtTime(part.f0 * 0.45, start + 0.28);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.3, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.32);
+      osc.connect(filt);
+      filt.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.36);
+    });
+  }
 
   function startEngineSound() {
     const ctx = ensureAudioCtx();
@@ -2123,17 +2224,56 @@
     stopEngineSound();
     engineGain = ctx.createGain();
     engineGain.gain.value = 0.0001;
+
+    // Corps du son (grondement grave), passé dans un filtre dont la fréquence de coupure
+    // s'ouvre avec la vitesse — c'est ce filtre balayé qui donne l'impression de moteur qui
+    // monte en régime plutôt qu'un simple buzz fixe.
+    engineFilter = ctx.createBiquadFilter();
+    engineFilter.type = 'lowpass';
+    engineFilter.frequency.value = 300;
+    engineFilter.Q.value = 1.1;
     engineOsc = ctx.createOscillator();
     engineOsc.type = 'sawtooth';
-    engineOsc.frequency.value = 55;
+    engineOsc.frequency.value = 58;
     engineOsc2 = ctx.createOscillator();
-    engineOsc2.type = 'square';
-    engineOsc2.frequency.value = 55;
-    engineOsc.connect(engineGain);
-    engineOsc2.connect(engineGain);
+    engineOsc2.type = 'sawtooth';
+    engineOsc2.frequency.value = 58.4;
+    engineOsc.connect(engineFilter);
+    engineOsc2.connect(engineFilter);
+    engineFilter.connect(engineGain);
+
+    // Sifflement aigu façon turbo hybride F1 (pas juste un moteur atmosphérique qui gronde) :
+    // un harmonique élevé dont le volume monte surtout à haute vitesse.
+    engineWhine = ctx.createOscillator();
+    engineWhine.type = 'triangle';
+    engineWhine.frequency.value = 58 * 6;
+    engineWhineGain = ctx.createGain();
+    engineWhineGain.gain.value = 0.0001;
+    engineWhine.connect(engineWhineGain);
+    engineWhineGain.connect(engineGain);
+
+    // Souffle d'air à haute vitesse (bruit filtré passe-haut), pour la texture.
+    const bufferSize = Math.round(ctx.sampleRate * 1.5);
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    engineNoise = ctx.createBufferSource();
+    engineNoise.buffer = noiseBuffer;
+    engineNoise.loop = true;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 2200;
+    engineNoiseGain = ctx.createGain();
+    engineNoiseGain.gain.value = 0.0001;
+    engineNoise.connect(noiseFilter);
+    noiseFilter.connect(engineNoiseGain);
+    engineNoiseGain.connect(engineGain);
+
     engineGain.connect(ctx.destination);
     engineOsc.start();
     engineOsc2.start();
+    engineWhine.start();
+    engineNoise.start();
     engineSpeed = 0;
   }
 
@@ -2146,9 +2286,10 @@
         engineGain.gain.linearRampToValueAtTime(0.0001, t + 0.08);
       } catch (e) {}
     }
-    const osc1 = engineOsc, osc2 = engineOsc2;
-    setTimeout(() => { try { if (osc1) osc1.stop(); if (osc2) osc2.stop(); } catch (e) {} }, 120);
+    const nodes = [engineOsc, engineOsc2, engineWhine, engineNoise];
+    setTimeout(() => { nodes.forEach(function (n) { try { if (n) n.stop(); } catch (e) {} }); }, 120);
     engineOsc = null; engineOsc2 = null; engineGain = null;
+    engineFilter = null; engineWhine = null; engineWhineGain = null; engineNoise = null; engineNoiseGain = null;
   }
 
   function updateEngineSound(rawSpeed) {
@@ -2156,10 +2297,14 @@
     engineSpeed += (rawSpeed - engineSpeed) * 0.2; // lissage — évite les à-coups de fréquence
     const t = audioCtx.currentTime;
     const level = Math.min(1, engineSpeed / 900); // 900 = vitesse logique "pied au plancher"
-    const freq = 55 + level * 260;
-    const vol = 0.05 + level * 0.15;
+    const freq = 58 + level * 210;
+    const vol = 0.045 + level * 0.13;
     engineOsc.frequency.setTargetAtTime(freq, t, 0.05);
-    engineOsc2.frequency.setTargetAtTime(freq * 1.008, t, 0.05); // léger désaccord, timbre plus riche
+    engineOsc2.frequency.setTargetAtTime(freq * 1.007, t, 0.05); // léger désaccord, timbre plus riche
+    engineFilter.frequency.setTargetAtTime(280 + level * 3200, t, 0.06);
+    engineWhine.frequency.setTargetAtTime(freq * (5 + level * 2.2), t, 0.05);
+    engineWhineGain.gain.setTargetAtTime(0.015 + level * 0.05, t, 0.08);
+    engineNoiseGain.gain.setTargetAtTime(level * level * 0.045, t, 0.08);
     engineGain.gain.setTargetAtTime(vol, t, 0.08);
   }
 
@@ -2567,12 +2712,11 @@
   function updateAccountChip() {
     const user = auth && auth.currentUser;
     if (user) {
-      const label = user.displayName || playerName || (user.email ? user.email.split('@')[0] : 'Compte');
-      if (user.photoURL) {
-        accountAvatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
-      } else {
-        accountAvatar.textContent = label[0].toUpperCase();
-      }
+      // On n'utilise jamais la photo de profil Google : juste une initiale, comme pour un
+      // compte e-mail ou invité (cohérent visuellement, et ça évite d'afficher une photo
+      // personnelle par-dessus l'interface du jeu).
+      const label = playerName || user.displayName || (user.email ? user.email.split('@')[0] : 'Compte');
+      accountAvatar.textContent = label[0].toUpperCase();
       accountChipName.textContent = label;
       return;
     }
@@ -2615,18 +2759,38 @@
     if (user) {
       accountSignedOut.hidden = true;
       accountSignedIn.hidden = false;
-      const label = user.displayName || (user.email ? user.email.split('@')[0] : 'Joueur');
+      const label = playerName || user.displayName || (user.email ? user.email.split('@')[0] : 'Joueur');
       accountSignedInName.textContent = label;
       accountSignedInEmail.textContent = user.email || '';
-      if (user.photoURL) {
-        accountAvatarLg.innerHTML = '<img src="' + user.photoURL + '" alt="">';
-      } else {
-        accountAvatarLg.textContent = label[0].toUpperCase();
-      }
+      // Toujours une initiale, jamais la photo du compte Google (voir updateAccountChip).
+      accountAvatarLg.textContent = label[0].toUpperCase();
+      pseudoInput.value = label;
     } else {
       accountSignedOut.hidden = false;
       accountSignedIn.hidden = true;
       showAccountAuthError('');
+    }
+  }
+
+  function savePseudo() {
+    const name = (pseudoInput.value || '').trim();
+    if (!name) return;
+    playerName = name;
+    playerNameInput.value = name;
+    try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
+    updateAccountChip();
+    const user = auth && auth.currentUser;
+    if (user && typeof user.updateProfile === 'function') {
+      // Ne change que le profil Firebase (utilisé pour l'affichage dans le jeu) — pas le vrai
+      // compte Google, qui n'est jamais modifié.
+      user.updateProfile({ displayName: name }).then(renderAccountOverlay).catch(() => {});
+    } else {
+      renderAccountOverlay();
+    }
+    if (savePseudoBtn) {
+      const original = savePseudoBtn.textContent;
+      savePseudoBtn.textContent = 'Pseudo enregistré !';
+      setTimeout(() => { savePseudoBtn.textContent = original; }, 1500);
     }
   }
 
@@ -2711,6 +2875,7 @@
     screenRace.hidden = true;
     screenDuel.hidden = false;
     renderDuelScreen();
+    refreshActiveDuel();
   }
 
   function enterDuel(duelRef) {
@@ -2753,10 +2918,19 @@
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
       '<span class="duel-history-flag">' + flag + '</span>' +
       '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(name) + '</span>' +
-      '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span></div>';
+      '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span>' +
+      '<button class="duel-history-delete" type="button" data-id="' + entry.id + '" title="Retirer ce défi de la liste">✕</button></div>';
   }
 
   function wireDuelHistoryRows(container, list) {
+    Array.from(container.querySelectorAll('.duel-history-delete')).forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!window.confirm('Retirer ce défi de ta liste ? (il reste accessible aux autres joueurs qui ont le lien)')) return;
+        removeDuelFromHistory(btn.dataset.id);
+        renderDuelHistoryList();
+      });
+    });
     Array.from(container.querySelectorAll('.duel-history-row')).forEach(row => {
       row.addEventListener('click', () => {
         const entry = list.find(d => d.id === row.dataset.id);
@@ -2892,15 +3066,28 @@
 
     if (activeDuel && activeDuel.cid === current.id && activeDuel.id) {
       // Un défi est déjà en cours sur ce circuit : on y ajoute/actualise notre temps.
-      // L'écran se rafraîchit tout seul via l'abonnement Firestore (watchDuel) déjà en place.
-      duelDocRef(activeDuel.id).set(runsUpdate, { merge: true }).catch(function (err) {
+      // On met à jour l'affichage tout de suite (sans attendre le direct Firestore) pour que
+      // le joueur voie immédiatement son temps posé, même si le direct met du temps à revenir.
+      const others = (activeDuel.runs || []).filter(function (r) { return r.key !== key; });
+      activeDuel = Object.assign({}, activeDuel, { runs: others.concat([Object.assign({ key: key }, run)]) });
+      if (!screenDuel.hidden) renderDuelScreen();
+      if (!screenRace.hidden) renderDuelResultPanel();
+      duelDocRef(activeDuel.id).set(runsUpdate, { merge: true }).then(function () {
+        refreshActiveDuel();
+      }).catch(function (err) {
         console.error(err);
         alert('Impossible d\'enregistrer ton temps (' + err.message + ').');
       });
     } else {
       // "Défier un ami avec ce temps" depuis une course normale : on crée un nouveau défi
-      // qui contient déjà ce premier temps.
+      // qui contient déjà ce premier temps. Même logique : on affiche le résultat tout de
+      // suite avec l'id qu'on vient de générer, sans attendre la confirmation du serveur.
       const ref = db.collection('duels').doc();
+      activeDuel = {
+        id: ref.id, cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
+        runs: [Object.assign({ key: key }, run)]
+      };
+      if (!screenRace.hidden) renderDuelResultPanel();
       ref.set({
         cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2910,6 +3097,10 @@
         shareCurrentDuelLink({ id: ref.id }, duelResultCopyBtn, null, null);
       }).catch(function (err) {
         console.error(err);
+        if (activeDuel && activeDuel.id === ref.id) {
+          activeDuel = null;
+          if (!screenRace.hidden) renderDuelResultPanel();
+        }
         alert('Impossible de créer le défi (' + err.message + ').');
       });
     }
@@ -3153,6 +3344,15 @@
 
   signOutBtn.addEventListener('click', () => {
     if (auth) auth.signOut();
+  });
+  savePseudoBtn.addEventListener('click', savePseudo);
+  duelRefreshBtn.addEventListener('click', () => refreshActiveDuel(true));
+  document.addEventListener('visibilitychange', () => {
+    // Le direct Firestore (onSnapshot) peut se figer quand le téléphone se verrouille ou que
+    // l'appli passe en arrière-plan un moment — on force une actualisation au retour.
+    if (document.visibilityState === 'visible' && activeDuel && (!screenDuel.hidden || !screenRace.hidden)) {
+      refreshActiveDuel();
+    }
   });
   try {
     playerName = localStorage.getItem('sur-la-corde:playerName') || '';

@@ -406,6 +406,8 @@
 
   .duel-empty-text { margin: 0 0 14px; color: var(--text-dim); font-size: 13.5px; }
 
+  .duel-empty-sub { margin: 12px 0 0; color: var(--text-dim); font-size: 11.5px; line-height: 1.4; }
+
   .duel-history { margin-top: 22px; }
 
   .duel-history-title {
@@ -475,6 +477,8 @@
     cursor: pointer;
   }
   .duel-history-delete:active { background: rgba(255,90,90,0.18); color: #ffb3b3; border-color: rgba(255,90,90,0.4); }
+
+  .duel-history-arrow { flex: none; margin-left: auto; color: var(--accent); font-size: 18px; font-weight: 700; }
 
   .flag-rail {
     display: flex;
@@ -579,6 +583,22 @@
     color: var(--text-dim);
     font-variant-numeric: tabular-nums;
   }
+
+  .card-best-row { display: flex; align-items: center; gap: 6px; }
+
+  .card-best-delete {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .card-best-delete:active { background: rgba(255,90,90,0.18); color: #ffb3b3; border-color: rgba(255,90,90,0.4); }
 
   .carousel-nav {
     position: absolute;
@@ -1108,6 +1128,13 @@
       <div class="duel-empty" id="duelEmpty">
         <p class="duel-empty-text">Aucun défi en cours pour <strong id="duelEmptyCircuit"></strong>.</p>
         <button class="cta" id="duelCreateBtn" type="button">Défier un ami sur ce circuit</button>
+        <button class="cta ghost" id="duelCreatePublicBtn" type="button">Défier un adversaire (public)</button>
+        <p class="duel-empty-sub">« Défier un ami » : lien privé à partager toi-même. « Défier un adversaire » : visible de tous les joueurs sur ce circuit, n'importe qui peut le relever.</p>
+      </div>
+
+      <div class="duel-history" id="publicDuelSection" hidden>
+        <div class="duel-history-title">Défis publics ouverts — <span id="publicDuelCircuitName"></span></div>
+        <div id="publicDuelList"></div>
       </div>
 
       <div class="duel-history" id="duelToPlaySection" hidden>
@@ -1253,7 +1280,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-30-i';
+  const BUILD_TAG = '2026-08-30-j';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1318,6 +1345,10 @@
   const duelEmpty = document.getElementById('duelEmpty');
   const duelEmptyCircuit = document.getElementById('duelEmptyCircuit');
   const duelCreateBtn = document.getElementById('duelCreateBtn');
+  const duelCreatePublicBtn = document.getElementById('duelCreatePublicBtn');
+  const publicDuelSection = document.getElementById('publicDuelSection');
+  const publicDuelCircuitName = document.getElementById('publicDuelCircuitName');
+  const publicDuelList = document.getElementById('publicDuelList');
   const duelToPlaySection = document.getElementById('duelToPlaySection');
   const duelToPlayList = document.getElementById('duelToPlayList');
   const duelHistorySection = document.getElementById('duelHistorySection');
@@ -1620,22 +1651,33 @@
   let replayCarEls = [];
   let lastReplayDuel = null; // pour pouvoir relancer la même lecture avec "Rejouer la lecture"
 
-  function duelDocRef(id) { return db.collection('duels').doc(id); }
+  // Les défis "entre amis" (lien privé) vivent dans la collection "duels" ; les défis
+  // "publics" (visibles de tous, n'importe qui peut les relever) vivent dans une collection
+  // séparée "public_duels" — même structure de document, juste un espace de lecture publique
+  // distinct (règles Firestore différentes : "duels" refuse le listing, "public_duels" l'autorise).
+  function duelCollectionName(isPublic) { return isPublic ? 'public_duels' : 'duels'; }
 
-  function buildDuelShareUrl(id) {
-    return window.location.origin + window.location.pathname + window.location.search + '#duel=' + id;
+  function duelDocRef(id, isPublic) { return db.collection(duelCollectionName(isPublic)).doc(id); }
+
+  function buildDuelShareUrl(id, isPublic) {
+    return window.location.origin + window.location.pathname + window.location.search +
+      (isPublic ? '#pdefi=' : '#duel=') + id;
   }
 
   function parseDuelIdFromHash() {
-    const m = /duel=([A-Za-z0-9_-]+)/.exec(window.location.hash || '');
-    return m ? m[1] : null;
+    const hash = window.location.hash || '';
+    let m = /duel=([A-Za-z0-9_-]+)/.exec(hash);
+    if (m) return { id: m[1], isPublic: false };
+    m = /pdefi=([A-Za-z0-9_-]+)/.exec(hash);
+    if (m) return { id: m[1], isPublic: true };
+    return null;
   }
 
   function stopWatchingDuel() {
     if (duelUnsub) { duelUnsub(); duelUnsub = null; }
   }
 
-  function applyDuelSnapshot(id, data) {
+  function applyDuelSnapshot(id, data, isPublic) {
     const runsMap = data.runs || {};
     activeDuel = {
       id: id,
@@ -1643,6 +1685,7 @@
       diff: data.diff,
       dir: data.dir,
       laps: data.laps,
+      public: !!isPublic,
       runs: Object.keys(runsMap).map(function (k) {
         return Object.assign({ key: k }, runsMap[k], { tele: unflattenTele(runsMap[k].tele) });
       })
@@ -1651,12 +1694,12 @@
     if (!screenRace.hidden) renderDuelResultPanel();
   }
 
-  function watchDuel(id) {
+  function watchDuel(id, isPublic) {
     stopWatchingDuel();
     if (!db) return;
-    duelUnsub = duelDocRef(id).onSnapshot(function (snap) {
+    duelUnsub = duelDocRef(id, isPublic).onSnapshot(function (snap) {
       if (!snap.exists) return;
-      applyDuelSnapshot(id, snap.data() || {});
+      applyDuelSnapshot(id, snap.data() || {}, isPublic);
     }, function (err) {
       // Le direct (onSnapshot) peut se couper sans bruit sur mobile (appli en arrière-plan,
       // réseau coupé un instant...). On le signale sur l'écran Défis plutôt que de laisser
@@ -1676,10 +1719,10 @@
     const btn = duelRefreshBtn;
     const original = btn && btn.textContent;
     if (btn) btn.textContent = '⏳ ...';
-    duelDocRef(activeDuel.id).get({ source: 'server' }).then(function (snap) {
+    duelDocRef(activeDuel.id, activeDuel.public).get({ source: 'server' }).then(function (snap) {
       if (btn) btn.textContent = original;
       if (!snap.exists) return;
-      applyDuelSnapshot(activeDuel.id, snap.data() || {});
+      applyDuelSnapshot(activeDuel.id, snap.data() || {}, activeDuel.public);
     }).catch(function (err) {
       console.error('Défi : actualisation impossible', err);
       if (btn) btn.textContent = original;
@@ -1872,11 +1915,25 @@
         '<div class="card-plate">' +
           '<canvas class="card-preview"></canvas>' +
           '<span class="card-name">' + c.name + '</span>' +
-          '<span class="card-best"></span>' +
+          '<span class="card-best-row">' +
+            '<span class="card-best"></span>' +
+            '<button class="card-best-delete" type="button" title="Supprimer ce temps" hidden>✕</button>' +
+          '</span>' +
         '</div>';
       card.addEventListener('click', () => {
         if (i === menuIndex) { enterRace(c); }
         else { menuIndex = i; renderCarousel(); }
+      });
+      const bestDeleteBtn = card.querySelector('.card-best-delete');
+      bestDeleteBtn.addEventListener('click', (e) => {
+        // Ne doit pas déclencher le clic de la carte (recentrer/lancer la course).
+        e.stopPropagation();
+        if (!window.confirm('Supprimer ton temps sur ' + c.name + ' pour ces réglages ?')) return;
+        try {
+          localStorage.removeItem(runKey(c.id, selectedDifficulty, selectedDirection, selectedLaps));
+          localStorage.removeItem(bestTeleKey(c.id, selectedDifficulty, selectedDirection, selectedLaps));
+        } catch (err) {}
+        refreshCardBests();
       });
       carouselTrack.appendChild(card);
       cardEls.push(card);
@@ -1898,6 +1955,7 @@
     COUNTRIES.forEach((c, i) => {
       const best = getBest(c.id, selectedDifficulty, selectedDirection, selectedLaps);
       cardEls[i].querySelector('.card-best').textContent = best !== null ? fmt(best) : 'Pas encore de temps';
+      cardEls[i].querySelector('.card-best-delete').hidden = best === null;
     });
   }
 
@@ -3110,14 +3168,73 @@
     duelLinkFallback.hidden = true;
   }
 
+  function publicDuelRowHtml(entry) {
+    const runs = entry.runs || [];
+    const n = runs.length;
+    const sub = n === 0 ? 'Aucun temps posé — sois le premier !' :
+      (n + (n > 1 ? ' participants' : ' participant') + ' déjà inscrit' + (n > 1 ? 's' : ''));
+    return '<div class="duel-history-row" data-id="' + entry.id + '">' +
+      '<span class="duel-history-flag">🌍</span>' +
+      '<span class="duel-history-info"><span class="duel-history-name">Défi public</span>' +
+      '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span>' +
+      '<span class="duel-history-arrow">→</span></div>';
+  }
+
+  function renderPublicDuelBoard(cid) {
+    // Liste, pour le circuit actuellement affiché dans le carrousel, les défis publics encore
+    // ouverts que n'importe quel joueur peut relever (contrairement à "duels", qui n'est
+    // accessible qu'à qui a reçu le lien précis — voir firestore.rules).
+    if (!publicDuelList || !cid) return;
+    const country = COUNTRIES.find(c => c.id === cid);
+    publicDuelCircuitName.textContent = country ? (country.flag + ' ' + country.name) : '';
+    if (!db) { publicDuelSection.hidden = true; return; }
+    publicDuelSection.hidden = false;
+    publicDuelList.innerHTML = '<div class="history-empty">Chargement…</div>';
+    const requestToken = (renderPublicDuelBoard._token = (renderPublicDuelBoard._token || 0) + 1);
+    db.collection('public_duels').where('cid', '==', cid).orderBy('createdAt', 'desc').limit(20).get()
+      .then(function (snap) {
+        if (requestToken !== renderPublicDuelBoard._token) return; // une requête plus récente a pris le relais
+        const entries = [];
+        snap.forEach(function (doc) {
+          if (activeDuel && activeDuel.id === doc.id) return; // pas la peine de lister son propre défi actif
+          const data = doc.data() || {};
+          const runsMap = data.runs || {};
+          const runs = Object.keys(runsMap).map(function (k) {
+            return Object.assign({ key: k }, runsMap[k], { tele: unflattenTele(runsMap[k].tele) });
+          });
+          entries.push({ id: doc.id, cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, public: true, runs: runs });
+        });
+        if (!entries.length) {
+          publicDuelList.innerHTML = '<div class="history-empty">Aucun défi public ouvert sur ce circuit pour l\'instant — lance-toi !</div>';
+          return;
+        }
+        publicDuelList.innerHTML = entries.map(publicDuelRowHtml).join('');
+        Array.from(publicDuelList.querySelectorAll('.duel-history-row')).forEach(function (row) {
+          row.addEventListener('click', function () {
+            const entry = entries.find(function (d) { return d.id === row.dataset.id; });
+            if (entry) enterDuel(entry);
+          });
+        });
+      }).catch(function (err) {
+        if (requestToken !== renderPublicDuelBoard._token) return;
+        console.error('Défis publics : lecture impossible', err);
+        if (err && err.code === 'failed-precondition') {
+          publicDuelList.innerHTML = '<div class="history-empty">Défis publics pas encore activés : un index Firestore doit être créé une fois (lien dans la console du navigateur).</div>';
+        } else {
+          publicDuelList.innerHTML = '<div class="history-empty">Impossible de charger les défis publics pour le moment.</div>';
+        }
+      });
+  }
+
   function renderDuelScreen() {
     renderDuelPanel();
     const hasActive = !!activeDuel;
     duelEmpty.hidden = hasActive;
+    const country = COUNTRIES[menuIndex] || COUNTRIES[0];
     if (!hasActive) {
-      const country = COUNTRIES[menuIndex] || COUNTRIES[0];
       duelEmptyCircuit.textContent = country ? (country.flag + ' ' + country.name) : '';
     }
+    if (country) renderPublicDuelBoard(country.id);
     renderDuelHistoryList();
   }
 
@@ -3148,9 +3265,9 @@
     if (idx >= 0) { menuIndex = idx; renderCarousel(); }
     activeDuel = {
       id: duelRef.id, cid: duelRef.cid, diff: duelRef.diff, dir: duelRef.dir,
-      laps: duelRef.laps, runs: duelRef.runs || []
+      laps: duelRef.laps, public: !!duelRef.public, runs: duelRef.runs || []
     };
-    watchDuel(duelRef.id);
+    watchDuel(duelRef.id, !!duelRef.public);
     showDuelScreen();
   }
 
@@ -3240,7 +3357,7 @@
     // si "Actualiser" marchait pour le défi ouvert. On rafraîchit ici TOUTE la liste depuis
     // Firestore à chaque passage sur l'écran Défis, pour que "Défis réalisés" soit à jour.
     Promise.all(cached.map(function (entry) {
-      return duelDocRef(entry.id).get().then(function (snap) {
+      return duelDocRef(entry.id, entry.public).get().then(function (snap) {
         if (!snap.exists) return entry;
         const data = snap.data() || {};
         const runsMap = data.runs || {};
@@ -3263,24 +3380,24 @@
   }
 
   function applyHashDuel() {
-    const id = parseDuelIdFromHash();
-    if (!id) return;
-    // On consomme le lien une seule fois : on retire tout de suite #duel=... de la barre
-    // d'adresse, sinon actualiser la page rouvrirait ce même défi indéfiniment.
+    const parsed = parseDuelIdFromHash();
+    if (!parsed) return;
+    // On consomme le lien une seule fois : on retire tout de suite #duel=.../#pdefi=... de la
+    // barre d'adresse, sinon actualiser la page rouvrirait ce même défi indéfiniment.
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
     if (!db) {
       alert('Impossible de charger ce défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
       return;
     }
     // Un ami qui ouvre un lien de défi arrive directement sur l'écran Défis, pas sur le menu.
-    activeDuel = { id: id, cid: null, diff: null, dir: null, laps: null, runs: [] };
-    watchDuel(id);
+    activeDuel = { id: parsed.id, cid: null, diff: null, dir: null, laps: null, public: parsed.isPublic, runs: [] };
+    watchDuel(parsed.id, parsed.isPublic);
     showDuelScreen();
   }
 
   function shareCurrentDuelLink(duel, btn, fallbackEl, inputEl) {
     if (!duel || !duel.id) return;
-    const url = buildDuelShareUrl(duel.id);
+    const url = buildDuelShareUrl(duel.id, duel.public);
     const restoreLabel = () => {
       if (!btn) return;
       const original = btn.dataset.label || btn.textContent;
@@ -3328,8 +3445,10 @@
   }
 
   function startDuelInvite(country) {
-    // Crée un nouveau défi (document Firestore, encore aucun temps posé) et partage le lien —
-    // qui ne contient que l'identifiant du document, pas les données de la course.
+    // Crée un nouveau défi PRIVÉ (document Firestore dans "duels", encore aucun temps posé) et
+    // partage le lien — qui ne contient que l'identifiant du document, pas les données de la
+    // course. Seul quelqu'un qui reçoit ce lien peut le relever (la collection "duels" refuse
+    // le listing : impossible à découvrir par un autre moyen).
     if (!db) {
       alert('Impossible de créer un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
       return;
@@ -3340,9 +3459,9 @@
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       runs: {}
     }).then(function () {
-      watchDuel(ref.id);
+      watchDuel(ref.id, false);
       renderDuelScreen();
-      shareCurrentDuelLink({ id: ref.id }, duelCopyBtn, duelLinkFallback, duelLinkInput);
+      shareCurrentDuelLink({ id: ref.id, public: false }, duelCopyBtn, duelLinkFallback, duelLinkInput);
       if (typeof duelPanel.scrollIntoView === 'function') {
         duelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -3352,16 +3471,43 @@
     });
   }
 
+  function startPublicDuelInvite(country) {
+    // Même principe que startDuelInvite, mais dans la collection "public_duels" — celle-ci
+    // autorise le listing (voir firestore.rules), donc ce défi apparaît pour TOUT joueur qui
+    // ouvre l'écran Défis sur ce circuit, qui peut le relever sans avoir reçu de lien.
+    if (!db) {
+      alert('Impossible de créer un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      return;
+    }
+    const ref = db.collection('public_duels').doc();
+    ref.set({
+      cid: country.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      runs: {}
+    }).then(function () {
+      watchDuel(ref.id, true);
+      renderDuelScreen();
+      shareCurrentDuelLink({ id: ref.id, public: true }, duelCopyBtn, duelLinkFallback, duelLinkInput);
+      if (typeof duelPanel.scrollIntoView === 'function') {
+        duelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }).catch(function (err) {
+      console.error(err);
+      alert('Impossible de créer le défi public (' + err.message + ').');
+    });
+  }
+
   function rematchDuel(duel) {
     // Reprend les réglages (circuit, difficulté, sens, tours) d'un défi déjà terminé pour en
     // recréer un tout nouveau — un défi ne se rejoue pas, on en relance un autre à la place.
+    // On garde le même caractère privé/public que le défi d'origine.
     if (!ensurePlayerName()) { flagPlayerNameNeeded(); return; }
     const country = COUNTRIES.find(c => c.id === duel.cid);
     if (!country) return;
     selectedDifficulty = duel.diff;
     selectedDirection = duel.dir;
     selectedLaps = duel.laps;
-    startDuelInvite(country);
+    if (duel.public) startPublicDuelInvite(country); else startDuelInvite(country);
   }
 
   function addRunToActiveDuel(name, result) {
@@ -3398,7 +3544,7 @@
       // notre .catch() et remontait en "Uncaught" dans la console, sans message pour le joueur.
       let writePromise;
       try {
-        writePromise = duelDocRef(activeDuel.id).update(runsUpdate);
+        writePromise = duelDocRef(activeDuel.id, activeDuel.public).update(runsUpdate);
       } catch (err) {
         writePromise = Promise.reject(err);
       }
@@ -3416,7 +3562,7 @@
       const ref = db.collection('duels').doc();
       activeDuel = {
         id: ref.id, cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
-        runs: [Object.assign({ key: key }, run)]
+        public: false, runs: [Object.assign({ key: key }, run)]
       };
       if (!screenRace.hidden) renderDuelResultPanel();
       console.log('[F1 Finger Race] création Firestore d\'un nouveau défi', ref.id, 'avec le temps de', name);
@@ -3432,8 +3578,8 @@
       }
       createPromise.then(function () {
         console.log('[F1 Finger Race] création Firestore réussie pour le défi', ref.id);
-        watchDuel(ref.id);
-        shareCurrentDuelLink({ id: ref.id }, duelResultCopyBtn, null, null);
+        watchDuel(ref.id, false);
+        shareCurrentDuelLink({ id: ref.id, public: false }, duelResultCopyBtn, null, null);
       }).catch(function (err) {
         console.error('[F1 Finger Race] échec de la création Firestore (nouveau défi)', err);
         if (activeDuel && activeDuel.id === ref.id) {
@@ -3599,6 +3745,7 @@
 
   challengeBtn.addEventListener('click', () => showDuelScreen());
   duelCreateBtn.addEventListener('click', () => startDuelInvite(COUNTRIES[menuIndex]));
+  duelCreatePublicBtn.addEventListener('click', () => startPublicDuelInvite(COUNTRIES[menuIndex]));
   duelBackBtn.addEventListener('click', () => showMenu());
   duelPlayBtn.addEventListener('click', () => { if (activeDuel) startDuelRace(); });
   duelRematchBtn.addEventListener('click', () => { if (activeDuel) rematchDuel(activeDuel); });

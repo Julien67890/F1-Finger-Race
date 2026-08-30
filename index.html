@@ -665,6 +665,7 @@
     top: 14px;
     left: 14px;
     right: 14px;
+    margin: 0 auto;
     z-index: 9;
     background: rgba(14,19,26,0.92);
     border: 1px solid var(--border);
@@ -1066,6 +1067,7 @@
         </div>
         <div class="duel-participants" id="duelParticipants"></div>
         <button class="cta duel-play-btn" id="duelPlayBtn" type="button">Lancer la course</button>
+        <button class="cta duel-play-btn" id="duelRematchBtn" type="button" hidden>Relancer un défi</button>
         <div class="duel-actions">
           <button class="cta ghost small" id="duelCopyBtn" type="button">Partager le défi</button>
           <button class="cta ghost small" id="duelReplayBtn" type="button" hidden>Revoir en fantôme</button>
@@ -1138,6 +1140,7 @@
     <div class="replay-hud" id="replayHud" hidden>
       <div class="replay-title" id="replayTitle">Rejeu du défi</div>
       <div id="replayRows"></div>
+      <button class="cta ghost" id="replayAgainBtn" type="button">🔁 Rejouer la lecture</button>
       <button class="cta ghost" id="replayCloseBtn" type="button">Fermer le rejeu</button>
     </div>
     <div id="replayCars"></div>
@@ -1223,7 +1226,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-30-g';
+  const BUILD_TAG = '2026-08-30-h';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1339,6 +1342,7 @@
   const duelCloseBtn = document.getElementById('duelCloseBtn');
   const duelParticipants = document.getElementById('duelParticipants');
   const duelPlayBtn = document.getElementById('duelPlayBtn');
+  const duelRematchBtn = document.getElementById('duelRematchBtn');
   const duelCopyBtn = document.getElementById('duelCopyBtn');
   const duelReplayBtn = document.getElementById('duelReplayBtn');
   const duelRefreshBtn = document.getElementById('duelRefreshBtn');
@@ -1381,6 +1385,7 @@
   const replayHud = document.getElementById('replayHud');
   const replayRows = document.getElementById('replayRows');
   const replayCloseBtn = document.getElementById('replayCloseBtn');
+  const replayAgainBtn = document.getElementById('replayAgainBtn');
   const replayCarsEl = document.getElementById('replayCars');
 
   let selectedDifficulty = 'debutant';
@@ -1585,6 +1590,7 @@
   let replayRafId = null;
   let replayStartPerf = 0;
   let replayCarEls = [];
+  let lastReplayDuel = null; // pour pouvoir relancer la même lecture avec "Rejouer la lecture"
 
   function duelDocRef(id) { return db.collection('duels').doc(id); }
 
@@ -3009,12 +3015,12 @@
       duelTag.textContent = '';
       duelParticipants.innerHTML = '';
       duelPlayBtn.hidden = true;
+      duelRematchBtn.hidden = true;
       duelReplayBtn.hidden = true;
       duelLinkFallback.hidden = true;
       return;
     }
     saveDuelToHistory(duel);
-    duelPlayBtn.hidden = false;
     const country = COUNTRIES.find(c => c.id === duel.cid);
     duelFlag.textContent = (country && country.flag) || '🏁';
     duelTitle.textContent = 'Défi — ' + (country ? country.name : duel.cid);
@@ -3025,7 +3031,24 @@
     const alreadyRan = playerHasRunDuel(duel);
     duelTag.textContent = alreadyRan ? '✅ Défi réalisé' : '🏁 Défi à relever';
     duelTag.className = 'duel-tag ' + (alreadyRan ? 'done' : 'to-play');
-    duelPlayBtn.textContent = alreadyRan ? 'Relancer la course' : (duel.runs.length ? 'Relever le défi' : 'Lancer la course');
+    if (!alreadyRan) {
+      // Le joueur n'a pas encore couru : un seul essai, donc juste le bouton normal.
+      duelPlayBtn.hidden = false;
+      duelPlayBtn.textContent = duel.runs.length ? 'Relever le défi' : 'Lancer la course';
+      duelRematchBtn.hidden = true;
+    } else {
+      // Un seul essai par défi : plus de "Relancer la course" une fois couru.
+      duelPlayBtn.hidden = true;
+      if (duel.runs.length < 2) {
+        // En attente du temps de l'adversaire — rien à relancer pour l'instant.
+        duelRematchBtn.hidden = true;
+      } else {
+        const sorted = duel.runs.slice().sort((a, b) => a.time - b.time);
+        const isWinner = sorted[0].key === currentRunKey();
+        duelRematchBtn.hidden = false;
+        duelRematchBtn.textContent = isWinner ? '🔁 Relancer un défi' : '🔥 Demander une revanche';
+      }
+    }
     duelReplayBtn.hidden = duel.runs.length < 2;
     duelLinkFallback.hidden = true;
   }
@@ -3255,6 +3278,18 @@
     });
   }
 
+  function rematchDuel(duel) {
+    // Reprend les réglages (circuit, difficulté, sens, tours) d'un défi déjà terminé pour en
+    // recréer un tout nouveau — un défi ne se rejoue pas, on en relance un autre à la place.
+    if (!ensurePlayerName()) { flagPlayerNameNeeded(); return; }
+    const country = COUNTRIES.find(c => c.id === duel.cid);
+    if (!country) return;
+    selectedDifficulty = duel.diff;
+    selectedDirection = duel.dir;
+    selectedLaps = duel.laps;
+    startDuelInvite(country);
+  }
+
   function addRunToActiveDuel(name, result) {
     if (!db) {
       alert('Impossible d\'enregistrer ce temps dans un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
@@ -3410,6 +3445,8 @@
 
   function startGhostReplay(duel) {
     if (!duel || !duel.runs || duel.runs.length < 1) return;
+    if (replayRafId) { cancelAnimationFrame(replayRafId); replayRafId = null; } // relance propre si un rejeu était déjà en cours
+    lastReplayDuel = duel;
     if (!enterReplay(duel)) return;
 
     const sorted = duel.runs.slice().sort((a, b) => a.time - b.time);
@@ -3488,6 +3525,7 @@
   duelCreateBtn.addEventListener('click', () => startDuelInvite(COUNTRIES[menuIndex]));
   duelBackBtn.addEventListener('click', () => showMenu());
   duelPlayBtn.addEventListener('click', () => { if (activeDuel) startDuelRace(); });
+  duelRematchBtn.addEventListener('click', () => { if (activeDuel) rematchDuel(activeDuel); });
   duelCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelCopyBtn, duelLinkFallback, duelLinkInput));
   duelReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
   duelCloseBtn.addEventListener('click', () => {
@@ -3497,6 +3535,7 @@
     renderDuelScreen();
   });
   replayCloseBtn.addEventListener('click', closeReplay);
+  replayAgainBtn.addEventListener('click', () => { if (lastReplayDuel) startGhostReplay(lastReplayDuel); });
 
   challengeResultBtn.addEventListener('click', () => {
     const name = ensureChallengeName();

@@ -2535,17 +2535,24 @@
 
     lastResult = { time: total, penalties: penalties };
     if (activeDuel && activeDuel.cid === current.id) {
-      // Course lancée depuis un lien de défi : le temps s'ajoute automatiquement.
+      // Course lancée depuis un lien de défi : le temps s'ajoute automatiquement. Un seul
+      // essai compte pour un défi — on ne propose donc pas de "Recommencer" ici (ça
+      // resterait possible depuis l'écran Défis via "Relancer la course", en connaissance de
+      // cause), juste revoir sa course ou retourner au menu.
       const name = ensureChallengeName();
       challengeResultBtn.hidden = true;
+      retryBtn.hidden = true;
+      menuBtn.textContent = 'Retour au menu principal';
       if (name) {
         addRunToActiveDuel(name, lastResult);
       } else {
         duelResultPanel.hidden = true;
       }
     } else {
-      // Course normale : propose de la transformer en défi.
+      // Course normale : propose de la transformer en défi, et de recommencer comme avant.
       challengeResultBtn.hidden = false;
+      retryBtn.hidden = false;
+      menuBtn.textContent = 'Changer de circuit';
       duelResultPanel.hidden = true;
     }
   }
@@ -3405,9 +3412,9 @@
   }
 
   function goBackFromRace() {
-    // Après une course liée à un défi, on revient sur l'écran Défis (le résultat vient d'y
-    // apparaître dans "Défis réalisés") plutôt que sur le menu principal.
-    if (activeDuel) { showDuelScreen(); } else { showMenu(); }
+    // Toujours retour au menu principal (le résultat du défi est déjà visible juste au-dessus,
+    // sur l'écran de fin de course lui-même — pas besoin de repasser par l'écran Défis).
+    showMenu();
   }
   backBtn.addEventListener('click', () => { if (state === 'replay') closeReplay(); else goBackFromRace(); });
   menuBtn.addEventListener('click', goBackFromRace);

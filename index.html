@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>F1 Finger Race</title>
+<!-- Web App Manifest : permet d'installer le jeu ("Ajouter à l'écran d'accueil") pour qu'il
+     se lance en plein écran, sans barre d'adresse ni barre de statut. Le fichier manifest.json
+     et les deux icônes doivent être uploadés dans le même dossier que cette page. -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0e131a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="F1 Finger Race">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
   :root {
@@ -424,9 +435,23 @@
 
   .duel-history-flag { font-size: 24px; line-height: 1; flex: none; }
 
-  .duel-history-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .duel-history-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 
   .duel-history-name { font-weight: 700; font-size: 13.5px; }
+
+  .duel-history-status { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .duel-status-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  .duel-status-badge.done { color: #8fe3a8; border-color: rgba(143,227,168,0.4); background: rgba(143,227,168,0.12); }
 
   .duel-history-sub {
     font-size: 11.5px;
@@ -438,6 +463,7 @@
 
   .duel-history-delete {
     flex: none;
+    margin-left: auto;
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -1070,6 +1096,7 @@
         <button class="cta duel-play-btn" id="duelRematchBtn" type="button" hidden>Relancer un défi</button>
         <div class="duel-actions">
           <button class="cta ghost small" id="duelCopyBtn" type="button">Partager le défi</button>
+          <button class="cta ghost small" id="duelDeleteBtn" type="button" hidden>🗑️ Supprimer</button>
           <button class="cta ghost small" id="duelReplayBtn" type="button" hidden>Revoir en fantôme</button>
           <button class="cta ghost small" id="duelRefreshBtn" type="button" title="Recharger ce défi">🔄 Actualiser</button>
         </div>
@@ -1226,7 +1253,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-30-h';
+  const BUILD_TAG = '2026-08-30-i';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1344,6 +1371,7 @@
   const duelPlayBtn = document.getElementById('duelPlayBtn');
   const duelRematchBtn = document.getElementById('duelRematchBtn');
   const duelCopyBtn = document.getElementById('duelCopyBtn');
+  const duelDeleteBtn = document.getElementById('duelDeleteBtn');
   const duelReplayBtn = document.getElementById('duelReplayBtn');
   const duelRefreshBtn = document.getElementById('duelRefreshBtn');
   const duelLinkFallback = document.getElementById('duelLinkFallback');
@@ -1918,7 +1946,10 @@
   }
 
   launchBtn.addEventListener('click', () => {
-    if (activeDuel) { startDuelRace(); return; }
+    // On ne relance le défi actif que si c'est bien SON circuit qui est affiché dans le
+    // carrousel — sinon "Lancer la course" redirigeait toujours vers le circuit du défi même
+    // après avoir fait défiler le carrousel vers un autre circuit pour une course libre.
+    if (activeDuel && activeDuel.cid === COUNTRIES[menuIndex].id) { startDuelRace(); return; }
     enterRace(COUNTRIES[menuIndex]);
   });
   window.addEventListener('resize', () => { if (!screenMenu.hidden) { renderCarousel(); redrawAllPreviews(); } });
@@ -1968,6 +1999,10 @@
     screenDuel.hidden = true;
     screenMenu.hidden = false;
     renderCarousel();
+    // Les canevas d'aperçu des circuits sont vides tant que l'écran menu était caché (ils
+    // n'ont jamais pu se dessiner) — on les redessine explicitement en revenant sur ce menu,
+    // plutôt que d'attendre qu'un changement de difficulté ne le déclenche par effet de bord.
+    redrawAllPreviews();
   }
 
   function computeRacePoints(country, direction) {
@@ -2060,7 +2095,22 @@
     return { x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
   }
 
+  function requestGameFullscreen() {
+    // Tentative de plein écran via l'API standard du navigateur (masque la barre d'adresse
+    // dans l'onglet). Ça ne masque pas forcément la barre de statut Android tant que le jeu
+    // n'est pas installé via "Ajouter à l'écran d'accueil" (voir manifest.json) — mais ça reste
+    // un mieux pour ceux qui jouent directement depuis un onglet du navigateur. On ignore
+    // silencieusement tout échec : certains navigateurs mobiles refusent ou ne supportent pas
+    // l'API, et ça ne doit jamais bloquer le lancement d'une course.
+    try {
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (req && !document.fullscreenElement) req.call(el).catch(function () {});
+    } catch (e) {}
+  }
+
   function enterRace(country) {
+    requestGameFullscreen();
     menuIndex = COUNTRIES.indexOf(country);
     current = country;
     const diff = DIFFICULTIES.find(d => d.id === selectedDifficulty) || DIFFICULTIES[1];
@@ -3017,6 +3067,8 @@
       duelPlayBtn.hidden = true;
       duelRematchBtn.hidden = true;
       duelReplayBtn.hidden = true;
+      duelCopyBtn.hidden = false;
+      duelDeleteBtn.hidden = true;
       duelLinkFallback.hidden = true;
       return;
     }
@@ -3050,6 +3102,11 @@
       }
     }
     duelReplayBtn.hidden = duel.runs.length < 2;
+    // Une fois le défi réalisé, partager le lien n'a plus vraiment de sens (le joueur qui le
+    // reçoit ne pourrait de toute façon plus poser de temps s'il l'a déjà fait) — on propose
+    // plutôt de le retirer de la liste.
+    duelCopyBtn.hidden = alreadyRan;
+    duelDeleteBtn.hidden = !alreadyRan;
     duelLinkFallback.hidden = true;
   }
 
@@ -3102,23 +3159,27 @@
     const flag = (country && country.flag) || '🏁';
     const name = country ? country.name : entry.cid;
     const runs = entry.runs || [];
-    const n = runs.length;
-    let sub;
-    if (n === 0) {
-      sub = 'Aucun temps posé';
-    } else if (playerHasRunDuel(entry)) {
+    const key = currentRunKey();
+    const mineDone = playerHasRunDuel(entry);
+    const opponentDone = runs.some(r => r.key !== key);
+    let sub = '';
+    if (mineDone) {
       const sorted = runs.slice().sort((a, b) => a.time - b.time);
-      const key = currentRunKey();
       const rank = sorted.findIndex(r => r.key === key);
       const mine = rank >= 0 ? sorted[rank] : runs[0];
       sub = 'Ton temps : ' + fmt(mine.time) + (sorted.length > 1 ? (rank === 0 ? ' 🏆' : ' · ' + (rank + 1) + 'e') : '');
-    } else {
-      sub = n + (n > 1 ? ' participants' : ' participant') + ' · à toi de jouer !';
+    } else if (opponentDone) {
+      sub = 'À toi de jouer !';
     }
+    const statusHtml = '<span class="duel-history-status">' +
+      '<span class="duel-status-badge' + (mineDone ? ' done' : '') + '">' + (mineDone ? '✅' : '⏳') + ' Toi</span>' +
+      '<span class="duel-status-badge' + (opponentDone ? ' done' : '') + '">' + (opponentDone ? '✅' : '⏳') + ' Adversaire</span>' +
+      '</span>';
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
       '<span class="duel-history-flag">' + flag + '</span>' +
       '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(name) + '</span>' +
-      '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span>' +
+      statusHtml +
+      (sub ? '<span class="duel-history-sub">' + escapeHtml(sub) + '</span>' : '') + '</span>' +
       '<button class="duel-history-delete" type="button" data-id="' + entry.id + '" title="Retirer ce défi de la liste">✕</button></div>';
   }
 
@@ -3139,13 +3200,26 @@
     });
   }
 
+  function duelSortKey(entry) {
+    // Le plus récent en haut : on prend l'horodatage du run le plus récent posé sur ce défi
+    // (date/heure de "réalisation"), et à défaut (aucun temps encore posé) la date de création.
+    let latest = 0;
+    (entry.runs || []).forEach(function (r) { if (r.at && r.at > latest) latest = r.at; });
+    if (!latest && entry.createdAt) {
+      if (typeof entry.createdAt.toMillis === 'function') latest = entry.createdAt.toMillis();
+      else if (entry.createdAt.seconds) latest = entry.createdAt.seconds * 1000;
+      else { const t = Date.parse(entry.createdAt); if (!isNaN(t)) latest = t; }
+    }
+    return latest;
+  }
+
   function buildDuelHistoryLists(rawList) {
     const list = rawList.filter(d => !activeDuel || d.id !== activeDuel.id);
     // On distingue ce qu'il reste à jouer (le joueur de cet appareil n'a pas encore posé de
     // temps) de ce qui est déjà réalisé, pour retrouver facilement les résultats des défis
     // qu'on a déjà courus.
-    const toPlay = list.filter(d => !playerHasRunDuel(d));
-    const done = list.filter(d => playerHasRunDuel(d));
+    const toPlay = list.filter(d => !playerHasRunDuel(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
+    const done = list.filter(d => playerHasRunDuel(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
 
     duelToPlaySection.hidden = toPlay.length === 0;
     duelToPlayList.innerHTML = toPlay.map(duelHistoryRowHtml).join('');
@@ -3297,7 +3371,9 @@
     }
     const key = currentRunKey();
     const tele = resampleTelemetry(telemetry, DUEL_TELE_POINTS);
-    const run = { name: name, time: result.time, pen: result.penalties, tele: tele };
+    // "at" (horodatage client) sert uniquement à trier les défis par date/heure de
+    // réalisation dans les listes — pas besoin d'un vrai serverTimestamp pour ça.
+    const run = { name: name, time: result.time, pen: result.penalties, tele: tele, at: Date.now() };
     // Firestore refuse les tableaux de tableaux : on envoie "tele" aplati, mais on garde la
     // version normale (imbriquée) dans "run" pour l'état local/le rejeu fantôme.
     const runForFirestore = Object.assign({}, run, { tele: flattenTele(tele) });
@@ -3527,6 +3603,15 @@
   duelPlayBtn.addEventListener('click', () => { if (activeDuel) startDuelRace(); });
   duelRematchBtn.addEventListener('click', () => { if (activeDuel) rematchDuel(activeDuel); });
   duelCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelCopyBtn, duelLinkFallback, duelLinkInput));
+  duelDeleteBtn.addEventListener('click', () => {
+    if (!activeDuel) return;
+    if (!window.confirm('Retirer ce défi de ta liste ? (il reste accessible à l\'adversaire qui a le lien)')) return;
+    removeDuelFromHistory(activeDuel.id);
+    stopWatchingDuel();
+    activeDuel = null;
+    try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
+    renderDuelScreen();
+  });
   duelReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
   duelCloseBtn.addEventListener('click', () => {
     stopWatchingDuel();

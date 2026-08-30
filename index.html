@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Sur la Corde</title>
+<title>F1 Finger Race</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
   :root {
@@ -45,11 +45,72 @@
     display: flex;
     flex-direction: column;
     padding: 22px 0 28px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .menu-head {
     padding: 0 20px;
     flex: none;
+  }
+
+  .menu-head-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .menu-head-titles { min-width: 0; }
+
+  .account-chip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px 5px 5px;
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: 'Manrope', sans-serif;
+    cursor: pointer;
+    max-width: 128px;
+    margin-top: 2px;
+  }
+
+  .account-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1a0d05;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    flex: none;
+  }
+
+  .account-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .account-auth-soon { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+  .account-auth-row {
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    text-align: left;
   }
 
   .eyebrow {
@@ -243,10 +304,10 @@
 
   .carousel-wrap {
     position: relative;
-    flex: 1;
+    flex: none;
+    height: 300px;
     display: flex;
     align-items: center;
-    min-height: 0;
     margin-top: 4px;
   }
 
@@ -700,13 +761,17 @@
 <div id="app">
   <section id="screenMenu" class="screen menu-screen">
     <div class="menu-head">
-      <div class="eyebrow">Prototype &middot; mécanique de base</div>
-      <h1>Choisis ton Grand Prix</h1>
-      <p class="lede">Trace le circuit au doigt sans sortir de la piste. Décompte de feux façon F1 au départ — tout mouvement avant l'extinction des feux est un faux départ.</p>
-
-      <div class="player-name-row">
-        <input type="text" id="playerNameInput" placeholder="Ton prénom (pour défier un ami)" maxlength="18" autocomplete="off">
+      <div class="menu-head-top">
+        <div class="menu-head-titles">
+          <div class="eyebrow">Choisis ton Grand Prix</div>
+          <h1>F1 Finger Race</h1>
+        </div>
+        <button class="account-chip" id="accountChip" type="button" title="Mon compte">
+          <span class="account-avatar" id="accountAvatar">👤</span>
+          <span class="account-name" id="accountChipName">Compte</span>
+        </button>
       </div>
+      <p class="lede">Celui qui aura le doigt le plus rapide et le plus précis sera champion.</p>
 
       <div class="difficulty-picker">
         <span class="difficulty-label">Difficulté (largeur de piste)</span>
@@ -779,6 +844,21 @@
         <div class="sub" id="historySub"></div>
         <div class="history-list" id="menuHistoryList"></div>
         <button class="cta ghost" id="closeHistoryBtn">Fermer</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="accountOverlay">
+      <div class="result-card">
+        <h2>Mon compte</h2>
+        <div class="sub">Ton prénom sert au classement dans les défis entre amis.</div>
+        <div class="player-name-row">
+          <input type="text" id="playerNameInput" placeholder="Ton prénom" maxlength="18" autocomplete="off">
+        </div>
+        <div class="account-auth-soon">
+          <div class="account-auth-row">📧 Connexion par e-mail — bientôt disponible</div>
+          <div class="account-auth-row">🔵 Connexion avec Google — bientôt disponible</div>
+        </div>
+        <button class="cta" id="closeAccountBtn">Fermer</button>
       </div>
     </div>
   </section>
@@ -917,6 +997,11 @@
   const menuHistoryList = document.getElementById('menuHistoryList');
   const closeHistoryBtn = document.getElementById('closeHistoryBtn');
   const playerNameInput = document.getElementById('playerNameInput');
+  const accountChip = document.getElementById('accountChip');
+  const accountAvatar = document.getElementById('accountAvatar');
+  const accountChipName = document.getElementById('accountChipName');
+  const accountOverlay = document.getElementById('accountOverlay');
+  const closeAccountBtn = document.getElementById('closeAccountBtn');
   const challengeBtn = document.getElementById('challengeBtn');
   const duelPanel = document.getElementById('duelPanel');
   const duelFlag = document.getElementById('duelFlag');
@@ -1945,8 +2030,20 @@
       playerName = name;
       playerNameInput.value = name;
       try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
+      updateAccountChip();
     }
     return name;
+  }
+
+  function updateAccountChip() {
+    const name = (playerName || '').trim();
+    if (name) {
+      accountAvatar.textContent = name[0].toUpperCase();
+      accountChipName.textContent = name;
+    } else {
+      accountAvatar.textContent = '👤';
+      accountChipName.textContent = 'Compte';
+    }
   }
 
   function syncSegUI() {
@@ -2222,14 +2319,26 @@
   duelResultCopyBtn.addEventListener('click', () => shareCurrentDuelLink(duelResultCopyBtn, null, null));
   duelResultReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
 
+  accountChip.addEventListener('click', () => {
+    accountOverlay.classList.add('show');
+    playerNameInput.focus();
+  });
+  closeAccountBtn.addEventListener('click', () => {
+    playerName = playerNameInput.value.trim();
+    try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
+    updateAccountChip();
+    accountOverlay.classList.remove('show');
+  });
   playerNameInput.addEventListener('change', () => {
     playerName = playerNameInput.value.trim();
     try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
+    updateAccountChip();
   });
   try {
     playerName = localStorage.getItem('sur-la-corde:playerName') || '';
     playerNameInput.value = playerName;
   } catch (e) {}
+  updateAccountChip();
 
   view.addEventListener('pointerdown', onPointerDown);
   view.addEventListener('pointermove', onPointerMove);

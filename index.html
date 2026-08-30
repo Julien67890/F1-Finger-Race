@@ -1221,6 +1221,11 @@
 (function () {
   "use strict";
 
+  // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
+  // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
+  const BUILD_TAG = '2026-08-30-g';
+  console.log('[F1 Finger Race] build ' + BUILD_TAG);
+
   const PENALTY_SECONDS = 2;
   const START_RADIUS = 46;
   const FINISH_RADIUS = 46;
@@ -1431,6 +1436,12 @@
   // avant de s'en servir, pour que le jeu en solo continue de fonctionner hors-ligne.
   const auth = (typeof firebase !== 'undefined' && firebase.apps.length) ? firebase.auth() : null;
   const db = (typeof firebase !== 'undefined' && firebase.apps.length) ? firebase.firestore() : null;
+  console.log('[F1 Finger Race] Firebase SDK chargé :', typeof firebase !== 'undefined', '— auth :', !!auth, '— firestore :', !!db);
+  if (auth) {
+    auth.onAuthStateChanged(function (u) {
+      console.log('[F1 Finger Race] état de connexion :', u ? ('connecté (' + (u.email || u.uid) + ')') : 'invité (non connecté)');
+    });
+  }
 
   function getGuestId() {
     try {
@@ -1599,7 +1610,7 @@
       dir: data.dir,
       laps: data.laps,
       runs: Object.keys(runsMap).map(function (k) {
-        return Object.assign({ key: k }, runsMap[k]);
+        return Object.assign({ key: k }, runsMap[k], { tele: unflattenTele(runsMap[k].tele) });
       })
     };
     if (!screenDuel.hidden) renderDuelScreen();
@@ -2828,6 +2839,24 @@
     return out;
   }
 
+  // Firestore refuse les "tableaux imbriqués" (un tableau qui contient directement d'autres
+  // tableaux) — hors "tele" est justement une liste de [x, y, t]. On aplatit donc en un seul
+  // tableau de nombres avant l'envoi (x1,y1,t1,x2,y2,t2,...), et on reconstruit des triplets
+  // à la lecture. C'était la vraie cause du bug "le temps ne s'enregistre jamais" : l'écriture
+  // Firestore échouait systématiquement avec "Nested arrays are not supported".
+  function flattenTele(tele) {
+    const flat = [];
+    for (let i = 0; i < tele.length; i++) { flat.push(tele[i][0], tele[i][1], tele[i][2]); }
+    return flat;
+  }
+
+  function unflattenTele(flat) {
+    const tele = [];
+    if (!Array.isArray(flat)) return tele;
+    for (let i = 0; i + 2 < flat.length; i += 3) { tele.push([flat[i], flat[i + 1], flat[i + 2]]); }
+    return tele;
+  }
+
   function ensurePlayerName() {
     playerName = (playerNameInput.value || '').trim();
     return playerName.length > 0;
@@ -3118,7 +3147,7 @@
         if (!snap.exists) return entry;
         const data = snap.data() || {};
         const runsMap = data.runs || {};
-        const runs = Object.keys(runsMap).map(function (k) { return Object.assign({ key: k }, runsMap[k]); });
+        const runs = Object.keys(runsMap).map(function (k) { return Object.assign({ key: k }, runsMap[k], { tele: unflattenTele(runsMap[k].tele) }); });
         const updated = Object.assign({}, entry, { cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, runs: runs });
         saveDuelToHistory(updated);
         return updated;
@@ -3234,8 +3263,12 @@
     const key = currentRunKey();
     const tele = resampleTelemetry(telemetry, DUEL_TELE_POINTS);
     const run = { name: name, time: result.time, pen: result.penalties, tele: tele };
+    // Firestore refuse les tableaux de tableaux : on envoie "tele" aplati, mais on garde la
+    // version normale (imbriquée) dans "run" pour l'état local/le rejeu fantôme.
+    const runForFirestore = Object.assign({}, run, { tele: flattenTele(tele) });
     const runsUpdate = {};
-    runsUpdate['runs.' + key] = run;
+    runsUpdate['runs.' + key] = runForFirestore;
+    console.log('[F1 Finger Race] addRunToActiveDuel — clé:', key, '— défi actif:', activeDuel && activeDuel.id, '— circuit couru:', current && current.id);
 
     if (activeDuel && activeDuel.cid === current.id && activeDuel.id) {
       // Un défi est déjà en cours sur ce circuit : on y ajoute/actualise notre temps.
@@ -3248,10 +3281,21 @@
       // .update() (et non .set(..., {merge:true})) : c'est la façon documentée et fiable de
       // cibler UNE clé précise d'un champ map ("runs.<id>") sans risquer d'écraser toute la
       // map ni de créer par erreur un champ littéralement nommé "runs.<id>".
-      duelDocRef(activeDuel.id).update(runsUpdate).then(function () {
+      console.log('[F1 Finger Race] écriture Firestore (update) sur le défi', activeDuel.id, runsUpdate);
+      // Le SDK Firestore peut rejeter des données invalides de façon SYNCHRONE (avant même de
+      // renvoyer une promesse) — sans ce try/catch, une telle erreur passait au travers de
+      // notre .catch() et remontait en "Uncaught" dans la console, sans message pour le joueur.
+      let writePromise;
+      try {
+        writePromise = duelDocRef(activeDuel.id).update(runsUpdate);
+      } catch (err) {
+        writePromise = Promise.reject(err);
+      }
+      writePromise.then(function () {
+        console.log('[F1 Finger Race] écriture Firestore réussie pour le défi', activeDuel.id);
         refreshActiveDuel();
       }).catch(function (err) {
-        console.error(err);
+        console.error('[F1 Finger Race] échec de l\'écriture Firestore (défi existant)', err);
         alert('Impossible d\'enregistrer ton temps (' + err.message + ').');
       });
     } else {
@@ -3264,15 +3308,23 @@
         runs: [Object.assign({ key: key }, run)]
       };
       if (!screenRace.hidden) renderDuelResultPanel();
-      ref.set({
-        cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        runs: { [key]: run }
-      }).then(function () {
+      console.log('[F1 Finger Race] création Firestore d\'un nouveau défi', ref.id, 'avec le temps de', name);
+      let createPromise;
+      try {
+        createPromise = ref.set({
+          cid: current.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          runs: { [key]: runForFirestore }
+        });
+      } catch (err) {
+        createPromise = Promise.reject(err);
+      }
+      createPromise.then(function () {
+        console.log('[F1 Finger Race] création Firestore réussie pour le défi', ref.id);
         watchDuel(ref.id);
         shareCurrentDuelLink({ id: ref.id }, duelResultCopyBtn, null, null);
       }).catch(function (err) {
-        console.error(err);
+        console.error('[F1 Finger Race] échec de la création Firestore (nouveau défi)', err);
         if (activeDuel && activeDuel.id === ref.id) {
           activeDuel = null;
           if (!screenRace.hidden) renderDuelResultPanel();

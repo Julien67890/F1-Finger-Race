@@ -1481,7 +1481,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-x';
+  const BUILD_TAG = '2026-08-31-y';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -3102,6 +3102,23 @@
     engineLevel = 0;
   }
 
+  // Volume de ralenti (doigt posé sur la ligne de départ, moteur tourne mais voiture à
+  // l'arrêt) — doit correspondre au volume que calcule updateEngineSound() à vitesse nulle
+  // (0.05 + 0*0.17) pour qu'il n'y ait aucun saut audible au moment où la course démarre
+  // vraiment et que updateEngineSound() reprend la main sur le volume.
+  const ENGINE_IDLE_VOL = 0.05;
+
+  // Fait "tourner" le moteur au ralenti dès que le doigt touche la ligne de départ, façon
+  // grille de F1 (moteur déjà lancé pendant les feux, pas seulement une fois la course
+  // commencée). startEngineSound() crée le graphe audio mais le laisse silencieux (gain à
+  // 0.0001) — ici on ne fait que remonter doucement ce volume, les fréquences restent à leurs
+  // valeurs de ralenti par défaut tant que updateEngineSound() n'a pas encore pris le relais.
+  function engineIdleIn() {
+    if (!engineGain || !audioCtx) return;
+    const t = audioCtx.currentTime;
+    engineGain.gain.setTargetAtTime(ENGINE_IDLE_VOL, t, 0.15);
+  }
+
   function stopEngineSound() {
     if (engineGain && audioCtx) {
       const t = audioCtx.currentTime;
@@ -3190,7 +3207,9 @@
     lastMoveY = heldPoint ? heldPoint[1] : 0;
     instSpeed = 0;
     setBanner('En course — reste sur la piste');
-    startEngineSound();
+    // Le moteur tourne déjà au ralenti depuis que le doigt a touché la ligne de départ (voir
+    // onPointerDown/engineIdleIn) — pas besoin de le relancer ici, updateEngineSound() (appelé
+    // à chaque image par tickTimer) prend simplement le relais sur le volume/les fréquences.
     rafId = requestAnimationFrame(tickTimer);
   }
 
@@ -3407,6 +3426,10 @@
     heldPoint = [lx, ly];
     pushPos(evt.clientX, evt.clientY);
     showCarSprite(evt.clientX, evt.clientY);
+    // Moteur au ralenti dès que le doigt se pose sur la ligne de départ, façon grille de F1 —
+    // resetRun() ci-dessus vient d'arrêter tout son résiduel d'une tentative précédente.
+    startEngineSound();
+    engineIdleIn();
     startCountdown();
   }
 

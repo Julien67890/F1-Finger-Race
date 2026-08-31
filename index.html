@@ -748,10 +748,15 @@
     border-radius: 14px;
     padding: 12px 14px;
     max-width: 320px;
-    /* Même avec les temps par tour (jusqu'à 10 lignes sur un circuit à 10 tours), ce panneau
-       ne doit jamais s'étendre au point de cacher la piste pendant le rejeu — il défile en
-       interne à la place de grandir sans limite par-dessus la vue. */
-    max-height: min(60vh, 420px);
+    /* Ce panneau n'est plus une fenêtre flottante par-dessus la piste : resizeCanvas() réserve
+       sa vraie hauteur affichée et repousse tout le circuit en dessous, donc il ne peut plus
+       jamais le recouvrir, quel que soit le nombre de lignes de temps. */
+  }
+
+  .replay-scroll {
+    /* Seule la liste des temps défile si elle est longue (jusqu'à 10 tours) — le titre et les
+       boutons "Rejouer"/"Fermer" restent toujours visibles, jamais poussés hors champ. */
+    max-height: 34vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -1320,7 +1325,9 @@
 
     <div class="replay-hud" id="replayHud" hidden>
       <div class="replay-title" id="replayTitle">Rejeu du défi</div>
-      <div id="replayRows"></div>
+      <div class="replay-scroll" id="replayScroll">
+        <div id="replayRows"></div>
+      </div>
       <button class="cta ghost" id="replayAgainBtn" type="button">🔁 Rejouer la lecture</button>
       <button class="cta ghost" id="replayCloseBtn" type="button">Fermer le rejeu</button>
     </div>
@@ -1409,7 +1416,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-r';
+  const BUILD_TAG = '2026-08-31-s';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -2370,8 +2377,14 @@
     if (!current) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    // Pendant un rejeu, le panneau "Rejeu de ta course"/"Rejeu du défi" ne doit plus jamais
+    // recouvrir la piste : on réserve sa vraie hauteur affichée en haut de l'écran et on fait
+    // tenir le circuit dans l'espace restant (il descend, et rétrécit un peu si besoin), au
+    // lieu de le laisser centré plein écran derrière le panneau.
+    const topInset = (replayHud && !replayHud.hidden) ? Math.ceil(replayHud.getBoundingClientRect().height) + 24 : 0;
+    const availH = Math.max(120, vh - topInset);
     const bounds = computeContentBounds();
-    const s = Math.min(vw / bounds.w, vh / bounds.h);
+    const s = Math.min(vw / bounds.w, availH / bounds.h);
     view.style.width = vw + 'px';
     view.style.height = vh + 'px';
     const dpr = window.devicePixelRatio || 1;
@@ -2379,7 +2392,7 @@
     view.height = Math.round(vh * dpr);
     const contentCssW = bounds.w * s, contentCssH = bounds.h * s;
     const padX = (vw - contentCssW) / 2;
-    const padY = (vh - contentCssH) / 2;
+    const padY = topInset + (availH - contentCssH) / 2;
     vctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (padX - bounds.x * s), dpr * (padY - bounds.y * s));
     scale = s;
     viewOffsetX = bounds.x - padX / s;
@@ -2551,6 +2564,17 @@
     splitFlashEl.classList.add('show');
     clearTimeout(splitFlashTimer);
     splitFlashTimer = setTimeout(() => splitFlashEl.classList.remove('show'), 1800);
+  }
+
+  // "splits" stocke des temps CUMULÉS depuis le départ (plus simple à calculer pendant la
+  // course). Pour l'affichage, Julien veut voir la durée du tour lui-même — donc on soustrait
+  // le cumul du tour précédent (0 pour le premier tour) au moment du rendu, jamais au moment
+  // de l'enregistrement (le cumul reste la donnée de référence stockée/partagée).
+  function lapSplitRows(splitsArr, rowHtmlFn) {
+    return splitsArr.map(function (s, i) {
+      const prevT = i > 0 ? splitsArr[i - 1].t : 0;
+      return rowHtmlFn(s.lap, s.t - prevT);
+    }).join('');
   }
 
   function flash(lx, ly) {
@@ -2869,10 +2893,9 @@
     let splitsHtml = '';
     if (lastSplits.length) {
       splitsHtml = '<div class="result-splits"><div class="history-title">Temps par tour</div>' +
-        lastSplits.map(function (s) {
-          const label = 'Tour ' + s.lap + ' terminé';
-          return '<div class="result-row"><span>' + escapeHtml(label) + '</span><span class="val">' + fmt(s.t) + '</span></div>';
-        }).join('') + '</div>';
+        lapSplitRows(lastSplits, function (lap, delta) {
+          return '<div class="result-row"><span>' + escapeHtml('Tour ' + lap + ' terminé') + '</span><span class="val">' + fmt(delta) + '</span></div>';
+        }) + '</div>';
     }
 
     resultTitle.textContent = 'Arrivée !';
@@ -3148,8 +3171,10 @@
           if (selectedLaps > 1) splits.push({ n: 'lap', lap: currentLap, t: elapsed });
           finishRun();
         } else {
+          // Temps du tour lui-même (pas le cumul) pour le chip flash — voir lapSplitRows.
+          const lapDelta = elapsed - (splits.length ? splits[splits.length - 1].t : 0);
           splits.push({ n: 'lap', lap: currentLap, t: elapsed });
-          showSplitFlash('Tour ' + currentLap + ' terminé', elapsed);
+          showSplitFlash('Tour ' + currentLap + ' terminé', lapDelta);
           currentLap += 1;
           nextCpPtr = 0;
           hudLapChip.hidden = false;
@@ -3767,7 +3792,9 @@
     }).then(function () {
       watchDuel(ref.id, true);
       renderDuelScreen();
-      shareCurrentDuelLink({ id: ref.id, public: true }, duelCopyBtn, duelLinkFallback, duelLinkInput);
+      // Un défi public est déjà visible de tout le monde sur l'écran Défis (il n'a pas besoin
+      // d'un lien envoyé pour être trouvé) — contrairement à un défi privé entre amis, on
+      // n'ouvre donc jamais le partage natif du téléphone automatiquement ici.
       if (typeof duelPanel.scrollIntoView === 'function') {
         duelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -3940,6 +3967,7 @@
     if (replayRafId) cancelAnimationFrame(replayRafId);
     replayRafId = null;
     replayHud.hidden = true;
+    resizeCanvas(); // la piste reprend toute la hauteur maintenant que le panneau a disparu
     replayCarEls.forEach(el => el.remove());
     replayCarEls = [];
     hudTime.style.display = '';
@@ -3989,10 +4017,9 @@
     let splitsHtml = '';
     if (duel.splits && duel.splits.length) {
       splitsHtml = '<div class="replay-splits"><div class="replay-splits-title">Temps par tour</div>' +
-        duel.splits.map(function (s) {
-          const label = 'Tour ' + s.lap + ' terminé';
-          return '<div class="replay-row"><span class="name">' + escapeHtml(label) + '</span><span class="val">' + fmt(s.t) + '</span></div>';
-        }).join('') + '</div>';
+        lapSplitRows(duel.splits, function (lap, delta) {
+          return '<div class="replay-row"><span class="name">' + escapeHtml('Tour ' + lap + ' terminé') + '</span><span class="val">' + fmt(delta) + '</span></div>';
+        }) + '</div>';
     }
 
     replayRows.innerHTML = runs.map(r =>
@@ -4000,6 +4027,7 @@
       escapeHtml(r.name) + '</span><span class="val">' + fmt(r.time) + '</span></div>'
     ).join('') + splitsHtml;
     replayHud.hidden = false;
+    resizeCanvas();
 
     const maxT = Math.max.apply(null, runs.map(r => r.time || 0)) + 0.6;
 

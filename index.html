@@ -1481,7 +1481,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-z';
+  const BUILD_TAG = '2026-08-31-aa';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -2406,8 +2406,12 @@
   launchBtn.addEventListener('click', () => {
     // On ne relance le défi actif que si c'est bien SON circuit qui est affiché dans le
     // carrousel — sinon "Lancer la course" redirigeait toujours vers le circuit du défi même
-    // après avoir fait défiler le carrousel vers un autre circuit pour une course libre.
-    if (activeDuel && activeDuel.cid === COUNTRIES[menuIndex].id) { startDuelRace(); return; }
+    // après avoir fait défiler le carrousel vers un autre circuit pour une course libre. On ne
+    // le fait aussi que si ce défi n'a pas déjà été couru par ce joueur : sinon, une fois le
+    // défi réalisé, chaque "Lancer la course" suivant sur ce même circuit continuait à écraser
+    // silencieusement le temps déjà posé au lieu de compter comme une course normale — c'est
+    // ce qui faisait "disparaître" les essais suivants (voir finishRun()).
+    if (shouldAttachRunToActiveDuel(COUNTRIES[menuIndex].id)) { startDuelRace(); return; }
     enterRace(COUNTRIES[menuIndex]);
   });
   window.addEventListener('resize', () => { if (!screenMenu.hidden) { renderCarousel(); redrawAllPreviews(); } });
@@ -2453,7 +2457,6 @@
     clearTimeout(countdownTimer);
     countdownAbort = true;
     hideCarSprite();
-    requestGameFullscreen();
     screenRace.hidden = true;
     screenDuel.hidden = true;
     screenMenu.hidden = false;
@@ -2554,44 +2557,16 @@
     return { x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
   }
 
-  function requestGameFullscreen() {
-    // Tentative de plein écran via l'API standard du navigateur (masque la barre d'adresse
-    // dans l'onglet). Ça ne masque pas forcément la barre de statut Android tant que le jeu
-    // n'est pas installé via "Ajouter à l'écran d'accueil" (voir manifest.json) — mais ça reste
-    // un mieux pour ceux qui jouent directement depuis un onglet du navigateur. On ignore
-    // silencieusement tout échec : certains navigateurs mobiles refusent ou ne supportent pas
-    // l'API, et ça ne doit jamais bloquer le lancement d'une course.
-    //
-    // Le navigateur n'accepte requestFullscreen() que si l'appel part directement d'un geste
-    // utilisateur (clic/tap) sans détour asynchrone avant — d'où les nombreux points d'appel
-    // (lancement de course, retour au menu, tout premier tap de la session) plutôt qu'un seul
-    // appel à l'ouverture : si l'un échoue silencieusement selon le navigateur, un autre passera.
-    try {
-      if (document.fullscreenElement || document.webkitFullscreenElement) return;
-      const el = document.documentElement;
-      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-      if (!req) return;
-      const res = req.call(el);
-      if (res && typeof res.catch === 'function') res.catch(function () {});
-    } catch (e) {}
-  }
-
-  // Tout premier tap/clic de la session : encore une chance de déclencher le plein écran,
-  // au cas où l'appel fait depuis enterRace() n'ait pas été accepté par le navigateur (certains
-  // Android exigent que ce soit littéralement le tout premier geste de la page). Se retire
-  // après le premier essai, réussi ou non — ça ne doit jamais gêner les interactions normales.
-  (function () {
-    function tryOnce() {
-      document.removeEventListener('pointerdown', tryOnce, true);
-      document.removeEventListener('touchstart', tryOnce, true);
-      requestGameFullscreen();
-    }
-    document.addEventListener('pointerdown', tryOnce, true);
-    document.addEventListener('touchstart', tryOnce, true);
-  })();
+  // requestGameFullscreen() (API Fullscreen du navigateur, déclenchée en JS à plusieurs
+  // moments) a été RETIRÉE : elle forçait un mode plein écran "immersif" qui entrait en
+  // conflit avec le balayage pour ouvrir les notifications Android (l'appli reprenait la main
+  // par-dessus le panneau de notifications). Maintenant que le jeu a un vrai service worker +
+  // manifest (voir sw.js), l'installation via "Ajouter à l'écran d'accueil" masque déjà la
+  // barre d'adresse proprement, sans ce conflit — cette astuce JS, qui datait d'avant, n'est
+  // plus nécessaire et causait plus de tort que de bien. Ceux qui jouent depuis un simple
+  // onglet de navigateur (sans avoir installé l'appli) verront de nouveau la barre d'adresse.
 
   function enterRace(country) {
-    requestGameFullscreen();
     menuIndex = COUNTRIES.indexOf(country);
     current = country;
     const diff = DIFFICULTIES.find(d => d.id === selectedDifficulty) || DIFFICULTIES[1];
@@ -3258,7 +3233,7 @@
     overlay.classList.add('show');
 
     lastResult = { time: total, penalties: penalties };
-    if (activeDuel && activeDuel.cid === current.id) {
+    if (shouldAttachRunToActiveDuel(current.id)) {
       // Course lancée depuis un lien de défi : le temps s'ajoute automatiquement. Un seul
       // essai compte pour un défi — on ne propose donc pas de "Recommencer" ici (ça
       // resterait possible depuis l'écran Défis via "Relancer la course", en connaissance de
@@ -3744,6 +3719,17 @@
   function playerHasRunDuel(duel) {
     const key = currentRunKey();
     return (duel.runs || []).some(r => r.key === key);
+  }
+
+  // Un défi actif reste en mémoire (activeDuel) tant qu'on ne le quitte pas explicitement.
+  // Sans ce garde-fou, TOUTE course suivante sur le même circuit (même lancée depuis le menu
+  // principal, en pensant faire une course libre) continuait à écraser silencieusement le temps
+  // déjà posé sur ce défi au lieu de compter comme une course normale — c'était la cause des
+  // "courses qui ne sont pas prises en compte" une fois un défi déjà réalisé. Utilisée à la
+  // fois par "Lancer la course" (menu principal) et par finishRun() : les deux doivent tomber
+  // d'accord sur la même décision, sinon l'UI et le résultat réel se contrediraient.
+  function shouldAttachRunToActiveDuel(cid) {
+    return !!(activeDuel && activeDuel.cid === cid && !playerHasRunDuel(activeDuel));
   }
 
   function renderDuelPanel() {

@@ -673,6 +673,11 @@
     padding: 2px 2px 4px;
     margin-top: 24px;
     margin-bottom: 12px;
+    /* Toujours en LTR, même si la page est en arabe (RTL) : ce rail suit le même ordre et les
+       mêmes index que le carrousel juste en dessous, dont le calcul de position (voir
+       .carousel-track) suppose un défilement gauche→droite. Les mélanger casserait la
+       correspondance entre "drapeau tapé" et "carte mise en avant". */
+    direction: ltr;
   }
 
   .flag-rail::-webkit-scrollbar { display: none; }
@@ -715,6 +720,7 @@
     height: 100%;
     overflow: hidden;
     touch-action: pan-y;
+    direction: ltr;
   }
 
   .carousel-track {
@@ -722,6 +728,16 @@
     display: flex;
     align-items: center;
     will-change: transform;
+    /* Forcé en LTR : renderCarousel() positionne les cartes avec un calcul de pixels
+       (translateX = moitié de la largeur de la vitrine moins la position de la carte active)
+       qui suppose un ordre de gauche à droite. En RTL (arabe), le flex "row" par défaut
+       inverserait l'ordre ET le sens de départ des cartes, ce qui désaligne complètement ce
+       calcul et pousse la carte active hors de la zone visible — d'où les circuits invisibles
+       signalés par Julien. Garder ce carrousel en LTR (comme le fait YouTube/Netflix pour
+       leurs rangées de vignettes même en interface RTL) est plus simple et plus sûr que de
+       réécrire toutes les formules de position pour les deux sens.
+       Le texte à l'intérieur (nom du circuit) reste, lui, écrit dans son alphabet normal. */
+    direction: ltr;
   }
 
   .country-card {
@@ -1578,7 +1594,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-ag';
+  const BUILD_TAG = '2026-08-31-ah';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;

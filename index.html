@@ -73,7 +73,15 @@
     gap: 12px;
   }
 
-  .menu-head-titles { min-width: 0; }
+  .menu-head-titles { min-width: 0; display: flex; align-items: center; gap: 10px; }
+
+  .app-logo {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    display: block;
+  }
 
   .account-chip {
     flex: none;
@@ -1112,6 +1120,7 @@
     <div class="menu-head">
       <div class="menu-head-top">
         <div class="menu-head-titles">
+          <img class="app-logo" src="icon-192.png" alt="" width="38" height="38">
           <h1>F1 Finger Race</h1>
         </div>
         <button class="account-chip" id="accountChip" type="button" title="Mon compte">
@@ -1377,7 +1386,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-o';
+  const BUILD_TAG = '2026-08-31-p';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;

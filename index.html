@@ -73,14 +73,12 @@
     gap: 12px;
   }
 
-  .menu-head-titles { min-width: 0; }
-
-  .menu-head-right { flex: none; display: flex; align-items: center; gap: 10px; }
+  .menu-head-titles { min-width: 0; display: flex; align-items: center; gap: 10px; }
 
   .app-logo {
     flex: none;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 8px;
     display: block;
   }
@@ -1112,6 +1110,29 @@
   }
 
   .ghost-sprite .glass { background: rgba(215,236,255,0.6); }
+
+  .next-cp-pulse {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    border-radius: 50%;
+    border: 3px solid #ffb648;
+    background: rgba(255,182,72,0.3);
+    pointer-events: none;
+    z-index: 3;
+    display: none;
+    animation: nextCpPulse 0.9s ease-in-out infinite;
+  }
+
+  .next-cp-pulse.show { display: block; }
+
+  @keyframes nextCpPulse {
+    0%, 100% { transform: scale(0.85); opacity: 0.95; }
+    50% { transform: scale(1.7); opacity: 0.25; }
+  }
 </style>
 </head>
 <body>
@@ -1121,15 +1142,13 @@
     <div class="menu-head">
       <div class="menu-head-top">
         <div class="menu-head-titles">
+          <img class="app-logo" src="icon-192.png" alt="F1 Finger Race" width="36" height="36">
           <h1>F1 Finger Race</h1>
         </div>
-        <div class="menu-head-right">
-          <img class="app-logo" src="icon-192.png" alt="F1 Finger Race" width="34" height="34">
-          <button class="account-chip" id="accountChip" type="button" title="Mon compte">
-            <span class="account-avatar" id="accountAvatar">👤</span>
-            <span class="account-name" id="accountChipName">Compte</span>
-          </button>
-        </div>
+        <button class="account-chip" id="accountChip" type="button" title="Mon compte">
+          <span class="account-avatar" id="accountAvatar">👤</span>
+          <span class="account-name" id="accountChipName">Compte</span>
+        </button>
       </div>
       <p class="lede">Celui qui aura le doigt le plus rapide et le plus précis sera champion.</p>
 
@@ -1361,6 +1380,8 @@
   <div class="glass"></div>
 </div>
 
+<div class="next-cp-pulse" id="nextCpPulse"></div>
+
 <!-- Firebase (compte + défis partagés) — SDK "compat" pour rester en scripts classiques,
      sans étape de build. Chargé avant le script du jeu : firebase.initializeApp() a déjà
      tourné quand le script principal s'exécute. Si un bloqueur de script ou une coupure
@@ -1388,7 +1409,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-q';
+  const BUILD_TAG = '2026-08-31-r';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1537,6 +1558,7 @@
   const flashEl = document.getElementById('flash');
   const carSprite = document.getElementById('carSprite');
   const ghostSprite = document.getElementById('ghostSprite');
+  const nextCpPulseEl = document.getElementById('nextCpPulse');
   const overlay = document.getElementById('overlay');
   const resultTitle = document.getElementById('resultTitle');
   const resultSub = document.getElementById('resultSub');
@@ -2364,6 +2386,7 @@
     viewOffsetY = bounds.y - padY / s;
     drawScene();
     positionHudExtras();
+    updateNextCpPulse();
   }
 
   // Les feux de départ (et le chip de temps intermédiaire) se positionnent juste sous le HUD
@@ -2488,6 +2511,24 @@
 
   function checkpointRadius() { return Math.max(24, effectiveWidth * 0.8); }
 
+  // Anneau qui clignote en grossissant sur le PROCHAIN point de contrôle à atteindre, pour que
+  // le joueur comprenne tout de suite vers où aller (utile dès l'écran "prêt", avant même le
+  // départ). Élément DOM à part (pas dessiné sur le canvas) : un simple CSS @keyframes suffit,
+  // pas besoin de redessiner toute la scène en boucle juste pour cette pulsation.
+  function updateNextCpPulse() {
+    if (!nextCpPulseEl) return;
+    const visibleStates = state === 'ready' || state === 'countdown' || state === 'racing';
+    if (!current || screenRace.hidden || !visibleStates || nextCpPtr >= checkpoints.length) {
+      nextCpPulseEl.classList.remove('show');
+      return;
+    }
+    const pt = checkpointAnchors[nextCpPtr];
+    const [sx, sy] = logicalToScreen(pt[0], pt[1]);
+    nextCpPulseEl.style.left = sx + 'px';
+    nextCpPulseEl.style.top = sy + 'px';
+    nextCpPulseEl.classList.add('show');
+  }
+
   function drawTrailSegment(a, b, ok) {
     vctx.beginPath();
     vctx.moveTo(a[0], a[1]);
@@ -2563,6 +2604,7 @@
     drawScene();
     setBanner('');
     if (startHintEl) startHintEl.hidden = false;
+    updateNextCpPulse();
   }
 
   // ---------------- Son (feux de départ façon F1 + moteur qui suit la vitesse) ----------------
@@ -2607,33 +2649,53 @@
     osc.stop(t + duration + 0.03);
   }
 
-  function playLightOnBeep() { playBeep(1250, 0.065, 'sine'); }
+  // Décompte façon Mario Kart : un bip bref et net, identique à chaque feu (pas un ton grave
+  // "F1"), pour retrouver ce côté "arcade" plutôt qu'électronique.
+  function playLightOnBeep() { playBeep(880, 0.09, 'triangle'); }
 
   function playLightsOutBeep() {
-    // Signal de départ : deux impulsions qui plongent en fréquence, plus percutant qu'un
-    // simple bip — se rapproche du "vrooom" de lancement plutôt que d'un bip électronique.
+    // "GO !" façon Mario Kart : un envol de notes claires et ascendantes, façon fanfare
+    // d'arcade, à la place du grondement grave utilisé avant.
     const ctx = ensureAudioCtx();
     if (!ctx) return;
     const t = ctx.currentTime;
-    [{ delay: 0, f0: 560 }, { delay: 0.1, f0: 340 }].forEach(function (part) {
+    [{ delay: 0, f: 880 }, { delay: 0.09, f: 1109 }, { delay: 0.18, f: 1760 }].forEach(function (part) {
       const osc = ctx.createOscillator();
-      const filt = ctx.createBiquadFilter();
       const gain = ctx.createGain();
       const start = t + part.delay;
-      osc.type = 'sawtooth';
-      filt.type = 'lowpass';
-      filt.frequency.setValueAtTime(2200, start);
-      filt.frequency.exponentialRampToValueAtTime(500, start + 0.25);
-      osc.frequency.setValueAtTime(part.f0, start);
-      osc.frequency.exponentialRampToValueAtTime(part.f0 * 0.45, start + 0.28);
+      const dur = part.delay < 0.18 ? 0.11 : 0.32;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(part.f, start);
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.3, start + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.32);
-      osc.connect(filt);
-      filt.connect(gain);
+      gain.gain.exponentialRampToValueAtTime(0.3, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(start);
-      osc.stop(start + 0.36);
+      osc.stop(start + dur + 0.03);
+    });
+  }
+
+  // "Pièce" façon Mario Kart/Mario à chaque point de contrôle passé : deux notes carrées très
+  // brèves qui montent (B5 puis E6), le classique "ding !" — 100% synthétisé, pas de fichier
+  // audio à charger.
+  function playCheckpointChime() {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [{ delay: 0, f: 988, dur: 0.09 }, { delay: 0.07, f: 1319, dur: 0.16 }].forEach(function (part) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const start = t + part.delay;
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(part.f, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.2, start + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + part.dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + part.dur + 0.02);
     });
   }
 
@@ -2791,6 +2853,7 @@
     hideGhostSprite();
     stopEngineSound();
     setBanner('');
+    updateNextCpPulse();
 
     const best = getBest(current.id, selectedDifficulty, selectedDirection, selectedLaps);
     const isNewBest = best === null || total < best;
@@ -2895,6 +2958,7 @@
     hideCarSprite();
     stopEngineSound();
     setBanner('');
+    updateNextCpPulse();
     resultTitle.textContent = 'Raté !';
     resultSub.textContent = current.flag + ' ' + current.name;
     resultBody.innerHTML = '<div class="result-row"><span>' + message + '</span><span class="val"></span></div>';
@@ -2979,7 +3043,9 @@
   function onPointerDown(evt) {
     if (!current) return;
     const [lx, ly] = toLogical(evt);
-    if (state === 'racing' || state === 'countdown') return;
+    // Pendant un rejeu (fantôme solo ou défi), toucher le point de départ ne doit RIEN faire —
+    // seuls "Fermer le rejeu" et "Rejouer la lecture" doivent pouvoir en sortir.
+    if (state === 'racing' || state === 'countdown' || state === 'replay') return;
     if (dist(lx, ly, startGate.pos) > START_RADIUS) {
       setBanner('Pose le doigt sur le point blanc DÉPART / ARRIVÉE (D/A)');
       return;
@@ -3060,7 +3126,9 @@
       const cpPt = checkpointAnchors[nextCpPtr];
       if (dist(lx, ly, cpPt) < checkpointRadius()) {
         nextCpPtr += 1;
+        playCheckpointChime();
         drawScene();
+        updateNextCpPulse();
       }
     }
 
@@ -3074,6 +3142,10 @@
       if (nextCpPtr >= checkpoints.length) {
         lapJustCrossed = true;
         if (currentLap >= selectedLaps) {
+          // Le dernier tour aussi doit apparaître dans les temps par tour (avant, seul le
+          // temps total à l'arrivée existait pour ce tour — Julien voulait voir tous les tours,
+          // pas juste les N-1 premiers).
+          if (selectedLaps > 1) splits.push({ n: 'lap', lap: currentLap, t: elapsed });
           finishRun();
         } else {
           splits.push({ n: 'lap', lap: currentLap, t: elapsed });
@@ -3084,6 +3156,7 @@
           hudLapChip.textContent = 'Tour ' + currentLap + ' / ' + selectedLaps;
           setBanner('Tour ' + currentLap + ' / ' + selectedLaps + ' — vas-y !');
           drawScene();
+          updateNextCpPulse();
         }
       } else {
         setBanner('Passe par tous les points de contrôle oranges avant de ' + (selectedLaps > 1 ? 'boucler le tour' : 'finir') + ' !');

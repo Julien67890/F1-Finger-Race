@@ -185,6 +185,55 @@
     white-space: nowrap;
   }
 
+  .lang-chip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 2px;
+    padding: 0;
+  }
+
+  .lang-list {
+    margin-top: 14px;
+    text-align: left;
+    max-height: 55vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .lang-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 14.5px;
+    font-weight: 600;
+    font-family: 'Manrope', sans-serif;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .lang-row .lang-flag { font-size: 18px; flex: none; }
+  .lang-row .lang-label { flex: 1; }
+  .lang-row .lang-check { flex: none; opacity: 0; font-weight: 800; color: var(--accent); }
+  .lang-row.active { border-color: var(--accent); }
+  .lang-row.active .lang-check { opacity: 1; }
+
   .account-auth { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 
   .account-divider {
@@ -1232,31 +1281,32 @@
           <img class="app-logo" src="icon-192.png" alt="F1 Finger Race" width="36" height="36">
           <h1>F1 Finger Race</h1>
         </div>
-        <button class="account-chip" id="accountChip" type="button" title="Mon compte">
+        <button class="lang-chip" id="langChip" type="button" title="Choisir la langue" data-i18n-title="choose_language">🌐</button>
+        <button class="account-chip" id="accountChip" type="button" title="Mon compte" data-i18n-title="account_title">
           <span class="account-avatar" id="accountAvatar">👤</span>
           <span class="account-name" id="accountChipName">Compte</span>
         </button>
       </div>
-      <p class="lede">Un doigt. Une piste. Un champion. 🏆</p>
+      <p class="lede" data-i18n="slogan">Un doigt. Une piste. Un champion. 🏆</p>
 
       <div class="difficulty-picker">
         <div class="seg" id="difficultySeg">
-          <button class="seg-btn active" data-diff="debutant">Débutant</button>
-          <button class="seg-btn" data-diff="intermediaire">Intermédiaire</button>
-          <button class="seg-btn" data-diff="difficile">Difficile</button>
+          <button class="seg-btn active" data-diff="debutant" data-i18n="diff_debutant">Débutant</button>
+          <button class="seg-btn" data-diff="intermediaire" data-i18n="diff_intermediaire">Intermédiaire</button>
+          <button class="seg-btn" data-diff="difficile" data-i18n="diff_difficile">Difficile</button>
         </div>
       </div>
 
       <div class="settings-row">
         <div class="difficulty-picker">
-          <span class="difficulty-label">Sens</span>
+          <span class="difficulty-label" data-i18n="label_sens">Sens</span>
           <div class="seg" id="directionSeg">
-            <button class="seg-btn active" data-dir="normal">Normal</button>
-            <button class="seg-btn" data-dir="inverse">Inversé</button>
+            <button class="seg-btn active" data-dir="normal" data-i18n="dir_normal">Normal</button>
+            <button class="seg-btn" data-dir="inverse" data-i18n="dir_inverse">Inversé</button>
           </div>
         </div>
         <div class="difficulty-picker laps-picker">
-          <span class="difficulty-label">Tours</span>
+          <span class="difficulty-label" data-i18n="label_tours">Tours</span>
           <div class="seg" id="lapsSeg">
             <button class="seg-btn active" data-laps="1">1</button>
             <button class="seg-btn" data-laps="3">3</button>
@@ -1278,34 +1328,34 @@
     </div>
 
     <div class="menu-foot">
-      <button class="cta" id="launchBtn">Lancer la course</button>
-      <button class="cta ghost" id="historyBtn">Records</button>
-      <button class="cta ghost" id="challengeBtn" title="Voir mes défis">Défis</button>
+      <button class="cta" id="launchBtn" data-i18n="launch_race">Lancer la course</button>
+      <button class="cta ghost" id="historyBtn" data-i18n="records_btn">Records</button>
+      <button class="cta ghost" id="challengeBtn" title="Voir mes défis" data-i18n="challenges_btn" data-i18n-title="challenges_title_attr">Défis</button>
     </div>
 
     <div class="live-ticker" id="liveTicker">
       <span class="ticker-dot"></span>
-      <span class="ticker-text" id="tickerText"><span class="ticker-text-inner" id="tickerTextInner">Chargement…</span></span>
+      <span class="ticker-text" id="tickerText"><span class="ticker-text-inner" id="tickerTextInner" data-i18n="ticker_loading">Chargement…</span></span>
     </div>
 
     <div class="overlay" id="historyOverlay">
       <div class="result-card">
-        <h2 id="historyTitle">Historique</h2>
+        <h2 id="historyTitle" data-i18n="history_title">Historique</h2>
         <div class="sub" id="historySub"></div>
         <div class="history-list" id="menuHistoryList"></div>
         <div class="history-list" id="leaderboardSection">
-          <div class="history-title">Classement de la semaine</div>
+          <div class="history-title" data-i18n="leaderboard_title">Classement de la semaine</div>
           <div id="leaderboardList"></div>
         </div>
-        <button class="cta ghost" id="closeHistoryBtn">Fermer</button>
+        <button class="cta ghost" id="closeHistoryBtn" data-i18n="close">Fermer</button>
       </div>
     </div>
   </section>
 
   <section id="screenDuel" class="screen duel-screen" hidden>
     <div class="duel-screen-head">
-      <button class="hud-btn" id="duelBackBtn" title="Retour au menu">&larr;</button>
-      <h2>Défis</h2>
+      <button class="hud-btn" id="duelBackBtn" title="Retour au menu" data-i18n-title="back_to_menu_title">&larr;</button>
+      <h2 data-i18n="challenges_btn">Défis</h2>
     </div>
 
     <div class="duel-screen-body">
@@ -1317,16 +1367,16 @@
             <div class="duel-sub" id="duelSub"></div>
             <span class="duel-tag" id="duelTag"></span>
           </div>
-          <button class="duel-close" id="duelCloseBtn" type="button" title="Quitter ce défi">✕</button>
+          <button class="duel-close" id="duelCloseBtn" type="button" title="Quitter ce défi" data-i18n-title="duel_quit_title">✕</button>
         </div>
         <div class="duel-participants" id="duelParticipants"></div>
-        <button class="cta duel-play-btn" id="duelPlayBtn" type="button">Lancer la course</button>
+        <button class="cta duel-play-btn" id="duelPlayBtn" type="button" data-i18n="launch_race">Lancer la course</button>
         <button class="cta duel-play-btn" id="duelRematchBtn" type="button" hidden>Relancer un défi</button>
         <div class="duel-actions">
-          <button class="cta ghost small" id="duelCopyBtn" type="button">Partager le défi</button>
-          <button class="cta ghost small" id="duelDeleteBtn" type="button" hidden>🗑️ Supprimer</button>
-          <button class="cta ghost small" id="duelReplayBtn" type="button" hidden>Revoir en fantôme</button>
-          <button class="cta ghost small" id="duelRefreshBtn" type="button" title="Recharger ce défi">🔄 Actualiser</button>
+          <button class="cta ghost small" id="duelCopyBtn" type="button" data-i18n="duel_share_btn">Partager le défi</button>
+          <button class="cta ghost small" id="duelDeleteBtn" type="button" hidden data-i18n="duel_delete_btn">🗑️ Supprimer</button>
+          <button class="cta ghost small" id="duelReplayBtn" type="button" hidden data-i18n="duel_replay_btn">Revoir en fantôme</button>
+          <button class="cta ghost small" id="duelRefreshBtn" type="button" title="Recharger ce défi" data-i18n-title="duel_refresh_title" data-i18n="duel_refresh_btn">🔄 Actualiser</button>
         </div>
         <div class="duel-link-fallback" id="duelLinkFallback" hidden>
           <input type="text" id="duelLinkInput" readonly>
@@ -1334,21 +1384,21 @@
       </div>
 
       <div class="duel-empty" id="duelEmpty">
-        <p class="duel-empty-text">Aucun défi en cours pour <strong id="duelEmptyCircuit"></strong>.</p>
-        <button class="cta" id="duelCreateBtn" type="button">Défier un ami sur ce circuit</button>
-        <button class="cta ghost" id="duelCreatePublicBtn" type="button">Défier un adversaire (public)</button>
-        <p class="duel-empty-sub">« Défier un ami » : lien privé à partager toi-même. « Défier un adversaire » : visible de tous les joueurs sur ce circuit, n'importe qui peut le relever.</p>
+        <p class="duel-empty-text" id="duelEmptyText"></p>
+        <button class="cta" id="duelCreateBtn" type="button" data-i18n="duel_create_friend">Défier un ami sur ce circuit</button>
+        <button class="cta ghost" id="duelCreatePublicBtn" type="button" data-i18n="duel_create_public">Défier un adversaire (public)</button>
+        <p class="duel-empty-sub" data-i18n="duel_empty_sub">« Défier un ami » : lien privé à partager toi-même. « Défier un adversaire » : visible de tous les joueurs sur ce circuit, n'importe qui peut le relever.</p>
       </div>
 
       <div class="duel-history" id="publicDuelSection" hidden>
         <div class="duel-history-title-row">
-          <div class="duel-history-title section-public">🌍 Défis publics</div>
+          <div class="duel-history-title section-public" data-i18n="public_duels_title">🌍 Défis publics</div>
           <div class="duel-history-filters">
             <select class="public-duel-filter" id="publicDuelFilter"></select>
             <select class="public-duel-filter" id="publicDuelStatusFilter">
-              <option value="open">Ouverts</option>
-              <option value="done">Déjà réalisés</option>
-              <option value="all">Tous</option>
+              <option value="open" data-i18n="filter_open">Ouverts</option>
+              <option value="done" data-i18n="filter_done">Déjà réalisés</option>
+              <option value="all" data-i18n="filter_all">Tous</option>
             </select>
           </div>
         </div>
@@ -1356,12 +1406,12 @@
       </div>
 
       <div class="duel-history" id="duelToPlaySection" hidden>
-        <div class="duel-history-title section-toplay">⏳ Défis à relever</div>
+        <div class="duel-history-title section-toplay" data-i18n="duels_toplay_title">⏳ Défis à relever</div>
         <div id="duelToPlayList"></div>
       </div>
 
       <div class="duel-history" id="duelHistorySection" hidden>
-        <div class="duel-history-title section-done">✅ Défis réalisés</div>
+        <div class="duel-history-title section-done" data-i18n="duels_done_title">✅ Défis réalisés</div>
         <div id="duelHistoryList"></div>
       </div>
     </div>
@@ -1373,7 +1423,7 @@
 
     <div class="race-hud" id="raceHud">
       <div class="race-hud-side race-hud-left">
-        <button class="hud-btn" id="backBtn" title="Retour au menu">&larr;</button>
+        <button class="hud-btn" id="backBtn" title="Retour au menu" data-i18n-title="back_to_menu_title">&larr;</button>
         <div class="hud-chip" id="hudCountryChip"></div>
       </div>
       <div class="race-hud-center">
@@ -1384,7 +1434,7 @@
       <div class="race-hud-side race-hud-right"></div>
     </div>
 
-    <div class="start-hint" id="startHint">👆 Pose le doigt sur le point <strong>DÉPART / ARRIVÉE</strong> et reste immobile</div>
+    <div class="start-hint" id="startHint" data-i18n-html="start_hint_html">👆 Pose le doigt sur le point <strong>DÉPART / ARRIVÉE</strong> et reste immobile</div>
 
     <div class="flash" id="flash"></div>
     <div class="banner" id="banner"></div>
@@ -1400,52 +1450,52 @@
         <div class="sub" id="resultSub"></div>
         <div id="resultBody"></div>
         <div class="best-note" id="bestNote"></div>
-        <button class="cta ghost" id="viewRunBtn" hidden>Voir ma course</button>
+        <button class="cta ghost" id="viewRunBtn" hidden data-i18n="view_run_btn">Voir ma course</button>
         <div class="duel-panel duel-result-panel" id="duelResultPanel" hidden>
           <div class="duel-participants" id="duelResultParticipants"></div>
           <div class="duel-actions">
-            <button class="cta ghost small" id="duelResultCopyBtn" type="button">Partager le résultat</button>
-            <button class="cta ghost small" id="duelResultReplayBtn" type="button" hidden>Revoir en fantôme</button>
+            <button class="cta ghost small" id="duelResultCopyBtn" type="button" data-i18n="duel_share_result_btn">Partager le résultat</button>
+            <button class="cta ghost small" id="duelResultReplayBtn" type="button" hidden data-i18n="duel_replay_btn">Revoir en fantôme</button>
           </div>
         </div>
-        <button class="cta ghost" id="challengeResultBtn" hidden>Défier un ami avec ce temps</button>
+        <button class="cta ghost" id="challengeResultBtn" hidden data-i18n="challenge_result_btn">Défier un ami avec ce temps</button>
         <div class="history-list" id="historyList" hidden></div>
-        <button class="cta" id="retryBtn">Recommencer</button>
+        <button class="cta" id="retryBtn" data-i18n="retry_btn">Recommencer</button>
         <button class="cta ghost" id="menuBtn">Changer de circuit</button>
       </div>
     </div>
 
-    <button class="hud-btn review-back" id="reviewBackBtn" title="Retour au résultat" hidden>&larr;</button>
+    <button class="hud-btn review-back" id="reviewBackBtn" title="Retour au résultat" hidden data-i18n-title="review_back_title">&larr;</button>
 
     <div class="replay-hud" id="replayHud" hidden>
       <div class="replay-title" id="replayTitle">Rejeu du défi</div>
       <div class="replay-scroll" id="replayScroll">
         <div id="replayRows"></div>
       </div>
-      <button class="cta ghost" id="replayAgainBtn" type="button">🔁 Rejouer la lecture</button>
-      <button class="cta ghost" id="replayCloseBtn" type="button">Fermer le rejeu</button>
+      <button class="cta ghost" id="replayAgainBtn" type="button" data-i18n="replay_again_btn">🔁 Rejouer la lecture</button>
+      <button class="cta ghost" id="replayCloseBtn" type="button" data-i18n="replay_close_btn">Fermer le rejeu</button>
     </div>
     <div id="replayCars"></div>
   </section>
 
   <div class="overlay" id="accountOverlay">
     <div class="result-card">
-      <h2>Mon compte</h2>
+      <h2 data-i18n="account_title">Mon compte</h2>
 
       <div id="accountSignedOut">
-        <div class="sub">Ton prénom sert au classement dans les défis entre amis. Connecte-toi pour le retrouver sur tous tes appareils.</div>
+        <div class="sub" data-i18n="account_intro">Ton prénom sert au classement dans les défis entre amis. Connecte-toi pour le retrouver sur tous tes appareils.</div>
         <div class="player-name-row">
-          <input type="text" id="playerNameInput" placeholder="Ton prénom" maxlength="18" autocomplete="off">
+          <input type="text" id="playerNameInput" placeholder="Ton prénom" maxlength="18" autocomplete="off" data-i18n-placeholder="placeholder_firstname">
         </div>
 
         <div class="account-auth">
-          <button class="cta ghost" id="googleSignInBtn" type="button">🔵 Continuer avec Google</button>
-          <div class="account-divider"><span>ou par e-mail</span></div>
-          <input type="email" id="authEmailInput" class="account-input" placeholder="E-mail" autocomplete="email">
-          <input type="password" id="authPasswordInput" class="account-input" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
+          <button class="cta ghost" id="googleSignInBtn" type="button" data-i18n="google_signin">🔵 Continuer avec Google</button>
+          <div class="account-divider"><span data-i18n="or_email">ou par e-mail</span></div>
+          <input type="email" id="authEmailInput" class="account-input" placeholder="E-mail" autocomplete="email" data-i18n-placeholder="placeholder_email">
+          <input type="password" id="authPasswordInput" class="account-input" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password" data-i18n-placeholder="placeholder_password">
           <div class="account-auth-buttons">
-            <button class="cta ghost small" id="emailSignInBtn" type="button">Se connecter</button>
-            <button class="cta ghost small" id="emailSignUpBtn" type="button">Créer un compte</button>
+            <button class="cta ghost small" id="emailSignInBtn" type="button" data-i18n="signin_btn">Se connecter</button>
+            <button class="cta ghost small" id="emailSignUpBtn" type="button" data-i18n="signup_btn">Créer un compte</button>
           </div>
           <div class="account-auth-error" id="accountAuthError" hidden></div>
         </div>
@@ -1460,13 +1510,21 @@
           </div>
         </div>
         <div class="account-pseudo-row">
-          <input type="text" id="pseudoInput" class="account-input" placeholder="Pseudo affiché dans les défis" maxlength="18" autocomplete="off">
-          <button class="cta ghost small" id="savePseudoBtn" type="button">Enregistrer le pseudo</button>
+          <input type="text" id="pseudoInput" class="account-input" placeholder="Pseudo affiché dans les défis" maxlength="18" autocomplete="off" data-i18n-placeholder="placeholder_pseudo">
+          <button class="cta ghost small" id="savePseudoBtn" type="button" data-i18n="save_pseudo_btn">Enregistrer le pseudo</button>
         </div>
-        <button class="cta ghost" id="signOutBtn" type="button">Se déconnecter</button>
+        <button class="cta ghost" id="signOutBtn" type="button" data-i18n="signout_btn">Se déconnecter</button>
       </div>
 
-      <button class="cta" id="closeAccountBtn">Fermer</button>
+      <button class="cta" id="closeAccountBtn" data-i18n="close">Fermer</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="langOverlay">
+    <div class="result-card">
+      <h2 data-i18n="choose_language">Choisir la langue</h2>
+      <div class="lang-list" id="langList"></div>
+      <button class="cta ghost" id="closeLangBtn" data-i18n="close">Fermer</button>
     </div>
   </div>
 </div>
@@ -1520,7 +1578,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-af';
+  const BUILD_TAG = '2026-08-31-ag';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1529,52 +1587,2207 @@
   const FALSE_START_MOVE = 30;
   const LOGICAL_W = 1000, LOGICAL_H = 600;
 
+  // ==================== Internationalisation (i18n) ====================
+  // Toutes les langues sont embarquées dans ce même fichier (pas de fichier JSON séparé à
+  // charger) : poids ajouté négligeable face au reste du fichier, zéro requête réseau en plus,
+  // et le service worker n'a rien de plus à gérer. t(clé, variables) cherche la traduction dans
+  // la langue active, puis retombe sur l'anglais, puis sur le français, et enfin sur la clé
+  // elle-même — jamais d'erreur ni de texte vide même si une traduction manque quelque part.
+  const SUPPORTED_LANGS = ["fr", "en", "es", "pt", "de", "it", "nl", "ar", "ja", "zh", "id"];
+
+  const LANG_META = {
+    fr: { label: "Français", flag: "🇫🇷", locale: "fr-FR", rtl: false },
+    en: { label: "English", flag: "🇬🇧", locale: "en-GB", rtl: false },
+    es: { label: "Español", flag: "🇪🇸", locale: "es-ES", rtl: false },
+    pt: { label: "Português", flag: "🇧🇷", locale: "pt-BR", rtl: false },
+    de: { label: "Deutsch", flag: "🇩🇪", locale: "de-DE", rtl: false },
+    it: { label: "Italiano", flag: "🇮🇹", locale: "it-IT", rtl: false },
+    nl: { label: "Nederlands", flag: "🇳🇱", locale: "nl-NL", rtl: false },
+    ar: { label: "العربية", flag: "🇸🇦", locale: "ar-SA", rtl: true },
+    ja: { label: "日本語", flag: "🇯🇵", locale: "ja-JP", rtl: false },
+    zh: { label: "中文", flag: "🇨🇳", locale: "zh-CN", rtl: false },
+    id: { label: "Bahasa Indonesia", flag: "🇮🇩", locale: "id-ID", rtl: false },
+  };
+
+  const STRINGS = {
+    fr: {
+      "slogan": "Un doigt. Une piste. Un champion. 🏆",
+      "account_title": "Mon compte",
+      "account_default_name": "Compte",
+      "label_sens": "Sens",
+      "dir_normal": "Normal",
+      "dir_inverse": "Inversé",
+      "dir_normal_full": "Sens normal",
+      "dir_inverse_full": "Sens inversé",
+      "label_tours": "Tours",
+      "laps_unit_one": "tour",
+      "laps_unit_many": "tours",
+      "launch_race": "Lancer la course",
+      "records_btn": "Records",
+      "challenges_title_attr": "Voir mes défis",
+      "challenges_btn": "Défis",
+      "ticker_loading": "Chargement…",
+      "history_title": "Historique",
+      "leaderboard_title": "Classement de la semaine",
+      "close": "Fermer",
+      "choose_language": "Choisir la langue",
+      "back_to_menu_title": "Retour au menu",
+      "duel_quit_title": "Quitter ce défi",
+      "duel_share_btn": "Partager le défi",
+      "duel_delete_btn": "🗑️ Supprimer",
+      "duel_replay_btn": "Revoir en fantôme",
+      "duel_refresh_title": "Recharger ce défi",
+      "duel_refresh_btn": "🔄 Actualiser",
+      "duel_empty_p": "Aucun défi en cours pour {circuit}.",
+      "duel_create_friend": "Défier un ami sur ce circuit",
+      "duel_create_public": "Défier un adversaire (public)",
+      "duel_empty_sub": "« Défier un ami » : lien privé à partager toi-même. « Défier un adversaire » : visible de tous les joueurs sur ce circuit, n’importe qui peut le relever.",
+      "public_duels_title": "🌍 Défis publics",
+      "filter_open": "Ouverts",
+      "filter_done": "Déjà réalisés",
+      "filter_all": "Tous",
+      "duels_toplay_title": "⏳ Défis à relever",
+      "duels_done_title": "✅ Défis réalisés",
+      "duel_play_relever": "Relever le défi",
+      "duel_rematch_again": "🔁 Relancer un défi",
+      "duel_rematch_revenge": "🔥 Demander une revanche",
+      "duel_row_waiting": "Personne n’a encore couru ce défi — lance la course pour poser le premier temps !",
+      "duel_loading_title": "Chargement du défi…",
+      "duel_title_prefix": "Défi — {circuit}",
+      "duel_status_done": "✅ Défi réalisé",
+      "duel_status_todo": "🏁 Défi à relever",
+      "duel_participants_none": "Aucun temps posé — sois le premier !",
+      "duel_participants_one": "{n} participant déjà inscrit",
+      "duel_participants_many": "{n} participants déjà inscrits",
+      "duel_public_suffix": "{circuit} — Défi public",
+      "duel_public_label_bare": "Défi public",
+      "duel_public_done_badge": "✅ Réalisé",
+      "duel_public_new": "🆕 Nouveau défi public sur {circuit} — sois le premier à le relever !",
+      "duel_public_ongoing": "🌍 Défi public en cours sur {circuit} — viens le relever !",
+      "loading": "Chargement…",
+      "duel_public_none_done": "aucun défi public déjà réalisé",
+      "duel_public_none_open": "aucun défi public ouvert",
+      "duel_public_none_all": "aucun défi public",
+      "duel_public_none_cta": " — lance-toi !",
+      "duel_public_index_missing": "Défis publics pas encore activés : un index Firestore doit être créé une fois (lien dans la console du navigateur).",
+      "duel_public_load_error": "Impossible de charger les défis publics pour le moment.",
+      "duel_delete_tooltip": "Retirer ce défi de la liste",
+      "duel_delete_tooltip_confirm": "Retape pour confirmer la suppression",
+      "duel_conn_lost": "⚠️ Connexion perdue — appuie sur Actualiser",
+      "duel_refresh_fail": "Impossible d’actualiser ce défi ({error}).",
+      "duel_load_fail": "Impossible de charger ce défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).",
+      "link_copied": "Lien copié !",
+      "link_copy_prompt": "Copie ce lien pour défier ton ami :",
+      "share_title": "Défi F1 Finger Race",
+      "share_text": "Je te défie sur ce circuit dans F1 Finger Race !",
+      "duel_create_fail_conn": "Impossible de créer un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).",
+      "duel_create_fail": "Impossible de créer le défi ({error}).",
+      "duel_create_public_fail": "Impossible de créer le défi public ({error}).",
+      "duel_save_run_fail_conn": "Impossible d’enregistrer ce temps dans un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).",
+      "duel_supprimer_confirm": "Retirer ce défi de ta liste ? (il reste accessible à l’adversaire qui a le lien)",
+      "start_hint_html": "👆 Pose le doigt sur le point <strong>DÉPART / ARRIVÉE</strong> et reste immobile",
+      "banner_touch_start": "Pose le doigt sur le point blanc DÉPART / ARRIVÉE (D/A)",
+      "banner_wait_start": "Reste immobile... départ imminent",
+      "banner_in_race": "En course — reste sur la piste",
+      "banner_off_track": "Sortie de piste ! +{s} s — continue",
+      "banner_lap_progress": "Tour {lap} / {laps} — vas-y !",
+      "hud_lap_chip": "Tour {lap} / {laps}",
+      "checkpoints_hint": "Passe par tous les points de contrôle oranges avant de {action} !",
+      "action_close_lap": "boucler le tour",
+      "action_finish": "finir",
+      "false_start_moved": "Faux départ — tu as bougé avant l’extinction des feux",
+      "false_start_released": "Faux départ — tu as relâché avant l’extinction des feux",
+      "lifted_early": "Tu as levé le doigt avant la ligne d’arrivée",
+      "lap_done": "Tour {lap} terminé",
+      "result_title_finish": "Arrivée !",
+      "result_title_fail": "Raté !",
+      "result_raw_time": "Temps brut",
+      "result_offtrack_count": "Sorties de piste",
+      "result_penalties": "Pénalités",
+      "result_total": "Total",
+      "result_new_best": "🏁 Nouveau meilleur temps !",
+      "result_best_time": "Meilleur temps : {time}",
+      "view_run_btn": "Voir ma course",
+      "challenge_result_btn": "Défier un ami avec ce temps",
+      "retry_btn": "Recommencer",
+      "change_circuit_btn": "Changer de circuit",
+      "back_to_main_menu_btn": "Retour au menu principal",
+      "review_back_title": "Retour au résultat",
+      "replay_title_duel": "Rejeu du défi",
+      "replay_title_solo": "Rejeu de ta course",
+      "replay_again_btn": "🔁 Rejouer la lecture",
+      "replay_close_btn": "Fermer le rejeu",
+      "history_title_prefix": "Historique — {settings}",
+      "history_empty": "Aucun temps enregistré avec ces réglages pour le moment. Change la difficulté, le sens ou le nombre de tours ci-dessus pour voir un autre historique.",
+      "my_records_title": "Mes records",
+      "leaderboard_loading": "Chargement du classement…",
+      "leaderboard_index_missing": "Classement pas encore activé : un index Firestore doit être créé une fois (lien dans la console du navigateur).",
+      "account_intro": "Ton prénom sert au classement dans les défis entre amis. Connecte-toi pour le retrouver sur tous tes appareils.",
+      "placeholder_firstname": "Ton prénom",
+      "google_signin": "🔵 Continuer avec Google",
+      "or_email": "ou par e-mail",
+      "placeholder_email": "E-mail",
+      "placeholder_password": "Mot de passe (6 caractères min.)",
+      "signin_btn": "Se connecter",
+      "signup_btn": "Créer un compte",
+      "placeholder_pseudo": "Pseudo affiché dans les défis",
+      "save_pseudo_btn": "Enregistrer le pseudo",
+      "pseudo_saved": "Pseudo enregistré !",
+      "signout_btn": "Se déconnecter",
+      "name_prompt": "Ton prénom, pour le classement du défi ?",
+      "auth_conn_unavailable": "Connexion indisponible (Firebase non chargé).",
+      "auth_err_email_in_use": "Un compte existe déjà avec cet e-mail — essaie de te connecter plutôt.",
+      "auth_err_invalid_email": "Adresse e-mail invalide.",
+      "auth_err_weak_password": "Le mot de passe doit faire au moins 6 caractères.",
+      "auth_err_wrong_password": "Mot de passe incorrect.",
+      "auth_err_user_not_found": "Aucun compte avec cet e-mail — crée un compte d’abord.",
+      "auth_err_invalid_credential": "E-mail ou mot de passe incorrect.",
+      "auth_err_network": "Connexion impossible — vérifie ta connexion internet.",
+      "auth_err_generic": "Une erreur est survenue.",
+      "ticker_record_beaten": "🏆 {name} vient de battre le record sur {flag} {circuit} en {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart} !",
+      "ticker_you_hold_record": "👑 Tu détiens le record de {flag} {circuit} cette semaine !",
+      "ticker_gap_to_record": "🎯 Tu es à {gap} du record de {flag} {circuit} — file le battre !",
+      "ticker_current_record": "🏁 Record actuel sur {flag} {circuit} : {time} ({name})",
+      "weekly_reset_countdown": "⏳ Classement remis à zéro dans {countdown}",
+      "today_at": "aujourd’hui à {time}",
+      "yesterday_at": "hier à {time}",
+      "unit_day": "j",
+      "unit_hour": "h",
+      "unit_min": "min",
+      "leaderboard_offline": "Classement indisponible hors connexion.",
+      "leaderboard_nobody": "Personne n’a encore couru cette combinaison cette semaine.",
+      "leaderboard_load_error": "Impossible de charger le classement pour le moment.",
+      "default_player_name": "Joueur",
+      "hud_duel_suffix": " · Défi",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Rejeu",
+      "ticker_trending_circuit": "🔥 Circuit tendance cette semaine : {label} ({n} courses)",
+      "filter_all_circuits": "Tous les circuits",
+      "ghost_your_record": "ton record",
+      "ghost_default_label": "Fantôme",
+      "time_per_lap_title": "Temps par tour",
+      "your_time": "Ton temps : {time}",
+      "your_turn": "À toi de jouer !",
+      "duel_second_place": " · 2e",
+      "badge_public": "🌍 Public",
+      "badge_friend": "🔒 Ami",
+      "label_you": "Toi",
+      "label_opponent": "Adversaire",
+      "duel_public_none_scope_all": " pour l’instant",
+      "duel_public_none_scope_circuit": " sur ce circuit pour l’instant",
+      "duel_share_result_btn": "Partager le résultat",
+      "country_bahrein": "Bahreïn",
+      "country_arabie_saoudite": "Arabie saoudite",
+      "country_australie": "Australie",
+      "country_japon": "Japon",
+      "country_monaco": "Monaco",
+      "country_canada": "Canada",
+      "country_espagne": "Espagne",
+      "country_autriche": "Autriche",
+      "country_royaume_uni": "Royaume-Uni",
+      "country_hongrie": "Hongrie",
+      "country_belgique": "Belgique",
+      "country_pays_bas": "Pays-Bas",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Azerbaïdjan",
+      "country_singapour": "Singapour",
+      "country_etats_unis": "États-Unis",
+      "country_mexique": "Mexique",
+      "country_bresil": "Brésil",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abou Dhabi",
+      "diff_debutant": "Débutant",
+      "diff_intermediaire": "Intermédiaire",
+      "diff_difficile": "Difficile",
+    },
+    en: {
+      "slogan": "One finger. One track. One champion. 🏆",
+      "account_title": "My account",
+      "account_default_name": "Account",
+      "label_sens": "Direction",
+      "dir_normal": "Normal",
+      "dir_inverse": "Reversed",
+      "dir_normal_full": "Normal direction",
+      "dir_inverse_full": "Reversed direction",
+      "label_tours": "Laps",
+      "laps_unit_one": "lap",
+      "laps_unit_many": "laps",
+      "launch_race": "Start race",
+      "records_btn": "Records",
+      "challenges_title_attr": "View my challenges",
+      "challenges_btn": "Challenges",
+      "ticker_loading": "Loading…",
+      "history_title": "History",
+      "leaderboard_title": "This week’s leaderboard",
+      "close": "Close",
+      "choose_language": "Choose language",
+      "back_to_menu_title": "Back to menu",
+      "duel_quit_title": "Leave this challenge",
+      "duel_share_btn": "Share challenge",
+      "duel_delete_btn": "🗑️ Delete",
+      "duel_replay_btn": "Watch ghost replay",
+      "duel_refresh_title": "Reload this challenge",
+      "duel_refresh_btn": "🔄 Refresh",
+      "duel_empty_p": "No ongoing challenge for {circuit}.",
+      "duel_create_friend": "Challenge a friend on this track",
+      "duel_create_public": "Challenge an opponent (public)",
+      "duel_empty_sub": "“Challenge a friend”: a private link you share yourself. “Challenge an opponent”: visible to every player on this track, anyone can take it on.",
+      "public_duels_title": "🌍 Public challenges",
+      "filter_open": "Open",
+      "filter_done": "Already done",
+      "filter_all": "All",
+      "duels_toplay_title": "⏳ Challenges to play",
+      "duels_done_title": "✅ Completed challenges",
+      "duel_play_relever": "Take on the challenge",
+      "duel_rematch_again": "🔁 Start a new challenge",
+      "duel_rematch_revenge": "🔥 Ask for a rematch",
+      "duel_row_waiting": "No one has run this challenge yet — start the race to set the first time!",
+      "duel_loading_title": "Loading challenge…",
+      "duel_title_prefix": "Challenge — {circuit}",
+      "duel_status_done": "✅ Challenge done",
+      "duel_status_todo": "🏁 Challenge to take on",
+      "duel_participants_none": "No time set yet — be the first!",
+      "duel_participants_one": "{n} participant already in",
+      "duel_participants_many": "{n} participants already in",
+      "duel_public_suffix": "{circuit} — Public challenge",
+      "duel_public_label_bare": "Public challenge",
+      "duel_public_done_badge": "✅ Done",
+      "duel_public_new": "🆕 New public challenge on {circuit} — be the first to take it on!",
+      "duel_public_ongoing": "🌍 Public challenge underway on {circuit} — come take it on!",
+      "loading": "Loading…",
+      "duel_public_none_done": "no public challenge completed yet",
+      "duel_public_none_open": "no open public challenge",
+      "duel_public_none_all": "no public challenge",
+      "duel_public_none_cta": " — go for it!",
+      "duel_public_index_missing": "Public challenges not yet enabled: a Firestore index must be created once (link in the browser console).",
+      "duel_public_load_error": "Unable to load public challenges right now.",
+      "duel_delete_tooltip": "Remove this challenge from the list",
+      "duel_delete_tooltip_confirm": "Tap again to confirm deletion",
+      "duel_conn_lost": "⚠️ Connection lost — tap Refresh",
+      "duel_refresh_fail": "Unable to refresh this challenge ({error}).",
+      "duel_load_fail": "Unable to load this challenge: the challenge service is unavailable (check your internet connection).",
+      "link_copied": "Link copied!",
+      "link_copy_prompt": "Copy this link to challenge your friend:",
+      "share_title": "F1 Finger Race challenge",
+      "share_text": "I’m challenging you on this track in F1 Finger Race!",
+      "duel_create_fail_conn": "Unable to create a challenge: the challenge service is unavailable (check your internet connection).",
+      "duel_create_fail": "Unable to create the challenge ({error}).",
+      "duel_create_public_fail": "Unable to create the public challenge ({error}).",
+      "duel_save_run_fail_conn": "Unable to save this time to a challenge: the challenge service is unavailable (check your internet connection).",
+      "duel_supprimer_confirm": "Remove this challenge from your list? (it stays accessible to the opponent who has the link)",
+      "start_hint_html": "👆 Place your finger on the <strong>START / FINISH</strong> point and stay still",
+      "banner_touch_start": "Place your finger on the white START / FINISH point (S/F)",
+      "banner_wait_start": "Stay still… start imminent",
+      "banner_in_race": "Racing — stay on track",
+      "banner_off_track": "Off track! +{s} s — keep going",
+      "banner_lap_progress": "Lap {lap} / {laps} — go!",
+      "hud_lap_chip": "Lap {lap} / {laps}",
+      "checkpoints_hint": "Go through all the orange checkpoints before you {action}!",
+      "action_close_lap": "finishing the lap",
+      "action_finish": "finishing",
+      "false_start_moved": "False start — you moved before the lights went out",
+      "false_start_released": "False start — you lifted off before the lights went out",
+      "lifted_early": "You lifted your finger before the finish line",
+      "lap_done": "Lap {lap} done",
+      "result_title_finish": "Finish!",
+      "result_title_fail": "Failed!",
+      "result_raw_time": "Raw time",
+      "result_offtrack_count": "Off-track incidents",
+      "result_penalties": "Penalties",
+      "result_total": "Total",
+      "result_new_best": "🏁 New best time!",
+      "result_best_time": "Best time: {time}",
+      "view_run_btn": "Watch my run",
+      "challenge_result_btn": "Challenge a friend with this time",
+      "retry_btn": "Try again",
+      "change_circuit_btn": "Change track",
+      "back_to_main_menu_btn": "Back to main menu",
+      "review_back_title": "Back to result",
+      "replay_title_duel": "Challenge replay",
+      "replay_title_solo": "Your run replay",
+      "replay_again_btn": "🔁 Replay again",
+      "replay_close_btn": "Close replay",
+      "history_title_prefix": "History — {settings}",
+      "history_empty": "No time recorded with these settings yet. Change the difficulty, direction or number of laps above to see a different history.",
+      "my_records_title": "My records",
+      "leaderboard_loading": "Loading leaderboard…",
+      "leaderboard_index_missing": "Leaderboard not yet enabled: a Firestore index must be created once (link in the browser console).",
+      "account_intro": "Your first name is used for ranking in challenges between friends. Sign in to keep it across all your devices.",
+      "placeholder_firstname": "Your first name",
+      "google_signin": "🔵 Continue with Google",
+      "or_email": "or by email",
+      "placeholder_email": "Email",
+      "placeholder_password": "Password (6 characters min.)",
+      "signin_btn": "Sign in",
+      "signup_btn": "Create an account",
+      "placeholder_pseudo": "Nickname shown in challenges",
+      "save_pseudo_btn": "Save nickname",
+      "pseudo_saved": "Nickname saved!",
+      "signout_btn": "Sign out",
+      "name_prompt": "Your first name, for the challenge ranking?",
+      "auth_conn_unavailable": "Sign-in unavailable (Firebase not loaded).",
+      "auth_err_email_in_use": "An account already exists with this email — try signing in instead.",
+      "auth_err_invalid_email": "Invalid email address.",
+      "auth_err_weak_password": "Password must be at least 6 characters.",
+      "auth_err_wrong_password": "Incorrect password.",
+      "auth_err_user_not_found": "No account with this email — create an account first.",
+      "auth_err_invalid_credential": "Incorrect email or password.",
+      "auth_err_network": "Unable to connect — check your internet connection.",
+      "auth_err_generic": "An error occurred.",
+      "ticker_record_beaten": "🏆 {name} just beat the record on {flag} {circuit} in {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 You hold the record on {flag} {circuit} this week!",
+      "ticker_gap_to_record": "🎯 You’re {gap} away from the record on {flag} {circuit} — go beat it!",
+      "ticker_current_record": "🏁 Current record on {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ Leaderboard resets in {countdown}",
+      "today_at": "today at {time}",
+      "yesterday_at": "yesterday at {time}",
+      "unit_day": "d",
+      "unit_hour": "h",
+      "unit_min": "min",
+      "leaderboard_offline": "Leaderboard unavailable while offline.",
+      "leaderboard_nobody": "No one has run this combination yet this week.",
+      "leaderboard_load_error": "Unable to load the leaderboard right now.",
+      "default_player_name": "Player",
+      "hud_duel_suffix": " · Challenge",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Replay",
+      "ticker_trending_circuit": "🔥 Trending track this week: {label} ({n} races)",
+      "filter_all_circuits": "All tracks",
+      "ghost_your_record": "your record",
+      "ghost_default_label": "Ghost",
+      "time_per_lap_title": "Lap times",
+      "your_time": "Your time: {time}",
+      "your_turn": "Your turn!",
+      "duel_second_place": " · 2nd",
+      "badge_public": "🌍 Public",
+      "badge_friend": "🔒 Friend",
+      "label_you": "You",
+      "label_opponent": "Opponent",
+      "duel_public_none_scope_all": " for now",
+      "duel_public_none_scope_circuit": " on this track for now",
+      "duel_share_result_btn": "Share result",
+      "country_bahrein": "Bahrain",
+      "country_arabie_saoudite": "Saudi Arabia",
+      "country_australie": "Australia",
+      "country_japon": "Japan",
+      "country_monaco": "Monaco",
+      "country_canada": "Canada",
+      "country_espagne": "Spain",
+      "country_autriche": "Austria",
+      "country_royaume_uni": "United Kingdom",
+      "country_hongrie": "Hungary",
+      "country_belgique": "Belgium",
+      "country_pays_bas": "Netherlands",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Azerbaijan",
+      "country_singapour": "Singapore",
+      "country_etats_unis": "United States",
+      "country_mexique": "Mexico",
+      "country_bresil": "Brazil",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abu Dhabi",
+      "diff_debutant": "Beginner",
+      "diff_intermediaire": "Intermediate",
+      "diff_difficile": "Hard",
+    },
+    es: {
+      "slogan": "Un dedo. Un circuito. Un campeón. 🏆",
+      "account_title": "Mi cuenta",
+      "account_default_name": "Cuenta",
+      "label_sens": "Sentido",
+      "dir_normal": "Normal",
+      "dir_inverse": "Invertido",
+      "dir_normal_full": "Sentido normal",
+      "dir_inverse_full": "Sentido invertido",
+      "label_tours": "Vueltas",
+      "laps_unit_one": "vuelta",
+      "laps_unit_many": "vueltas",
+      "launch_race": "Empezar carrera",
+      "records_btn": "Récords",
+      "challenges_title_attr": "Ver mis desafíos",
+      "challenges_btn": "Desafíos",
+      "ticker_loading": "Cargando…",
+      "history_title": "Historial",
+      "leaderboard_title": "Clasificación de la semana",
+      "close": "Cerrar",
+      "choose_language": "Elegir idioma",
+      "back_to_menu_title": "Volver al menú",
+      "duel_quit_title": "Salir de este desafío",
+      "duel_share_btn": "Compartir desafío",
+      "duel_delete_btn": "🗑️ Eliminar",
+      "duel_replay_btn": "Ver repetición fantasma",
+      "duel_refresh_title": "Recargar este desafío",
+      "duel_refresh_btn": "🔄 Actualizar",
+      "duel_empty_p": "No hay ningún desafío en curso para {circuit}.",
+      "duel_create_friend": "Desafiar a un amigo en este circuito",
+      "duel_create_public": "Desafiar a un rival (público)",
+      "duel_empty_sub": "«Desafiar a un amigo»: enlace privado que compartes tú mismo. «Desafiar a un rival»: visible para todos los jugadores de este circuito, cualquiera puede aceptarlo.",
+      "public_duels_title": "🌍 Desafíos públicos",
+      "filter_open": "Abiertos",
+      "filter_done": "Ya realizados",
+      "filter_all": "Todos",
+      "duels_toplay_title": "⏳ Desafíos por jugar",
+      "duels_done_title": "✅ Desafíos realizados",
+      "duel_play_relever": "Aceptar el desafío",
+      "duel_rematch_again": "🔁 Lanzar otro desafío",
+      "duel_rematch_revenge": "🔥 Pedir la revancha",
+      "duel_row_waiting": "Nadie ha corrido este desafío todavía — ¡lanza la carrera para marcar el primer tiempo!",
+      "duel_loading_title": "Cargando el desafío…",
+      "duel_title_prefix": "Desafío — {circuit}",
+      "duel_status_done": "✅ Desafío realizado",
+      "duel_status_todo": "🏁 Desafío por aceptar",
+      "duel_participants_none": "Aún no hay tiempo marcado — ¡sé el primero!",
+      "duel_participants_one": "{n} participante ya inscrito",
+      "duel_participants_many": "{n} participantes ya inscritos",
+      "duel_public_suffix": "{circuit} — Desafío público",
+      "duel_public_label_bare": "Desafío público",
+      "duel_public_done_badge": "✅ Realizado",
+      "duel_public_new": "🆕 Nuevo desafío público en {circuit} — ¡sé el primero en aceptarlo!",
+      "duel_public_ongoing": "🌍 Desafío público en curso en {circuit} — ¡ven a aceptarlo!",
+      "loading": "Cargando…",
+      "duel_public_none_done": "ningún desafío público realizado todavía",
+      "duel_public_none_open": "ningún desafío público abierto",
+      "duel_public_none_all": "ningún desafío público",
+      "duel_public_none_cta": " — ¡anímate!",
+      "duel_public_index_missing": "Desafíos públicos aún no activados: hay que crear un índice de Firestore una vez (enlace en la consola del navegador).",
+      "duel_public_load_error": "No se pueden cargar los desafíos públicos por el momento.",
+      "duel_delete_tooltip": "Quitar este desafío de la lista",
+      "duel_delete_tooltip_confirm": "Vuelve a tocar para confirmar la eliminación",
+      "duel_conn_lost": "⚠️ Conexión perdida — pulsa Actualizar",
+      "duel_refresh_fail": "No se puede actualizar este desafío ({error}).",
+      "duel_load_fail": "No se puede cargar este desafío: el servicio de desafíos no está disponible (comprueba tu conexión a internet).",
+      "link_copied": "¡Enlace copiado!",
+      "link_copy_prompt": "Copia este enlace para desafiar a tu amigo:",
+      "share_title": "Desafío F1 Finger Race",
+      "share_text": "¡Te desafío en este circuito en F1 Finger Race!",
+      "duel_create_fail_conn": "No se puede crear un desafío: el servicio de desafíos no está disponible (comprueba tu conexión a internet).",
+      "duel_create_fail": "No se puede crear el desafío ({error}).",
+      "duel_create_public_fail": "No se puede crear el desafío público ({error}).",
+      "duel_save_run_fail_conn": "No se puede guardar este tiempo en un desafío: el servicio de desafíos no está disponible (comprueba tu conexión a internet).",
+      "duel_supprimer_confirm": "¿Quitar este desafío de tu lista? (seguirá accesible para el rival que tenga el enlace)",
+      "start_hint_html": "👆 Pon el dedo en el punto de <strong>SALIDA / META</strong> y no te muevas",
+      "banner_touch_start": "Pon el dedo en el punto blanco de SALIDA / META (S/M)",
+      "banner_wait_start": "No te muevas… la salida está cerca",
+      "banner_in_race": "En carrera — mantente en la pista",
+      "banner_off_track": "¡Fuera de pista! +{s} s — sigue",
+      "banner_lap_progress": "Vuelta {lap} / {laps} — ¡vamos!",
+      "hud_lap_chip": "Vuelta {lap} / {laps}",
+      "checkpoints_hint": "Pasa por todos los puntos de control naranjas antes de {action}!",
+      "action_close_lap": "completar la vuelta",
+      "action_finish": "terminar",
+      "false_start_moved": "Salida en falso — te moviste antes de que se apagaran las luces",
+      "false_start_released": "Salida en falso — soltaste antes de que se apagaran las luces",
+      "lifted_early": "Levantaste el dedo antes de la línea de meta",
+      "lap_done": "Vuelta {lap} completada",
+      "result_title_finish": "¡Meta!",
+      "result_title_fail": "¡Fallado!",
+      "result_raw_time": "Tiempo bruto",
+      "result_offtrack_count": "Salidas de pista",
+      "result_penalties": "Penalizaciones",
+      "result_total": "Total",
+      "result_new_best": "🏁 ¡Nuevo mejor tiempo!",
+      "result_best_time": "Mejor tiempo: {time}",
+      "view_run_btn": "Ver mi carrera",
+      "challenge_result_btn": "Desafiar a un amigo con este tiempo",
+      "retry_btn": "Reintentar",
+      "change_circuit_btn": "Cambiar de circuito",
+      "back_to_main_menu_btn": "Volver al menú principal",
+      "review_back_title": "Volver al resultado",
+      "replay_title_duel": "Repetición del desafío",
+      "replay_title_solo": "Repetición de tu carrera",
+      "replay_again_btn": "🔁 Repetir de nuevo",
+      "replay_close_btn": "Cerrar repetición",
+      "history_title_prefix": "Historial — {settings}",
+      "history_empty": "Todavía no hay ningún tiempo registrado con estos ajustes. Cambia la dificultad, el sentido o el número de vueltas arriba para ver otro historial.",
+      "my_records_title": "Mis récords",
+      "leaderboard_loading": "Cargando la clasificación…",
+      "leaderboard_index_missing": "Clasificación aún no activada: hay que crear un índice de Firestore una vez (enlace en la consola del navegador).",
+      "account_intro": "Tu nombre se usa para la clasificación en los desafíos entre amigos. Conéctate para conservarlo en todos tus dispositivos.",
+      "placeholder_firstname": "Tu nombre",
+      "google_signin": "🔵 Continuar con Google",
+      "or_email": "o por correo electrónico",
+      "placeholder_email": "Correo electrónico",
+      "placeholder_password": "Contraseña (6 caracteres mín.)",
+      "signin_btn": "Iniciar sesión",
+      "signup_btn": "Crear una cuenta",
+      "placeholder_pseudo": "Apodo mostrado en los desafíos",
+      "save_pseudo_btn": "Guardar el apodo",
+      "pseudo_saved": "¡Apodo guardado!",
+      "signout_btn": "Cerrar sesión",
+      "name_prompt": "¿Tu nombre, para la clasificación del desafío?",
+      "auth_conn_unavailable": "Conexión no disponible (Firebase no se cargó).",
+      "auth_err_email_in_use": "Ya existe una cuenta con este correo — intenta iniciar sesión en su lugar.",
+      "auth_err_invalid_email": "Dirección de correo no válida.",
+      "auth_err_weak_password": "La contraseña debe tener al menos 6 caracteres.",
+      "auth_err_wrong_password": "Contraseña incorrecta.",
+      "auth_err_user_not_found": "No hay ninguna cuenta con este correo — crea una cuenta primero.",
+      "auth_err_invalid_credential": "Correo o contraseña incorrectos.",
+      "auth_err_network": "No se puede conectar — comprueba tu conexión a internet.",
+      "auth_err_generic": "Se produjo un error.",
+      "ticker_record_beaten": "🏆 ¡{name} acaba de batir el récord en {flag} {circuit} en {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 ¡Tienes el récord de {flag} {circuit} esta semana!",
+      "ticker_gap_to_record": "🎯 Estás a {gap} del récord de {flag} {circuit} — ¡ve a batirlo!",
+      "ticker_current_record": "🏁 Récord actual en {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ La clasificación se reinicia en {countdown}",
+      "today_at": "hoy a las {time}",
+      "yesterday_at": "ayer a las {time}",
+      "unit_day": "d",
+      "unit_hour": "h",
+      "unit_min": "min",
+      "leaderboard_offline": "Clasificación no disponible sin conexión.",
+      "leaderboard_nobody": "Nadie ha corrido esta combinación todavía esta semana.",
+      "leaderboard_load_error": "No se puede cargar la clasificación por el momento.",
+      "default_player_name": "Jugador",
+      "hud_duel_suffix": " · Desafío",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Repetición",
+      "ticker_trending_circuit": "🔥 Circuito de moda esta semana: {label} ({n} carreras)",
+      "filter_all_circuits": "Todos los circuitos",
+      "ghost_your_record": "tu récord",
+      "ghost_default_label": "Fantasma",
+      "time_per_lap_title": "Tiempos por vuelta",
+      "your_time": "Tu tiempo: {time}",
+      "your_turn": "¡Te toca!",
+      "duel_second_place": " · 2.º",
+      "badge_public": "🌍 Público",
+      "badge_friend": "🔒 Amigo",
+      "label_you": "Tú",
+      "label_opponent": "Rival",
+      "duel_public_none_scope_all": " por ahora",
+      "duel_public_none_scope_circuit": " en este circuito por ahora",
+      "duel_share_result_btn": "Compartir resultado",
+      "country_bahrein": "Baréin",
+      "country_arabie_saoudite": "Arabia Saudí",
+      "country_australie": "Australia",
+      "country_japon": "Japón",
+      "country_monaco": "Mónaco",
+      "country_canada": "Canadá",
+      "country_espagne": "España",
+      "country_autriche": "Austria",
+      "country_royaume_uni": "Reino Unido",
+      "country_hongrie": "Hungría",
+      "country_belgique": "Bélgica",
+      "country_pays_bas": "Países Bajos",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Azerbaiyán",
+      "country_singapour": "Singapur",
+      "country_etats_unis": "Estados Unidos",
+      "country_mexique": "México",
+      "country_bresil": "Brasil",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abu Dabi",
+      "diff_debutant": "Principiante",
+      "diff_intermediaire": "Intermedio",
+      "diff_difficile": "Difícil",
+    },
+    pt: {
+      "slogan": "Um dedo. Um circuito. Um campeão. 🏆",
+      "account_title": "Minha conta",
+      "account_default_name": "Conta",
+      "label_sens": "Sentido",
+      "dir_normal": "Normal",
+      "dir_inverse": "Invertido",
+      "dir_normal_full": "Sentido normal",
+      "dir_inverse_full": "Sentido invertido",
+      "label_tours": "Voltas",
+      "laps_unit_one": "volta",
+      "laps_unit_many": "voltas",
+      "launch_race": "Iniciar corrida",
+      "records_btn": "Recordes",
+      "challenges_title_attr": "Ver meus desafios",
+      "challenges_btn": "Desafios",
+      "ticker_loading": "Carregando…",
+      "history_title": "Histórico",
+      "leaderboard_title": "Classificação da semana",
+      "close": "Fechar",
+      "choose_language": "Escolher idioma",
+      "back_to_menu_title": "Voltar ao menu",
+      "duel_quit_title": "Sair deste desafio",
+      "duel_share_btn": "Compartilhar desafio",
+      "duel_delete_btn": "🗑️ Excluir",
+      "duel_replay_btn": "Ver replay fantasma",
+      "duel_refresh_title": "Recarregar este desafio",
+      "duel_refresh_btn": "🔄 Atualizar",
+      "duel_empty_p": "Nenhum desafio em andamento para {circuit}.",
+      "duel_create_friend": "Desafiar um amigo neste circuito",
+      "duel_create_public": "Desafiar um adversário (público)",
+      "duel_empty_sub": "“Desafiar um amigo”: link privado que você mesmo compartilha. “Desafiar um adversário”: visível para todos os jogadores neste circuito, qualquer um pode aceitar.",
+      "public_duels_title": "🌍 Desafios públicos",
+      "filter_open": "Abertos",
+      "filter_done": "Já concluídos",
+      "filter_all": "Todos",
+      "duels_toplay_title": "⏳ Desafios a jogar",
+      "duels_done_title": "✅ Desafios concluídos",
+      "duel_play_relever": "Aceitar o desafio",
+      "duel_rematch_again": "🔁 Iniciar outro desafio",
+      "duel_rematch_revenge": "🔥 Pedir revanche",
+      "duel_row_waiting": "Ninguém correu esse desafio ainda — inicie a corrida para marcar o primeiro tempo!",
+      "duel_loading_title": "Carregando o desafio…",
+      "duel_title_prefix": "Desafio — {circuit}",
+      "duel_status_done": "✅ Desafio concluído",
+      "duel_status_todo": "🏁 Desafio a aceitar",
+      "duel_participants_none": "Nenhum tempo registrado ainda — seja o primeiro!",
+      "duel_participants_one": "{n} participante já inscrito",
+      "duel_participants_many": "{n} participantes já inscritos",
+      "duel_public_suffix": "{circuit} — Desafio público",
+      "duel_public_label_bare": "Desafio público",
+      "duel_public_done_badge": "✅ Concluído",
+      "duel_public_new": "🆕 Novo desafio público em {circuit} — seja o primeiro a aceitar!",
+      "duel_public_ongoing": "🌍 Desafio público em andamento em {circuit} — venha aceitar!",
+      "loading": "Carregando…",
+      "duel_public_none_done": "nenhum desafio público concluído ainda",
+      "duel_public_none_open": "nenhum desafio público aberto",
+      "duel_public_none_all": "nenhum desafio público",
+      "duel_public_none_cta": " — vá em frente!",
+      "duel_public_index_missing": "Desafios públicos ainda não ativados: é preciso criar um índice do Firestore uma vez (link no console do navegador).",
+      "duel_public_load_error": "Não foi possível carregar os desafios públicos no momento.",
+      "duel_delete_tooltip": "Remover este desafio da lista",
+      "duel_delete_tooltip_confirm": "Toque novamente para confirmar a exclusão",
+      "duel_conn_lost": "⚠️ Conexão perdida — toque em Atualizar",
+      "duel_refresh_fail": "Não foi possível atualizar este desafio ({error}).",
+      "duel_load_fail": "Não foi possível carregar este desafio: o serviço de desafios está indisponível (verifique sua conexão com a internet).",
+      "link_copied": "Link copiado!",
+      "link_copy_prompt": "Copie este link para desafiar seu amigo:",
+      "share_title": "Desafio F1 Finger Race",
+      "share_text": "Eu te desafio neste circuito no F1 Finger Race!",
+      "duel_create_fail_conn": "Não foi possível criar um desafio: o serviço de desafios está indisponível (verifique sua conexão com a internet).",
+      "duel_create_fail": "Não foi possível criar o desafio ({error}).",
+      "duel_create_public_fail": "Não foi possível criar o desafio público ({error}).",
+      "duel_save_run_fail_conn": "Não foi possível salvar esse tempo em um desafio: o serviço de desafios está indisponível (verifique sua conexão com a internet).",
+      "duel_supprimer_confirm": "Remover este desafio da sua lista? (ele continua acessível ao adversário que tem o link)",
+      "start_hint_html": "👆 Coloque o dedo no ponto de <strong>LARGADA / CHEGADA</strong> e fique parado",
+      "banner_touch_start": "Coloque o dedo no ponto branco de LARGADA / CHEGADA (L/C)",
+      "banner_wait_start": "Fique parado… largada iminente",
+      "banner_in_race": "Em corrida — fique na pista",
+      "banner_off_track": "Fora da pista! +{s} s — continue",
+      "banner_lap_progress": "Volta {lap} / {laps} — vai!",
+      "hud_lap_chip": "Volta {lap} / {laps}",
+      "checkpoints_hint": "Passe por todos os pontos de controle laranjas antes de {action}!",
+      "action_close_lap": "completar a volta",
+      "action_finish": "terminar",
+      "false_start_moved": "Largada em falso — você se moveu antes de as luzes apagarem",
+      "false_start_released": "Largada em falso — você soltou antes de as luzes apagarem",
+      "lifted_early": "Você levantou o dedo antes da linha de chegada",
+      "lap_done": "Volta {lap} concluída",
+      "result_title_finish": "Chegada!",
+      "result_title_fail": "Falhou!",
+      "result_raw_time": "Tempo bruto",
+      "result_offtrack_count": "Saídas de pista",
+      "result_penalties": "Penalidades",
+      "result_total": "Total",
+      "result_new_best": "🏁 Novo melhor tempo!",
+      "result_best_time": "Melhor tempo: {time}",
+      "view_run_btn": "Ver minha corrida",
+      "challenge_result_btn": "Desafiar um amigo com esse tempo",
+      "retry_btn": "Tentar de novo",
+      "change_circuit_btn": "Trocar de circuito",
+      "back_to_main_menu_btn": "Voltar ao menu principal",
+      "review_back_title": "Voltar ao resultado",
+      "replay_title_duel": "Replay do desafio",
+      "replay_title_solo": "Replay da sua corrida",
+      "replay_again_btn": "🔁 Reproduzir de novo",
+      "replay_close_btn": "Fechar replay",
+      "history_title_prefix": "Histórico — {settings}",
+      "history_empty": "Nenhum tempo registrado com essas configurações ainda. Mude a dificuldade, o sentido ou o número de voltas acima para ver outro histórico.",
+      "my_records_title": "Meus recordes",
+      "leaderboard_loading": "Carregando a classificação…",
+      "leaderboard_index_missing": "Classificação ainda não ativada: é preciso criar um índice do Firestore uma vez (link no console do navegador).",
+      "account_intro": "Seu primeiro nome é usado na classificação dos desafios entre amigos. Entre na conta para tê-lo em todos os seus dispositivos.",
+      "placeholder_firstname": "Seu primeiro nome",
+      "google_signin": "🔵 Continuar com o Google",
+      "or_email": "ou por e-mail",
+      "placeholder_email": "E-mail",
+      "placeholder_password": "Senha (mín. 6 caracteres)",
+      "signin_btn": "Entrar",
+      "signup_btn": "Criar uma conta",
+      "placeholder_pseudo": "Apelido exibido nos desafios",
+      "save_pseudo_btn": "Salvar apelido",
+      "pseudo_saved": "Apelido salvo!",
+      "signout_btn": "Sair",
+      "name_prompt": "Seu primeiro nome, para a classificação do desafio?",
+      "auth_conn_unavailable": "Conexão indisponível (Firebase não carregado).",
+      "auth_err_email_in_use": "Já existe uma conta com esse e-mail — tente entrar em vez disso.",
+      "auth_err_invalid_email": "Endereço de e-mail inválido.",
+      "auth_err_weak_password": "A senha deve ter pelo menos 6 caracteres.",
+      "auth_err_wrong_password": "Senha incorreta.",
+      "auth_err_user_not_found": "Nenhuma conta com esse e-mail — crie uma conta primeiro.",
+      "auth_err_invalid_credential": "E-mail ou senha incorretos.",
+      "auth_err_network": "Não foi possível conectar — verifique sua conexão com a internet.",
+      "auth_err_generic": "Ocorreu um erro.",
+      "ticker_record_beaten": "🏆 {name} acabou de bater o recorde em {flag} {circuit} no {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 Você tem o recorde de {flag} {circuit} esta semana!",
+      "ticker_gap_to_record": "🎯 Você está a {gap} do recorde de {flag} {circuit} — vá bater esse recorde!",
+      "ticker_current_record": "🏁 Recorde atual em {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ A classificação será zerada em {countdown}",
+      "today_at": "hoje às {time}",
+      "yesterday_at": "ontem às {time}",
+      "unit_day": "d",
+      "unit_hour": "h",
+      "unit_min": "min",
+      "leaderboard_offline": "Classificação indisponível offline.",
+      "leaderboard_nobody": "Ninguém correu essa combinação ainda esta semana.",
+      "leaderboard_load_error": "Não foi possível carregar a classificação no momento.",
+      "default_player_name": "Jogador",
+      "hud_duel_suffix": " · Desafio",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Replay",
+      "ticker_trending_circuit": "🔥 Circuito em alta esta semana: {label} ({n} corridas)",
+      "filter_all_circuits": "Todos os circuitos",
+      "ghost_your_record": "seu recorde",
+      "ghost_default_label": "Fantasma",
+      "time_per_lap_title": "Tempos por volta",
+      "your_time": "Seu tempo: {time}",
+      "your_turn": "Sua vez!",
+      "duel_second_place": " · 2º",
+      "badge_public": "🌍 Público",
+      "badge_friend": "🔒 Amigo",
+      "label_you": "Você",
+      "label_opponent": "Adversário",
+      "duel_public_none_scope_all": " por enquanto",
+      "duel_public_none_scope_circuit": " neste circuito por enquanto",
+      "duel_share_result_btn": "Compartilhar resultado",
+      "country_bahrein": "Barein",
+      "country_arabie_saoudite": "Arábia Saudita",
+      "country_australie": "Austrália",
+      "country_japon": "Japão",
+      "country_monaco": "Mônaco",
+      "country_canada": "Canadá",
+      "country_espagne": "Espanha",
+      "country_autriche": "Áustria",
+      "country_royaume_uni": "Reino Unido",
+      "country_hongrie": "Hungria",
+      "country_belgique": "Bélgica",
+      "country_pays_bas": "Países Baixos",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Azerbaijão",
+      "country_singapour": "Singapura",
+      "country_etats_unis": "Estados Unidos",
+      "country_mexique": "México",
+      "country_bresil": "Brasil",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abu Dhabi",
+      "diff_debutant": "Iniciante",
+      "diff_intermediaire": "Intermediário",
+      "diff_difficile": "Difícil",
+    },
+    de: {
+      "slogan": "Ein Finger. Eine Strecke. Ein Champion. 🏆",
+      "account_title": "Mein Konto",
+      "account_default_name": "Konto",
+      "label_sens": "Richtung",
+      "dir_normal": "Normal",
+      "dir_inverse": "Umgekehrt",
+      "dir_normal_full": "Normale Richtung",
+      "dir_inverse_full": "Umgekehrte Richtung",
+      "label_tours": "Runden",
+      "laps_unit_one": "Runde",
+      "laps_unit_many": "Runden",
+      "launch_race": "Rennen starten",
+      "records_btn": "Rekorde",
+      "challenges_title_attr": "Meine Duelle ansehen",
+      "challenges_btn": "Duelle",
+      "ticker_loading": "Wird geladen…",
+      "history_title": "Verlauf",
+      "leaderboard_title": "Bestenliste der Woche",
+      "close": "Schließen",
+      "choose_language": "Sprache wählen",
+      "back_to_menu_title": "Zurück zum Menü",
+      "duel_quit_title": "Dieses Duell verlassen",
+      "duel_share_btn": "Duell teilen",
+      "duel_delete_btn": "🗑️ Löschen",
+      "duel_replay_btn": "Geister-Wiederholung ansehen",
+      "duel_refresh_title": "Dieses Duell neu laden",
+      "duel_refresh_btn": "🔄 Aktualisieren",
+      "duel_empty_p": "Kein laufendes Duell für {circuit}.",
+      "duel_create_friend": "Einen Freund auf dieser Strecke herausfordern",
+      "duel_create_public": "Einen Gegner herausfordern (öffentlich)",
+      "duel_empty_sub": "„Einen Freund herausfordern“: privater Link, den du selbst teilst. „Einen Gegner herausfordern“: für alle Spieler auf dieser Strecke sichtbar, jeder kann ihn annehmen.",
+      "public_duels_title": "🌍 Öffentliche Duelle",
+      "filter_open": "Offen",
+      "filter_done": "Bereits erledigt",
+      "filter_all": "Alle",
+      "duels_toplay_title": "⏳ Offene Duelle",
+      "duels_done_title": "✅ Erledigte Duelle",
+      "duel_play_relever": "Herausforderung annehmen",
+      "duel_rematch_again": "🔁 Neues Duell starten",
+      "duel_rematch_revenge": "🔥 Revanche fordern",
+      "duel_row_waiting": "Noch niemand hat dieses Duell gefahren — starte das Rennen und stelle die erste Zeit auf!",
+      "duel_loading_title": "Duell wird geladen…",
+      "duel_title_prefix": "Duell — {circuit}",
+      "duel_status_done": "✅ Duell erledigt",
+      "duel_status_todo": "🏁 Herausforderung offen",
+      "duel_participants_none": "Noch keine Zeit gesetzt — sei der Erste!",
+      "duel_participants_one": "{n} Teilnehmer bereits dabei",
+      "duel_participants_many": "{n} Teilnehmer bereits dabei",
+      "duel_public_suffix": "{circuit} — Öffentliches Duell",
+      "duel_public_label_bare": "Öffentliches Duell",
+      "duel_public_done_badge": "✅ Erledigt",
+      "duel_public_new": "🆕 Neues öffentliches Duell auf {circuit} — nimm es als Erster an!",
+      "duel_public_ongoing": "🌍 Öffentliches Duell läuft auf {circuit} — nimm es an!",
+      "loading": "Wird geladen…",
+      "duel_public_none_done": "noch kein öffentliches Duell erledigt",
+      "duel_public_none_open": "kein offenes öffentliches Duell",
+      "duel_public_none_all": "kein öffentliches Duell",
+      "duel_public_none_cta": " — leg los!",
+      "duel_public_index_missing": "Öffentliche Duelle noch nicht aktiviert: ein Firestore-Index muss einmalig erstellt werden (Link in der Browser-Konsole).",
+      "duel_public_load_error": "Öffentliche Duelle können gerade nicht geladen werden.",
+      "duel_delete_tooltip": "Dieses Duell aus der Liste entfernen",
+      "duel_delete_tooltip_confirm": "Nochmal tippen, um das Löschen zu bestätigen",
+      "duel_conn_lost": "⚠️ Verbindung verloren — tippe auf Aktualisieren",
+      "duel_refresh_fail": "Dieses Duell kann nicht aktualisiert werden ({error}).",
+      "duel_load_fail": "Dieses Duell kann nicht geladen werden: der Duell-Dienst ist nicht verfügbar (prüfe deine Internetverbindung).",
+      "link_copied": "Link kopiert!",
+      "link_copy_prompt": "Kopiere diesen Link, um deinen Freund herauszufordern:",
+      "share_title": "F1 Finger Race Duell",
+      "share_text": "Ich fordere dich auf dieser Strecke in F1 Finger Race heraus!",
+      "duel_create_fail_conn": "Duell kann nicht erstellt werden: der Duell-Dienst ist nicht verfügbar (prüfe deine Internetverbindung).",
+      "duel_create_fail": "Duell kann nicht erstellt werden ({error}).",
+      "duel_create_public_fail": "Öffentliches Duell kann nicht erstellt werden ({error}).",
+      "duel_save_run_fail_conn": "Diese Zeit kann nicht in einem Duell gespeichert werden: der Duell-Dienst ist nicht verfügbar (prüfe deine Internetverbindung).",
+      "duel_supprimer_confirm": "Dieses Duell aus deiner Liste entfernen? (bleibt für den Gegner mit dem Link weiterhin zugänglich)",
+      "start_hint_html": "👆 Lege den Finger auf den <strong>START-/ZIELPUNKT</strong> und halte still",
+      "banner_touch_start": "Lege den Finger auf den weißen START-/ZIELPUNKT (S/Z)",
+      "banner_wait_start": "Bleib still... Start steht bevor",
+      "banner_in_race": "Im Rennen — bleib auf der Strecke",
+      "banner_off_track": "Von der Strecke abgekommen! +{s} s — weiter geht’s",
+      "banner_lap_progress": "Runde {lap} / {laps} — los!",
+      "hud_lap_chip": "Runde {lap} / {laps}",
+      "checkpoints_hint": "Fahre durch alle orangefarbenen Kontrollpunkte, bevor du {action}!",
+      "action_close_lap": "die Runde abzuschließen",
+      "action_finish": "zu beenden",
+      "false_start_moved": "Fehlstart — du hast dich bewegt, bevor die Ampel erlosch",
+      "false_start_released": "Fehlstart — du hast losgelassen, bevor die Ampel erlosch",
+      "lifted_early": "Du hast den Finger vor der Ziellinie angehoben",
+      "lap_done": "Runde {lap} beendet",
+      "result_title_finish": "Ziel!",
+      "result_title_fail": "Fehlgeschlagen!",
+      "result_raw_time": "Rohzeit",
+      "result_offtrack_count": "Ausritte von der Strecke",
+      "result_penalties": "Strafen",
+      "result_total": "Gesamt",
+      "result_new_best": "🏁 Neue Bestzeit!",
+      "result_best_time": "Bestzeit: {time}",
+      "view_run_btn": "Mein Rennen ansehen",
+      "challenge_result_btn": "Einen Freund mit dieser Zeit herausfordern",
+      "retry_btn": "Erneut versuchen",
+      "change_circuit_btn": "Strecke wechseln",
+      "back_to_main_menu_btn": "Zurück zum Hauptmenü",
+      "review_back_title": "Zurück zum Ergebnis",
+      "replay_title_duel": "Duell-Wiederholung",
+      "replay_title_solo": "Wiederholung deines Rennens",
+      "replay_again_btn": "🔁 Wiederholung erneut abspielen",
+      "replay_close_btn": "Wiederholung schließen",
+      "history_title_prefix": "Verlauf — {settings}",
+      "history_empty": "Mit diesen Einstellungen wurde noch keine Zeit aufgezeichnet. Ändere oben Schwierigkeit, Richtung oder Rundenzahl, um einen anderen Verlauf zu sehen.",
+      "my_records_title": "Meine Rekorde",
+      "leaderboard_loading": "Bestenliste wird geladen…",
+      "leaderboard_index_missing": "Bestenliste noch nicht aktiviert: ein Firestore-Index muss einmalig erstellt werden (Link in der Browser-Konsole).",
+      "account_intro": "Dein Vorname wird für die Rangliste bei Duellen mit Freunden verwendet. Melde dich an, um ihn auf allen deinen Geräten zu behalten.",
+      "placeholder_firstname": "Dein Vorname",
+      "google_signin": "🔵 Weiter mit Google",
+      "or_email": "oder per E-Mail",
+      "placeholder_email": "E-Mail",
+      "placeholder_password": "Passwort (mind. 6 Zeichen)",
+      "signin_btn": "Anmelden",
+      "signup_btn": "Konto erstellen",
+      "placeholder_pseudo": "In Duellen angezeigter Spitzname",
+      "save_pseudo_btn": "Spitzname speichern",
+      "pseudo_saved": "Spitzname gespeichert!",
+      "signout_btn": "Abmelden",
+      "name_prompt": "Dein Vorname für die Duell-Rangliste?",
+      "auth_conn_unavailable": "Anmeldung nicht verfügbar (Firebase nicht geladen).",
+      "auth_err_email_in_use": "Mit dieser E-Mail existiert bereits ein Konto — versuche dich stattdessen anzumelden.",
+      "auth_err_invalid_email": "Ungültige E-Mail-Adresse.",
+      "auth_err_weak_password": "Das Passwort muss mindestens 6 Zeichen lang sein.",
+      "auth_err_wrong_password": "Falsches Passwort.",
+      "auth_err_user_not_found": "Kein Konto mit dieser E-Mail — erstelle zuerst ein Konto.",
+      "auth_err_invalid_credential": "E-Mail oder Passwort falsch.",
+      "auth_err_network": "Verbindung nicht möglich — prüfe deine Internetverbindung.",
+      "auth_err_generic": "Ein Fehler ist aufgetreten.",
+      "ticker_record_beaten": "🏆 {name} hat gerade den Rekord auf {flag} {circuit} gebrochen ({diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}){marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 Du hältst diese Woche den Rekord auf {flag} {circuit}!",
+      "ticker_gap_to_record": "🎯 Du bist {gap} vom Rekord auf {flag} {circuit} entfernt — schlag ihn!",
+      "ticker_current_record": "🏁 Aktueller Rekord auf {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ Bestenliste wird in {countdown} zurückgesetzt",
+      "today_at": "heute um {time}",
+      "yesterday_at": "gestern um {time}",
+      "unit_day": "T",
+      "unit_hour": "Std",
+      "unit_min": "Min",
+      "leaderboard_offline": "Bestenliste ohne Verbindung nicht verfügbar.",
+      "leaderboard_nobody": "Diese Kombination wurde diese Woche noch von niemandem gefahren.",
+      "leaderboard_load_error": "Bestenliste kann gerade nicht geladen werden.",
+      "default_player_name": "Spieler",
+      "hud_duel_suffix": " · Duell",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Wiederholung",
+      "ticker_trending_circuit": "🔥 Angesagte Strecke diese Woche: {label} ({n} Rennen)",
+      "filter_all_circuits": "Alle Strecken",
+      "ghost_your_record": "deinem Rekord",
+      "ghost_default_label": "Geist",
+      "time_per_lap_title": "Rundenzeiten",
+      "your_time": "Deine Zeit: {time}",
+      "your_turn": "Du bist dran!",
+      "duel_second_place": " · 2.",
+      "badge_public": "🌍 Öffentlich",
+      "badge_friend": "🔒 Freund",
+      "label_you": "Du",
+      "label_opponent": "Gegner",
+      "duel_public_none_scope_all": " vorerst",
+      "duel_public_none_scope_circuit": " auf dieser Strecke vorerst",
+      "duel_share_result_btn": "Ergebnis teilen",
+      "country_bahrein": "Bahrain",
+      "country_arabie_saoudite": "Saudi-Arabien",
+      "country_australie": "Australien",
+      "country_japon": "Japan",
+      "country_monaco": "Monaco",
+      "country_canada": "Kanada",
+      "country_espagne": "Spanien",
+      "country_autriche": "Österreich",
+      "country_royaume_uni": "Vereinigtes Königreich",
+      "country_hongrie": "Ungarn",
+      "country_belgique": "Belgien",
+      "country_pays_bas": "Niederlande",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Aserbaidschan",
+      "country_singapour": "Singapur",
+      "country_etats_unis": "USA",
+      "country_mexique": "Mexiko",
+      "country_bresil": "Brasilien",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abu Dhabi",
+      "diff_debutant": "Anfänger",
+      "diff_intermediaire": "Mittel",
+      "diff_difficile": "Schwer",
+    },
+    it: {
+      "slogan": "Un dito. Un circuito. Un campione. 🏆",
+      "account_title": "Il mio account",
+      "account_default_name": "Account",
+      "label_sens": "Senso",
+      "dir_normal": "Normale",
+      "dir_inverse": "Invertito",
+      "dir_normal_full": "Senso normale",
+      "dir_inverse_full": "Senso invertito",
+      "label_tours": "Giri",
+      "laps_unit_one": "giro",
+      "laps_unit_many": "giri",
+      "launch_race": "Avvia gara",
+      "records_btn": "Record",
+      "challenges_title_attr": "Vedi le mie sfide",
+      "challenges_btn": "Sfide",
+      "ticker_loading": "Caricamento…",
+      "history_title": "Cronologia",
+      "leaderboard_title": "Classifica della settimana",
+      "close": "Chiudi",
+      "choose_language": "Scegli la lingua",
+      "back_to_menu_title": "Torna al menu",
+      "duel_quit_title": "Esci da questa sfida",
+      "duel_share_btn": "Condividi sfida",
+      "duel_delete_btn": "🗑️ Elimina",
+      "duel_replay_btn": "Rivedi il replay fantasma",
+      "duel_refresh_title": "Ricarica questa sfida",
+      "duel_refresh_btn": "🔄 Aggiorna",
+      "duel_empty_p": "Nessuna sfida in corso per {circuit}.",
+      "duel_create_friend": "Sfida un amico su questo circuito",
+      "duel_create_public": "Sfida un avversario (pubblica)",
+      "duel_empty_sub": "«Sfida un amico»: link privato che condividi tu stesso. «Sfida un avversario»: visibile a tutti i giocatori su questo circuito, chiunque può accettarla.",
+      "public_duels_title": "🌍 Sfide pubbliche",
+      "filter_open": "Aperte",
+      "filter_done": "Già completate",
+      "filter_all": "Tutte",
+      "duels_toplay_title": "⏳ Sfide da giocare",
+      "duels_done_title": "✅ Sfide completate",
+      "duel_play_relever": "Accetta la sfida",
+      "duel_rematch_again": "🔁 Avvia un’altra sfida",
+      "duel_rematch_revenge": "🔥 Chiedi la rivincita",
+      "duel_row_waiting": "Nessuno ha ancora corso questa sfida — avvia la gara per fissare il primo tempo!",
+      "duel_loading_title": "Caricamento della sfida…",
+      "duel_title_prefix": "Sfida — {circuit}",
+      "duel_status_done": "✅ Sfida completata",
+      "duel_status_todo": "🏁 Sfida da accettare",
+      "duel_participants_none": "Nessun tempo ancora — sii il primo!",
+      "duel_participants_one": "{n} partecipante già iscritto",
+      "duel_participants_many": "{n} partecipanti già iscritti",
+      "duel_public_suffix": "{circuit} — Sfida pubblica",
+      "duel_public_label_bare": "Sfida pubblica",
+      "duel_public_done_badge": "✅ Completata",
+      "duel_public_new": "🆕 Nuova sfida pubblica su {circuit} — sii il primo ad accettarla!",
+      "duel_public_ongoing": "🌍 Sfida pubblica in corso su {circuit} — vieni ad accettarla!",
+      "loading": "Caricamento…",
+      "duel_public_none_done": "nessuna sfida pubblica ancora completata",
+      "duel_public_none_open": "nessuna sfida pubblica aperta",
+      "duel_public_none_all": "nessuna sfida pubblica",
+      "duel_public_none_cta": " — lanciati!",
+      "duel_public_index_missing": "Sfide pubbliche non ancora attive: bisogna creare un indice Firestore una volta (link nella console del browser).",
+      "duel_public_load_error": "Impossibile caricare le sfide pubbliche al momento.",
+      "duel_delete_tooltip": "Rimuovi questa sfida dalla lista",
+      "duel_delete_tooltip_confirm": "Tocca di nuovo per confermare l’eliminazione",
+      "duel_conn_lost": "⚠️ Connessione persa — tocca Aggiorna",
+      "duel_refresh_fail": "Impossibile aggiornare questa sfida ({error}).",
+      "duel_load_fail": "Impossibile caricare questa sfida: il servizio sfide non è disponibile (controlla la tua connessione internet).",
+      "link_copied": "Link copiato!",
+      "link_copy_prompt": "Copia questo link per sfidare il tuo amico:",
+      "share_title": "Sfida F1 Finger Race",
+      "share_text": "Ti sfido su questo circuito in F1 Finger Race!",
+      "duel_create_fail_conn": "Impossibile creare una sfida: il servizio sfide non è disponibile (controlla la tua connessione internet).",
+      "duel_create_fail": "Impossibile creare la sfida ({error}).",
+      "duel_create_public_fail": "Impossibile creare la sfida pubblica ({error}).",
+      "duel_save_run_fail_conn": "Impossibile salvare questo tempo in una sfida: il servizio sfide non è disponibile (controlla la tua connessione internet).",
+      "duel_supprimer_confirm": "Rimuovere questa sfida dalla tua lista? (resta accessibile all’avversario che ha il link)",
+      "start_hint_html": "👆 Metti il dito sul punto <strong>PARTENZA / ARRIVO</strong> e resta fermo",
+      "banner_touch_start": "Metti il dito sul punto bianco PARTENZA / ARRIVO (P/A)",
+      "banner_wait_start": "Resta fermo... partenza imminente",
+      "banner_in_race": "In gara — resta in pista",
+      "banner_off_track": "Fuori pista! +{s} s — continua",
+      "banner_lap_progress": "Giro {lap} / {laps} — vai!",
+      "hud_lap_chip": "Giro {lap} / {laps}",
+      "checkpoints_hint": "Passa per tutti i checkpoint arancioni prima di {action}!",
+      "action_close_lap": "completare il giro",
+      "action_finish": "finire",
+      "false_start_moved": "Falsa partenza — ti sei mosso prima che si spegnessero le luci",
+      "false_start_released": "Falsa partenza — hai sollevato il dito prima che si spegnessero le luci",
+      "lifted_early": "Hai sollevato il dito prima del traguardo",
+      "lap_done": "Giro {lap} completato",
+      "result_title_finish": "Arrivo!",
+      "result_title_fail": "Fallito!",
+      "result_raw_time": "Tempo grezzo",
+      "result_offtrack_count": "Uscite di pista",
+      "result_penalties": "Penalità",
+      "result_total": "Totale",
+      "result_new_best": "🏁 Nuovo record personale!",
+      "result_best_time": "Miglior tempo: {time}",
+      "view_run_btn": "Guarda la mia gara",
+      "challenge_result_btn": "Sfida un amico con questo tempo",
+      "retry_btn": "Riprova",
+      "change_circuit_btn": "Cambia circuito",
+      "back_to_main_menu_btn": "Torna al menu principale",
+      "review_back_title": "Torna al risultato",
+      "replay_title_duel": "Replay della sfida",
+      "replay_title_solo": "Replay della tua gara",
+      "replay_again_btn": "🔁 Rivedi di nuovo",
+      "replay_close_btn": "Chiudi il replay",
+      "history_title_prefix": "Cronologia — {settings}",
+      "history_empty": "Nessun tempo registrato con queste impostazioni per ora. Cambia la difficoltà, il senso o il numero di giri qui sopra per vedere un’altra cronologia.",
+      "my_records_title": "I miei record",
+      "leaderboard_loading": "Caricamento della classifica…",
+      "leaderboard_index_missing": "Classifica non ancora attiva: bisogna creare un indice Firestore una volta (link nella console del browser).",
+      "account_intro": "Il tuo nome viene usato per la classifica nelle sfide tra amici. Accedi per ritrovarlo su tutti i tuoi dispositivi.",
+      "placeholder_firstname": "Il tuo nome",
+      "google_signin": "🔵 Continua con Google",
+      "or_email": "oppure via e-mail",
+      "placeholder_email": "E-mail",
+      "placeholder_password": "Password (min. 6 caratteri)",
+      "signin_btn": "Accedi",
+      "signup_btn": "Crea un account",
+      "placeholder_pseudo": "Nickname mostrato nelle sfide",
+      "save_pseudo_btn": "Salva il nickname",
+      "pseudo_saved": "Nickname salvato!",
+      "signout_btn": "Disconnetti",
+      "name_prompt": "Il tuo nome, per la classifica della sfida?",
+      "auth_conn_unavailable": "Accesso non disponibile (Firebase non caricato).",
+      "auth_err_email_in_use": "Esiste già un account con questa e-mail — prova ad accedere invece.",
+      "auth_err_invalid_email": "Indirizzo e-mail non valido.",
+      "auth_err_weak_password": "La password deve contenere almeno 6 caratteri.",
+      "auth_err_wrong_password": "Password errata.",
+      "auth_err_user_not_found": "Nessun account con questa e-mail — crea prima un account.",
+      "auth_err_invalid_credential": "E-mail o password errati.",
+      "auth_err_network": "Connessione impossibile — controlla la tua connessione internet.",
+      "auth_err_generic": "Si è verificato un errore.",
+      "ticker_record_beaten": "🏆 {name} ha appena battuto il record su {flag} {circuit} in {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 Detieni il record su {flag} {circuit} questa settimana!",
+      "ticker_gap_to_record": "🎯 Sei a {gap} dal record su {flag} {circuit} — vai a batterlo!",
+      "ticker_current_record": "🏁 Record attuale su {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ La classifica si azzera tra {countdown}",
+      "today_at": "oggi alle {time}",
+      "yesterday_at": "ieri alle {time}",
+      "unit_day": "g",
+      "unit_hour": "h",
+      "unit_min": "min",
+      "leaderboard_offline": "Classifica non disponibile offline.",
+      "leaderboard_nobody": "Nessuno ha ancora corso questa combinazione questa settimana.",
+      "leaderboard_load_error": "Impossibile caricare la classifica al momento.",
+      "default_player_name": "Giocatore",
+      "hud_duel_suffix": " · Sfida",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Replay",
+      "ticker_trending_circuit": "🔥 Circuito di tendenza questa settimana: {label} ({n} gare)",
+      "filter_all_circuits": "Tutti i circuiti",
+      "ghost_your_record": "il tuo record",
+      "ghost_default_label": "Fantasma",
+      "time_per_lap_title": "Tempi sul giro",
+      "your_time": "Il tuo tempo: {time}",
+      "your_turn": "Tocca a te!",
+      "duel_second_place": " · 2°",
+      "badge_public": "🌍 Pubblica",
+      "badge_friend": "🔒 Amico",
+      "label_you": "Tu",
+      "label_opponent": "Avversario",
+      "duel_public_none_scope_all": " per ora",
+      "duel_public_none_scope_circuit": " su questo circuito per ora",
+      "duel_share_result_btn": "Condividi risultato",
+      "country_bahrein": "Bahrein",
+      "country_arabie_saoudite": "Arabia Saudita",
+      "country_australie": "Australia",
+      "country_japon": "Giappone",
+      "country_monaco": "Monaco",
+      "country_canada": "Canada",
+      "country_espagne": "Spagna",
+      "country_autriche": "Austria",
+      "country_royaume_uni": "Regno Unito",
+      "country_hongrie": "Ungheria",
+      "country_belgique": "Belgio",
+      "country_pays_bas": "Paesi Bassi",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Azerbaigian",
+      "country_singapour": "Singapore",
+      "country_etats_unis": "Stati Uniti",
+      "country_mexique": "Messico",
+      "country_bresil": "Brasile",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abu Dhabi",
+      "diff_debutant": "Principiante",
+      "diff_intermediaire": "Intermedio",
+      "diff_difficile": "Difficile",
+    },
+    nl: {
+      "slogan": "Eén vinger. Eén circuit. Eén kampioen. 🏆",
+      "account_title": "Mijn account",
+      "account_default_name": "Account",
+      "label_sens": "Richting",
+      "dir_normal": "Normaal",
+      "dir_inverse": "Omgekeerd",
+      "dir_normal_full": "Normale richting",
+      "dir_inverse_full": "Omgekeerde richting",
+      "label_tours": "Rondes",
+      "laps_unit_one": "ronde",
+      "laps_unit_many": "rondes",
+      "launch_race": "Race starten",
+      "records_btn": "Records",
+      "challenges_title_attr": "Mijn uitdagingen bekijken",
+      "challenges_btn": "Uitdagingen",
+      "ticker_loading": "Laden…",
+      "history_title": "Geschiedenis",
+      "leaderboard_title": "Ranglijst van de week",
+      "close": "Sluiten",
+      "choose_language": "Taal kiezen",
+      "back_to_menu_title": "Terug naar menu",
+      "duel_quit_title": "Deze uitdaging verlaten",
+      "duel_share_btn": "Uitdaging delen",
+      "duel_delete_btn": "🗑️ Verwijderen",
+      "duel_replay_btn": "Ghost-replay bekijken",
+      "duel_refresh_title": "Deze uitdaging herladen",
+      "duel_refresh_btn": "🔄 Vernieuwen",
+      "duel_empty_p": "Geen lopende uitdaging voor {circuit}.",
+      "duel_create_friend": "Daag een vriend uit op dit circuit",
+      "duel_create_public": "Daag een tegenstander uit (openbaar)",
+      "duel_empty_sub": "\"Daag een vriend uit\": privélink die je zelf deelt. \"Daag een tegenstander uit\": zichtbaar voor alle spelers op dit circuit, iedereen kan hem aannemen.",
+      "public_duels_title": "🌍 Openbare uitdagingen",
+      "filter_open": "Open",
+      "filter_done": "Al gedaan",
+      "filter_all": "Alle",
+      "duels_toplay_title": "⏳ Nog te spelen uitdagingen",
+      "duels_done_title": "✅ Voltooide uitdagingen",
+      "duel_play_relever": "Uitdaging aannemen",
+      "duel_rematch_again": "🔁 Nieuwe uitdaging starten",
+      "duel_rematch_revenge": "🔥 Om een revanche vragen",
+      "duel_row_waiting": "Nog niemand heeft deze uitdaging gereden — start de race om de eerste tijd neer te zetten!",
+      "duel_loading_title": "Uitdaging wordt geladen…",
+      "duel_title_prefix": "Uitdaging — {circuit}",
+      "duel_status_done": "✅ Uitdaging voltooid",
+      "duel_status_todo": "🏁 Uitdaging om aan te nemen",
+      "duel_participants_none": "Nog geen tijd neergezet — wees de eerste!",
+      "duel_participants_one": "{n} deelnemer al meegedaan",
+      "duel_participants_many": "{n} deelnemers al meegedaan",
+      "duel_public_suffix": "{circuit} — Openbare uitdaging",
+      "duel_public_label_bare": "Openbare uitdaging",
+      "duel_public_done_badge": "✅ Voltooid",
+      "duel_public_new": "🆕 Nieuwe openbare uitdaging op {circuit} — wees de eerste die hem aanneemt!",
+      "duel_public_ongoing": "🌍 Openbare uitdaging bezig op {circuit} — kom hem aannemen!",
+      "loading": "Laden…",
+      "duel_public_none_done": "nog geen openbare uitdaging voltooid",
+      "duel_public_none_open": "geen open openbare uitdaging",
+      "duel_public_none_all": "geen openbare uitdaging",
+      "duel_public_none_cta": " — begin er zelf een!",
+      "duel_public_index_missing": "Openbare uitdagingen nog niet actief: er moet eenmalig een Firestore-index worden aangemaakt (link in de browserconsole).",
+      "duel_public_load_error": "Openbare uitdagingen kunnen momenteel niet worden geladen.",
+      "duel_delete_tooltip": "Deze uitdaging uit de lijst verwijderen",
+      "duel_delete_tooltip_confirm": "Tik nogmaals om verwijderen te bevestigen",
+      "duel_conn_lost": "⚠️ Verbinding verloren — tik op Vernieuwen",
+      "duel_refresh_fail": "Deze uitdaging kan niet worden vernieuwd ({error}).",
+      "duel_load_fail": "Deze uitdaging kan niet worden geladen: de uitdagingsservice is niet beschikbaar (controleer je internetverbinding).",
+      "link_copied": "Link gekopieerd!",
+      "link_copy_prompt": "Kopieer deze link om je vriend uit te dagen:",
+      "share_title": "F1 Finger Race-uitdaging",
+      "share_text": "Ik daag je uit op dit circuit in F1 Finger Race!",
+      "duel_create_fail_conn": "Kan geen uitdaging maken: de uitdagingsservice is niet beschikbaar (controleer je internetverbinding).",
+      "duel_create_fail": "Kan de uitdaging niet maken ({error}).",
+      "duel_create_public_fail": "Kan de openbare uitdaging niet maken ({error}).",
+      "duel_save_run_fail_conn": "Kan deze tijd niet opslaan in een uitdaging: de uitdagingsservice is niet beschikbaar (controleer je internetverbinding).",
+      "duel_supprimer_confirm": "Deze uitdaging uit je lijst verwijderen? (blijft toegankelijk voor de tegenstander met de link)",
+      "start_hint_html": "👆 Plaats je vinger op het <strong>START-/FINISHPUNT</strong> en blijf stilstaan",
+      "banner_touch_start": "Plaats je vinger op het witte START-/FINISHPUNT (S/F)",
+      "banner_wait_start": "Blijf stilstaan... start komt eraan",
+      "banner_in_race": "In de race — blijf op het circuit",
+      "banner_off_track": "Van de baan af! +{s} s — ga door",
+      "banner_lap_progress": "Ronde {lap} / {laps} — ga ervoor!",
+      "hud_lap_chip": "Ronde {lap} / {laps}",
+      "checkpoints_hint": "Rijd door alle oranje checkpoints voordat je {action}!",
+      "action_close_lap": "de ronde af te maken",
+      "action_finish": "te finishen",
+      "false_start_moved": "Valse start — je bewoog voordat de lichten doofden",
+      "false_start_released": "Valse start — je liet los voordat de lichten doofden",
+      "lifted_early": "Je hebt je vinger opgetild vóór de finishlijn",
+      "lap_done": "Ronde {lap} voltooid",
+      "result_title_finish": "Finish!",
+      "result_title_fail": "Mislukt!",
+      "result_raw_time": "Ruwe tijd",
+      "result_offtrack_count": "Baanuitgangen",
+      "result_penalties": "Straffen",
+      "result_total": "Totaal",
+      "result_new_best": "🏁 Nieuwe beste tijd!",
+      "result_best_time": "Beste tijd: {time}",
+      "view_run_btn": "Bekijk mijn race",
+      "challenge_result_btn": "Daag een vriend uit met deze tijd",
+      "retry_btn": "Opnieuw proberen",
+      "change_circuit_btn": "Circuit wijzigen",
+      "back_to_main_menu_btn": "Terug naar hoofdmenu",
+      "review_back_title": "Terug naar resultaat",
+      "replay_title_duel": "Uitdaging-replay",
+      "replay_title_solo": "Replay van jouw race",
+      "replay_again_btn": "🔁 Replay opnieuw afspelen",
+      "replay_close_btn": "Replay sluiten",
+      "history_title_prefix": "Geschiedenis — {settings}",
+      "history_empty": "Nog geen tijd geregistreerd met deze instellingen. Wijzig hierboven de moeilijkheidsgraad, richting of aantal rondes om een andere geschiedenis te zien.",
+      "my_records_title": "Mijn records",
+      "leaderboard_loading": "Ranglijst wordt geladen…",
+      "leaderboard_index_missing": "Ranglijst nog niet actief: er moet eenmalig een Firestore-index worden aangemaakt (link in de browserconsole).",
+      "account_intro": "Je voornaam wordt gebruikt voor de ranglijst bij uitdagingen tussen vrienden. Log in om hem op al je apparaten terug te vinden.",
+      "placeholder_firstname": "Je voornaam",
+      "google_signin": "🔵 Doorgaan met Google",
+      "or_email": "of via e-mail",
+      "placeholder_email": "E-mail",
+      "placeholder_password": "Wachtwoord (min. 6 tekens)",
+      "signin_btn": "Inloggen",
+      "signup_btn": "Account aanmaken",
+      "placeholder_pseudo": "Bijnaam getoond bij uitdagingen",
+      "save_pseudo_btn": "Bijnaam opslaan",
+      "pseudo_saved": "Bijnaam opgeslagen!",
+      "signout_btn": "Uitloggen",
+      "name_prompt": "Je voornaam, voor de ranglijst van de uitdaging?",
+      "auth_conn_unavailable": "Inloggen niet beschikbaar (Firebase niet geladen).",
+      "auth_err_email_in_use": "Er bestaat al een account met dit e-mailadres — probeer in te loggen.",
+      "auth_err_invalid_email": "Ongeldig e-mailadres.",
+      "auth_err_weak_password": "Het wachtwoord moet minstens 6 tekens lang zijn.",
+      "auth_err_wrong_password": "Onjuist wachtwoord.",
+      "auth_err_user_not_found": "Geen account met dit e-mailadres — maak eerst een account aan.",
+      "auth_err_invalid_credential": "E-mailadres of wachtwoord onjuist.",
+      "auth_err_network": "Verbinden niet mogelijk — controleer je internetverbinding.",
+      "auth_err_generic": "Er is een fout opgetreden.",
+      "ticker_record_beaten": "🏆 {name} heeft zojuist het record verbroken op {flag} {circuit} in {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 Jij houdt deze week het record op {flag} {circuit}!",
+      "ticker_gap_to_record": "🎯 Je zit {gap} van het record op {flag} {circuit} — ga het verbreken!",
+      "ticker_current_record": "🏁 Huidig record op {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ Ranglijst wordt over {countdown} gereset",
+      "today_at": "vandaag om {time}",
+      "yesterday_at": "gisteren om {time}",
+      "unit_day": "d",
+      "unit_hour": "u",
+      "unit_min": "min",
+      "leaderboard_offline": "Ranglijst niet beschikbaar zonder verbinding.",
+      "leaderboard_nobody": "Nog niemand heeft deze combinatie deze week gereden.",
+      "leaderboard_load_error": "Ranglijst kan momenteel niet worden geladen.",
+      "default_player_name": "Speler",
+      "hud_duel_suffix": " · Uitdaging",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Replay",
+      "ticker_trending_circuit": "🔥 Populair circuit deze week: {label} ({n} races)",
+      "filter_all_circuits": "Alle circuits",
+      "ghost_your_record": "jouw record",
+      "ghost_default_label": "Ghost",
+      "time_per_lap_title": "Rondetijden",
+      "your_time": "Jouw tijd: {time}",
+      "your_turn": "Jij bent aan de beurt!",
+      "duel_second_place": " · 2e",
+      "badge_public": "🌍 Openbaar",
+      "badge_friend": "🔒 Vriend",
+      "label_you": "Jij",
+      "label_opponent": "Tegenstander",
+      "duel_public_none_scope_all": " voorlopig",
+      "duel_public_none_scope_circuit": " op dit circuit voorlopig",
+      "duel_share_result_btn": "Resultaat delen",
+      "country_bahrein": "Bahrein",
+      "country_arabie_saoudite": "Saoedi-Arabië",
+      "country_australie": "Australië",
+      "country_japon": "Japan",
+      "country_monaco": "Monaco",
+      "country_canada": "Canada",
+      "country_espagne": "Spanje",
+      "country_autriche": "Oostenrijk",
+      "country_royaume_uni": "Verenigd Koninkrijk",
+      "country_hongrie": "Hongarije",
+      "country_belgique": "België",
+      "country_pays_bas": "Nederland",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Azerbeidzjan",
+      "country_singapour": "Singapore",
+      "country_etats_unis": "Verenigde Staten",
+      "country_mexique": "Mexico",
+      "country_bresil": "Brazilië",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abu Dhabi",
+      "diff_debutant": "Beginner",
+      "diff_intermediaire": "Gemiddeld",
+      "diff_difficile": "Moeilijk",
+    },
+    ar: {
+      "slogan": "إصبع واحد. حلبة واحدة. بطل واحد. 🏆",
+      "account_title": "حسابي",
+      "account_default_name": "الحساب",
+      "label_sens": "الاتجاه",
+      "dir_normal": "عادي",
+      "dir_inverse": "معكوس",
+      "dir_normal_full": "الاتجاه العادي",
+      "dir_inverse_full": "الاتجاه المعكوس",
+      "label_tours": "اللفات",
+      "laps_unit_one": "لفة",
+      "laps_unit_many": "لفات",
+      "launch_race": "ابدأ السباق",
+      "records_btn": "الأرقام القياسية",
+      "challenges_title_attr": "عرض تحدياتي",
+      "challenges_btn": "التحديات",
+      "ticker_loading": "جارٍ التحميل…",
+      "history_title": "السجل",
+      "leaderboard_title": "ترتيب هذا الأسبوع",
+      "close": "إغلاق",
+      "choose_language": "اختر اللغة",
+      "back_to_menu_title": "العودة إلى القائمة",
+      "duel_quit_title": "مغادرة هذا التحدي",
+      "duel_share_btn": "مشاركة التحدي",
+      "duel_delete_btn": "🗑️ حذف",
+      "duel_replay_btn": "مشاهدة إعادة الشبح",
+      "duel_refresh_title": "إعادة تحميل هذا التحدي",
+      "duel_refresh_btn": "🔄 تحديث",
+      "duel_empty_p": "لا يوجد تحدٍ جارٍ على {circuit}.",
+      "duel_create_friend": "تحدَّ صديقًا على هذه الحلبة",
+      "duel_create_public": "تحدَّ خصمًا (عام)",
+      "duel_empty_sub": "\"تحدَّ صديقًا\": رابط خاص تشاركه بنفسك. \"تحدَّ خصمًا\": مرئي لجميع اللاعبين على هذه الحلبة، ويمكن لأي شخص قبوله.",
+      "public_duels_title": "🌍 تحديات عامة",
+      "filter_open": "مفتوحة",
+      "filter_done": "منتهية بالفعل",
+      "filter_all": "الكل",
+      "duels_toplay_title": "⏳ تحديات بانتظارك",
+      "duels_done_title": "✅ تحديات مكتملة",
+      "duel_play_relever": "قبول التحدي",
+      "duel_rematch_again": "🔁 بدء تحدٍ جديد",
+      "duel_rematch_revenge": "🔥 طلب إعادة المباراة",
+      "duel_row_waiting": "لم يخض أحد هذا التحدي بعد — ابدأ السباق لتسجيل أول توقيت!",
+      "duel_loading_title": "جارٍ تحميل التحدي…",
+      "duel_title_prefix": "تحدٍ — {circuit}",
+      "duel_status_done": "✅ تم إنجاز التحدي",
+      "duel_status_todo": "🏁 تحدٍ بانتظارك",
+      "duel_participants_none": "لم يُسجَّل أي وقت بعد — كن أول من يفعل ذلك!",
+      "duel_participants_one": "مشارك واحد ({n}) سجّل بالفعل",
+      "duel_participants_many": "{n} مشاركين سجّلوا بالفعل",
+      "duel_public_suffix": "{circuit} — تحدٍ عام",
+      "duel_public_label_bare": "تحدٍ عام",
+      "duel_public_done_badge": "✅ منتهٍ",
+      "duel_public_new": "🆕 تحدٍ عام جديد على {circuit} — كن أول من يقبله!",
+      "duel_public_ongoing": "🌍 تحدٍ عام جارٍ على {circuit} — تعال واقبله!",
+      "loading": "جارٍ التحميل…",
+      "duel_public_none_done": "لا يوجد تحدٍ عام منتهٍ بعد",
+      "duel_public_none_open": "لا يوجد تحدٍ عام مفتوح",
+      "duel_public_none_all": "لا يوجد تحدٍ عام",
+      "duel_public_none_cta": " — ابدأ أنت!",
+      "duel_public_index_missing": "التحديات العامة غير مفعّلة بعد: يجب إنشاء فهرس Firestore مرة واحدة (الرابط في وحدة تحكم المتصفح).",
+      "duel_public_load_error": "تعذّر تحميل التحديات العامة في الوقت الحالي.",
+      "duel_delete_tooltip": "إزالة هذا التحدي من القائمة",
+      "duel_delete_tooltip_confirm": "اضغط مرة أخرى لتأكيد الحذف",
+      "duel_conn_lost": "⚠️ انقطع الاتصال — اضغط تحديث",
+      "duel_refresh_fail": "تعذّر تحديث هذا التحدي ({error}).",
+      "duel_load_fail": "تعذّر تحميل هذا التحدي: خدمة التحديات غير متاحة (تحقق من اتصالك بالإنترنت).",
+      "link_copied": "تم نسخ الرابط!",
+      "link_copy_prompt": "انسخ هذا الرابط لتحدي صديقك:",
+      "share_title": "تحدي F1 Finger Race",
+      "share_text": "أتحداك على هذه الحلبة في F1 Finger Race!",
+      "duel_create_fail_conn": "تعذّر إنشاء تحدٍ: خدمة التحديات غير متاحة (تحقق من اتصالك بالإنترنت).",
+      "duel_create_fail": "تعذّر إنشاء التحدي ({error}).",
+      "duel_create_public_fail": "تعذّر إنشاء التحدي العام ({error}).",
+      "duel_save_run_fail_conn": "تعذّر حفظ هذا الوقت في تحدٍ: خدمة التحديات غير متاحة (تحقق من اتصالك بالإنترنت).",
+      "duel_supprimer_confirm": "هل تريد إزالة هذا التحدي من قائمتك؟ (سيبقى متاحًا للخصم الذي يملك الرابط)",
+      "start_hint_html": "👆 ضع إصبعك على نقطة <strong>الانطلاق / الوصول</strong> وابقَ ثابتًا",
+      "banner_touch_start": "ضع إصبعك على النقطة البيضاء للانطلاق / الوصول",
+      "banner_wait_start": "ابقَ ثابتًا... الانطلاق وشيك",
+      "banner_in_race": "في السباق — ابقَ على الحلبة",
+      "banner_off_track": "خرجت عن الحلبة! +{s} ثانية — تابع",
+      "banner_lap_progress": "اللفة {lap} / {laps} — هيا!",
+      "hud_lap_chip": "اللفة {lap} / {laps}",
+      "checkpoints_hint": "مر بجميع نقاط التفتيش البرتقالية قبل أن {action}!",
+      "action_close_lap": "إكمال اللفة",
+      "action_finish": "إنهاء السباق",
+      "false_start_moved": "انطلاقة خاطئة — تحركت قبل انطفاء الأضواء",
+      "false_start_released": "انطلاقة خاطئة — رفعت إصبعك قبل انطفاء الأضواء",
+      "lifted_early": "رفعت إصبعك قبل خط النهاية",
+      "lap_done": "اكتملت اللفة {lap}",
+      "result_title_finish": "الوصول!",
+      "result_title_fail": "فشل!",
+      "result_raw_time": "الوقت الخام",
+      "result_offtrack_count": "مرات الخروج عن الحلبة",
+      "result_penalties": "العقوبات",
+      "result_total": "الإجمالي",
+      "result_new_best": "🏁 أفضل وقت جديد!",
+      "result_best_time": "أفضل وقت: {time}",
+      "view_run_btn": "مشاهدة سباقي",
+      "challenge_result_btn": "تحدَّ صديقًا بهذا الوقت",
+      "retry_btn": "إعادة المحاولة",
+      "change_circuit_btn": "تغيير الحلبة",
+      "back_to_main_menu_btn": "العودة إلى القائمة الرئيسية",
+      "review_back_title": "العودة إلى النتيجة",
+      "replay_title_duel": "إعادة التحدي",
+      "replay_title_solo": "إعادة سباقك",
+      "replay_again_btn": "🔁 إعادة التشغيل مرة أخرى",
+      "replay_close_btn": "إغلاق الإعادة",
+      "history_title_prefix": "السجل — {settings}",
+      "history_empty": "لم يُسجَّل أي وقت بهذه الإعدادات بعد. غيّر مستوى الصعوبة أو الاتجاه أو عدد اللفات أعلاه لرؤية سجل آخر.",
+      "my_records_title": "أرقامي القياسية",
+      "leaderboard_loading": "جارٍ تحميل الترتيب…",
+      "leaderboard_index_missing": "الترتيب غير مفعّل بعد: يجب إنشاء فهرس Firestore مرة واحدة (الرابط في وحدة تحكم المتصفح).",
+      "account_intro": "يُستخدم اسمك الأول في الترتيب ضمن التحديات بين الأصدقاء. سجّل الدخول للاحتفاظ به على جميع أجهزتك.",
+      "placeholder_firstname": "اسمك الأول",
+      "google_signin": "🔵 المتابعة عبر Google",
+      "or_email": "أو عبر البريد الإلكتروني",
+      "placeholder_email": "البريد الإلكتروني",
+      "placeholder_password": "كلمة المرور (6 أحرف على الأقل)",
+      "signin_btn": "تسجيل الدخول",
+      "signup_btn": "إنشاء حساب",
+      "placeholder_pseudo": "الاسم المستعار الظاهر في التحديات",
+      "save_pseudo_btn": "حفظ الاسم المستعار",
+      "pseudo_saved": "تم حفظ الاسم المستعار!",
+      "signout_btn": "تسجيل الخروج",
+      "name_prompt": "ما اسمك الأول لترتيب التحدي؟",
+      "auth_conn_unavailable": "تسجيل الدخول غير متاح (لم يتم تحميل Firebase).",
+      "auth_err_email_in_use": "يوجد بالفعل حساب بهذا البريد الإلكتروني — حاول تسجيل الدخول بدلاً من ذلك.",
+      "auth_err_invalid_email": "عنوان البريد الإلكتروني غير صالح.",
+      "auth_err_weak_password": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.",
+      "auth_err_wrong_password": "كلمة المرور غير صحيحة.",
+      "auth_err_user_not_found": "لا يوجد حساب بهذا البريد الإلكتروني — أنشئ حسابًا أولاً.",
+      "auth_err_invalid_credential": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+      "auth_err_network": "تعذّر الاتصال — تحقق من اتصالك بالإنترنت.",
+      "auth_err_generic": "حدث خطأ ما.",
+      "ticker_record_beaten": "🏆 {name} حطّم للتو الرقم القياسي على {flag} {circuit} في {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 أنت تحمل الرقم القياسي على {flag} {circuit} هذا الأسبوع!",
+      "ticker_gap_to_record": "🎯 أنت على بعد {gap} من الرقم القياسي على {flag} {circuit} — اذهب وحطّمه!",
+      "ticker_current_record": "🏁 الرقم القياسي الحالي على {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ سيُعاد ضبط الترتيب خلال {countdown}",
+      "today_at": "اليوم الساعة {time}",
+      "yesterday_at": "أمس الساعة {time}",
+      "unit_day": "ي",
+      "unit_hour": "س",
+      "unit_min": "د",
+      "leaderboard_offline": "الترتيب غير متاح دون اتصال.",
+      "leaderboard_nobody": "لم يخض أحد هذا التوليف بعد هذا الأسبوع.",
+      "leaderboard_load_error": "تعذّر تحميل الترتيب في الوقت الحالي.",
+      "default_player_name": "لاعب",
+      "hud_duel_suffix": " · تحدٍ",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · إعادة",
+      "ticker_trending_circuit": "🔥 الحلبة الأكثر رواجًا هذا الأسبوع: {label} ({n} سباقات)",
+      "filter_all_circuits": "جميع الحلبات",
+      "ghost_your_record": "رقمك القياسي",
+      "ghost_default_label": "الشبح",
+      "time_per_lap_title": "الأوقات لكل لفة",
+      "your_time": "وقتك: {time}",
+      "your_turn": "حان دورك!",
+      "duel_second_place": " · الثاني",
+      "badge_public": "🌍 عام",
+      "badge_friend": "🔒 صديق",
+      "label_you": "أنت",
+      "label_opponent": "الخصم",
+      "duel_public_none_scope_all": " في الوقت الحالي",
+      "duel_public_none_scope_circuit": " على هذه الحلبة في الوقت الحالي",
+      "duel_share_result_btn": "مشاركة النتيجة",
+      "country_bahrein": "البحرين",
+      "country_arabie_saoudite": "السعودية",
+      "country_australie": "أستراليا",
+      "country_japon": "اليابان",
+      "country_monaco": "موناكو",
+      "country_canada": "كندا",
+      "country_espagne": "إسبانيا",
+      "country_autriche": "النمسا",
+      "country_royaume_uni": "المملكة المتحدة",
+      "country_hongrie": "المجر",
+      "country_belgique": "بلجيكا",
+      "country_pays_bas": "هولندا",
+      "country_monza": "مونزا",
+      "country_azerbaidjan": "أذربيجان",
+      "country_singapour": "سنغافورة",
+      "country_etats_unis": "الولايات المتحدة",
+      "country_mexique": "المكسيك",
+      "country_bresil": "البرازيل",
+      "country_las_vegas": "لاس فيغاس",
+      "country_emirats": "أبوظبي",
+      "diff_debutant": "مبتدئ",
+      "diff_intermediaire": "متوسط",
+      "diff_difficile": "صعب",
+    },
+    ja: {
+      "slogan": "指一本。サーキット一つ。チャンピオン一人。🏆",
+      "account_title": "マイアカウント",
+      "account_default_name": "アカウント",
+      "label_sens": "方向",
+      "dir_normal": "通常",
+      "dir_inverse": "逆走",
+      "dir_normal_full": "通常方向",
+      "dir_inverse_full": "逆走方向",
+      "label_tours": "周回数",
+      "laps_unit_one": "周",
+      "laps_unit_many": "周",
+      "launch_race": "レース開始",
+      "records_btn": "記録",
+      "challenges_title_attr": "自分の対戦を見る",
+      "challenges_btn": "対戦",
+      "ticker_loading": "読み込み中…",
+      "history_title": "履歴",
+      "leaderboard_title": "今週のランキング",
+      "close": "閉じる",
+      "choose_language": "言語を選択",
+      "back_to_menu_title": "メニューに戻る",
+      "duel_quit_title": "この対戦を閉じる",
+      "duel_share_btn": "対戦を共有",
+      "duel_delete_btn": "🗑️ 削除",
+      "duel_replay_btn": "ゴーストリプレイを見る",
+      "duel_refresh_title": "この対戦を再読み込み",
+      "duel_refresh_btn": "🔄 更新",
+      "duel_empty_p": "{circuit} で進行中の対戦はありません。",
+      "duel_create_friend": "友達をこのサーキットで挑戦する",
+      "duel_create_public": "対戦相手に挑戦（公開）",
+      "duel_empty_sub": "「友達に挑戦」：自分で共有する非公開リンク。「対戦相手に挑戦」：このサーキットの全プレイヤーに表示され、誰でも受けられます。",
+      "public_duels_title": "🌍 公開対戦",
+      "filter_open": "募集中",
+      "filter_done": "完了済み",
+      "filter_all": "すべて",
+      "duels_toplay_title": "⏳ 挑戦待ちの対戦",
+      "duels_done_title": "✅ 完了した対戦",
+      "duel_play_relever": "挑戦を受ける",
+      "duel_rematch_again": "🔁 新しい対戦を始める",
+      "duel_rematch_revenge": "🔥 リベンジを申し込む",
+      "duel_row_waiting": "まだこの対戦を走った人はいません — レースを始めて最初のタイムを記録しよう！",
+      "duel_loading_title": "対戦を読み込み中…",
+      "duel_title_prefix": "対戦 — {circuit}",
+      "duel_status_done": "✅ 対戦完了",
+      "duel_status_todo": "🏁 受けるべき対戦",
+      "duel_participants_none": "まだタイムが記録されていません — 一番乗りになろう！",
+      "duel_participants_one": "すでに{n}人が参加済み",
+      "duel_participants_many": "すでに{n}人が参加済み",
+      "duel_public_suffix": "{circuit} — 公開対戦",
+      "duel_public_label_bare": "公開対戦",
+      "duel_public_done_badge": "✅ 完了",
+      "duel_public_new": "🆕 {circuit} で新しい公開対戦が登録されました — 一番乗りで受けよう！",
+      "duel_public_ongoing": "🌍 {circuit} で公開対戦が進行中 — 参加しよう！",
+      "loading": "読み込み中…",
+      "duel_public_none_done": "まだ完了した公開対戦はありません",
+      "duel_public_none_open": "募集中の公開対戦はありません",
+      "duel_public_none_all": "公開対戦はありません",
+      "duel_public_none_cta": " — 挑戦してみよう！",
+      "duel_public_index_missing": "公開対戦はまだ有効ではありません：Firestoreのインデックスを一度作成する必要があります（ブラウザのコンソールにリンクがあります）。",
+      "duel_public_load_error": "現在、公開対戦を読み込めません。",
+      "duel_delete_tooltip": "この対戦を一覧から削除",
+      "duel_delete_tooltip_confirm": "もう一度タップして削除を確定",
+      "duel_conn_lost": "⚠️ 接続が切れました — 更新をタップ",
+      "duel_refresh_fail": "この対戦を更新できません（{error}）。",
+      "duel_load_fail": "この対戦を読み込めません：対戦サービスが利用できません（インターネット接続を確認してください）。",
+      "link_copied": "リンクをコピーしました！",
+      "link_copy_prompt": "このリンクをコピーして友達に挑戦しよう：",
+      "share_title": "F1フィンガーレース対戦",
+      "share_text": "F1フィンガーレースでこのサーキットに挑戦してみて！",
+      "duel_create_fail_conn": "対戦を作成できません：対戦サービスが利用できません（インターネット接続を確認してください）。",
+      "duel_create_fail": "対戦を作成できません（{error}）。",
+      "duel_create_public_fail": "公開対戦を作成できません（{error}）。",
+      "duel_save_run_fail_conn": "このタイムを対戦に保存できません：対戦サービスが利用できません（インターネット接続を確認してください）。",
+      "duel_supprimer_confirm": "この対戦を一覧から削除しますか？（リンクを持つ相手には引き続き表示されます）",
+      "start_hint_html": "👆 <strong>スタート／フィニッシュ</strong>地点に指を置いて動かないでください",
+      "banner_touch_start": "白いスタート／フィニッシュ地点に指を置いてください",
+      "banner_wait_start": "動かないで…まもなくスタート",
+      "banner_in_race": "レース中 — コースから外れないで",
+      "banner_off_track": "コースアウト！+{s}秒 — 続けて",
+      "banner_lap_progress": "{lap} / {laps} 周目 — 行け！",
+      "hud_lap_chip": "{lap} / {laps} 周",
+      "checkpoints_hint": "オレンジのチェックポイントをすべて通過してから{action}！",
+      "action_close_lap": "ラップを完了する",
+      "action_finish": "ゴールする",
+      "false_start_moved": "フライング — ライトが消える前に動きました",
+      "false_start_released": "フライング — ライトが消える前に指を離しました",
+      "lifted_early": "ゴールラインの前に指を離しました",
+      "lap_done": "{lap} 周目完了",
+      "result_title_finish": "ゴール！",
+      "result_title_fail": "失敗！",
+      "result_raw_time": "生タイム",
+      "result_offtrack_count": "コースアウト回数",
+      "result_penalties": "ペナルティ",
+      "result_total": "合計",
+      "result_new_best": "🏁 自己ベスト更新！",
+      "result_best_time": "ベストタイム：{time}",
+      "view_run_btn": "自分の走行を見る",
+      "challenge_result_btn": "このタイムで友達に挑戦",
+      "retry_btn": "もう一度",
+      "change_circuit_btn": "サーキットを変更",
+      "back_to_main_menu_btn": "メインメニューに戻る",
+      "review_back_title": "結果に戻る",
+      "replay_title_duel": "対戦リプレイ",
+      "replay_title_solo": "あなたの走行リプレイ",
+      "replay_again_btn": "🔁 もう一度再生",
+      "replay_close_btn": "リプレイを閉じる",
+      "history_title_prefix": "履歴 — {settings}",
+      "history_empty": "この設定ではまだタイムが記録されていません。上の難易度・方向・周回数を変更すると別の履歴が表示されます。",
+      "my_records_title": "自分の記録",
+      "leaderboard_loading": "ランキングを読み込み中…",
+      "leaderboard_index_missing": "ランキングはまだ有効ではありません：Firestoreのインデックスを一度作成する必要があります（ブラウザのコンソールにリンクがあります）。",
+      "account_intro": "名前は友達との対戦のランキングに使われます。すべての端末で使うにはログインしてください。",
+      "placeholder_firstname": "お名前",
+      "google_signin": "🔵 Googleで続ける",
+      "or_email": "またはメールアドレスで",
+      "placeholder_email": "メールアドレス",
+      "placeholder_password": "パスワード（6文字以上）",
+      "signin_btn": "ログイン",
+      "signup_btn": "アカウントを作成",
+      "placeholder_pseudo": "対戦で表示されるニックネーム",
+      "save_pseudo_btn": "ニックネームを保存",
+      "pseudo_saved": "ニックネームを保存しました！",
+      "signout_btn": "ログアウト",
+      "name_prompt": "対戦のランキングに使うお名前は？",
+      "auth_conn_unavailable": "ログインできません（Firebaseが読み込まれていません）。",
+      "auth_err_email_in_use": "このメールアドレスのアカウントはすでに存在します — 代わりにログインしてください。",
+      "auth_err_invalid_email": "メールアドレスが無効です。",
+      "auth_err_weak_password": "パスワードは6文字以上にしてください。",
+      "auth_err_wrong_password": "パスワードが正しくありません。",
+      "auth_err_user_not_found": "このメールアドレスのアカウントはありません — 先にアカウントを作成してください。",
+      "auth_err_invalid_credential": "メールアドレスまたはパスワードが正しくありません。",
+      "auth_err_network": "接続できません — インターネット接続を確認してください。",
+      "auth_err_generic": "エラーが発生しました。",
+      "ticker_record_beaten": "🏆 {name} が {flag} {circuit} の{diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps} で新記録を樹立{marginPart}{whenPart}！",
+      "ticker_you_hold_record": "👑 今週の {flag} {circuit} の記録はあなたのものです！",
+      "ticker_gap_to_record": "🎯 {flag} {circuit} の記録まであと {gap} — 更新しに行こう！",
+      "ticker_current_record": "🏁 {flag} {circuit} の現在の記録：{time}（{name}）",
+      "weekly_reset_countdown": "⏳ ランキングは {countdown} 後にリセットされます",
+      "today_at": "今日 {time}",
+      "yesterday_at": "昨日 {time}",
+      "unit_day": "日",
+      "unit_hour": "時間",
+      "unit_min": "分",
+      "leaderboard_offline": "オフラインではランキングを利用できません。",
+      "leaderboard_nobody": "今週、この組み合わせをまだ誰も走っていません。",
+      "leaderboard_load_error": "現在、ランキングを読み込めません。",
+      "default_player_name": "プレイヤー",
+      "hud_duel_suffix": " · 対戦",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · リプレイ",
+      "ticker_trending_circuit": "🔥 今週の人気サーキット：{label}（{n}レース）",
+      "filter_all_circuits": "すべてのサーキット",
+      "ghost_your_record": "あなたの記録",
+      "ghost_default_label": "ゴースト",
+      "time_per_lap_title": "ラップタイム",
+      "your_time": "あなたのタイム：{time}",
+      "your_turn": "あなたの番です！",
+      "duel_second_place": " · 2位",
+      "badge_public": "🌍 公開",
+      "badge_friend": "🔒 友達",
+      "label_you": "あなた",
+      "label_opponent": "対戦相手",
+      "duel_public_none_scope_all": " 現在のところ",
+      "duel_public_none_scope_circuit": " このサーキットでは現在のところ",
+      "duel_share_result_btn": "結果を共有",
+      "country_bahrein": "バーレーン",
+      "country_arabie_saoudite": "サウジアラビア",
+      "country_australie": "オーストラリア",
+      "country_japon": "日本",
+      "country_monaco": "モナコ",
+      "country_canada": "カナダ",
+      "country_espagne": "スペイン",
+      "country_autriche": "オーストリア",
+      "country_royaume_uni": "イギリス",
+      "country_hongrie": "ハンガリー",
+      "country_belgique": "ベルギー",
+      "country_pays_bas": "オランダ",
+      "country_monza": "モンツァ",
+      "country_azerbaidjan": "アゼルバイジャン",
+      "country_singapour": "シンガポール",
+      "country_etats_unis": "アメリカ",
+      "country_mexique": "メキシコ",
+      "country_bresil": "ブラジル",
+      "country_las_vegas": "ラスベガス",
+      "country_emirats": "アブダビ",
+      "diff_debutant": "初心者",
+      "diff_intermediaire": "中級",
+      "diff_difficile": "上級",
+    },
+    zh: {
+      "slogan": "一根手指，一条赛道，一位冠军。🏆",
+      "account_title": "我的账户",
+      "account_default_name": "账户",
+      "label_sens": "方向",
+      "dir_normal": "正向",
+      "dir_inverse": "反向",
+      "dir_normal_full": "正向行驶",
+      "dir_inverse_full": "反向行驶",
+      "label_tours": "圈数",
+      "laps_unit_one": "圈",
+      "laps_unit_many": "圈",
+      "launch_race": "开始比赛",
+      "records_btn": "最佳记录",
+      "challenges_title_attr": "查看我的挑战",
+      "challenges_btn": "挑战",
+      "ticker_loading": "加载中…",
+      "history_title": "历史记录",
+      "leaderboard_title": "本周排行榜",
+      "close": "关闭",
+      "choose_language": "选择语言",
+      "back_to_menu_title": "返回菜单",
+      "duel_quit_title": "退出此挑战",
+      "duel_share_btn": "分享挑战",
+      "duel_delete_btn": "🗑️ 删除",
+      "duel_replay_btn": "观看幽灵回放",
+      "duel_refresh_title": "重新加载此挑战",
+      "duel_refresh_btn": "🔄 刷新",
+      "duel_empty_p": "{circuit} 目前没有进行中的挑战。",
+      "duel_create_friend": "在这条赛道上挑战朋友",
+      "duel_create_public": "挑战对手（公开）",
+      "duel_empty_sub": "\"挑战朋友\"：由你自己分享的私密链接。\"挑战对手\"：此赛道上所有玩家可见，任何人都可以接受挑战。",
+      "public_duels_title": "🌍 公开挑战",
+      "filter_open": "开放中",
+      "filter_done": "已完成",
+      "filter_all": "全部",
+      "duels_toplay_title": "⏳ 待完成的挑战",
+      "duels_done_title": "✅ 已完成的挑战",
+      "duel_play_relever": "接受挑战",
+      "duel_rematch_again": "🔁 发起新挑战",
+      "duel_rematch_revenge": "🔥 请求复仇赛",
+      "duel_row_waiting": "还没有人参加过这个挑战——开始比赛，创造第一个成绩！",
+      "duel_loading_title": "正在加载挑战…",
+      "duel_title_prefix": "挑战 — {circuit}",
+      "duel_status_done": "✅ 挑战已完成",
+      "duel_status_todo": "🏁 待接受的挑战",
+      "duel_participants_none": "还没有人创造成绩——成为第一个！",
+      "duel_participants_one": "已有 {n} 位参赛者",
+      "duel_participants_many": "已有 {n} 位参赛者",
+      "duel_public_suffix": "{circuit} — 公开挑战",
+      "duel_public_label_bare": "公开挑战",
+      "duel_public_done_badge": "✅ 已完成",
+      "duel_public_new": "🆕 {circuit} 上有新的公开挑战——抢先接受吧！",
+      "duel_public_ongoing": "🌍 {circuit} 上有正在进行的公开挑战——快来接受吧！",
+      "loading": "加载中…",
+      "duel_public_none_done": "还没有已完成的公开挑战",
+      "duel_public_none_open": "没有开放的公开挑战",
+      "duel_public_none_all": "没有公开挑战",
+      "duel_public_none_cta": " — 快来发起一个吧！",
+      "duel_public_index_missing": "公开挑战功能尚未启用：需要创建一次 Firestore 索引（链接见浏览器控制台）。",
+      "duel_public_load_error": "目前无法加载公开挑战。",
+      "duel_delete_tooltip": "从列表中移除此挑战",
+      "duel_delete_tooltip_confirm": "再次点击以确认删除",
+      "duel_conn_lost": "⚠️ 连接已断开——点击刷新",
+      "duel_refresh_fail": "无法刷新此挑战（{error}）。",
+      "duel_load_fail": "无法加载此挑战：挑战服务当前不可用（请检查你的网络连接）。",
+      "link_copied": "链接已复制！",
+      "link_copy_prompt": "复制此链接来挑战你的朋友：",
+      "share_title": "F1 Finger Race 挑战",
+      "share_text": "在 F1 Finger Race 里，我在这条赛道上挑战你！",
+      "duel_create_fail_conn": "无法创建挑战：挑战服务当前不可用（请检查你的网络连接）。",
+      "duel_create_fail": "无法创建挑战（{error}）。",
+      "duel_create_public_fail": "无法创建公开挑战（{error}）。",
+      "duel_save_run_fail_conn": "无法将此成绩保存到挑战中：挑战服务当前不可用（请检查你的网络连接）。",
+      "duel_supprimer_confirm": "要从你的列表中移除此挑战吗？（拥有链接的对手仍可访问）",
+      "start_hint_html": "👆 将手指放在<strong>起点/终点</strong>标记上并保持不动",
+      "banner_touch_start": "将手指放在白色的起点/终点标记上",
+      "banner_wait_start": "保持不动……即将起步",
+      "banner_in_race": "比赛中——保持在赛道上",
+      "banner_off_track": "冲出赛道！+{s} 秒——继续",
+      "banner_lap_progress": "第 {lap} / {laps} 圈——加油！",
+      "hud_lap_chip": "第 {lap} / {laps} 圈",
+      "checkpoints_hint": "在{action}之前，请经过所有橙色检查点！",
+      "action_close_lap": "完成本圈",
+      "action_finish": "完成比赛",
+      "false_start_moved": "抢跑——你在灯灭之前就动了",
+      "false_start_released": "抢跑——你在灯灭之前就松开了手指",
+      "lifted_early": "你在终点线之前抬起了手指",
+      "lap_done": "第 {lap} 圈完成",
+      "result_title_finish": "到达终点！",
+      "result_title_fail": "失败！",
+      "result_raw_time": "原始用时",
+      "result_offtrack_count": "冲出赛道次数",
+      "result_penalties": "罚时",
+      "result_total": "总计",
+      "result_new_best": "🏁 新的最佳成绩！",
+      "result_best_time": "最佳成绩：{time}",
+      "view_run_btn": "查看我的比赛",
+      "challenge_result_btn": "用这个成绩挑战朋友",
+      "retry_btn": "重新再来",
+      "change_circuit_btn": "更换赛道",
+      "back_to_main_menu_btn": "返回主菜单",
+      "review_back_title": "返回结果",
+      "replay_title_duel": "挑战回放",
+      "replay_title_solo": "你的比赛回放",
+      "replay_again_btn": "🔁 再次播放回放",
+      "replay_close_btn": "关闭回放",
+      "history_title_prefix": "历史记录 — {settings}",
+      "history_empty": "目前这些设置下还没有记录任何成绩。请更改上方的难度、方向或圈数以查看其他历史记录。",
+      "my_records_title": "我的最佳记录",
+      "leaderboard_loading": "正在加载排行榜…",
+      "leaderboard_index_missing": "排行榜功能尚未启用：需要创建一次 Firestore 索引（链接见浏览器控制台）。",
+      "account_intro": "你的名字用于好友挑战的排名。登录后可在所有设备上同步。",
+      "placeholder_firstname": "你的名字",
+      "google_signin": "🔵 使用 Google 继续",
+      "or_email": "或通过邮箱",
+      "placeholder_email": "邮箱",
+      "placeholder_password": "密码（至少6个字符）",
+      "signin_btn": "登录",
+      "signup_btn": "创建账户",
+      "placeholder_pseudo": "在挑战中显示的昵称",
+      "save_pseudo_btn": "保存昵称",
+      "pseudo_saved": "昵称已保存！",
+      "signout_btn": "退出登录",
+      "name_prompt": "请输入你的名字，用于挑战排名",
+      "auth_conn_unavailable": "无法登录（Firebase 未加载）。",
+      "auth_err_email_in_use": "该邮箱已注册过账户——请改为登录。",
+      "auth_err_invalid_email": "邮箱地址无效。",
+      "auth_err_weak_password": "密码至少需要6个字符。",
+      "auth_err_wrong_password": "密码不正确。",
+      "auth_err_user_not_found": "没有使用该邮箱的账户——请先创建账户。",
+      "auth_err_invalid_credential": "邮箱或密码不正确。",
+      "auth_err_network": "无法连接——请检查你的网络连接。",
+      "auth_err_generic": "发生了一个错误。",
+      "ticker_record_beaten": "🏆 {name} 刚刚在 {flag} {circuit}（{diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}）打破了记录{marginPart}{whenPart}！",
+      "ticker_you_hold_record": "👑 本周你在 {flag} {circuit} 保持着记录！",
+      "ticker_gap_to_record": "🎯 你距离 {flag} {circuit} 的记录只差 {gap}——快去打破它吧！",
+      "ticker_current_record": "🏁 {flag} {circuit} 当前记录：{time}（{name}）",
+      "weekly_reset_countdown": "⏳ 排行榜将在 {countdown} 后重置",
+      "today_at": "今天 {time}",
+      "yesterday_at": "昨天 {time}",
+      "unit_day": "天",
+      "unit_hour": "小时",
+      "unit_min": "分钟",
+      "leaderboard_offline": "离线状态下无法查看排行榜。",
+      "leaderboard_nobody": "本周还没有人尝试过这个组合。",
+      "leaderboard_load_error": "目前无法加载排行榜。",
+      "default_player_name": "玩家",
+      "hud_duel_suffix": " · 挑战",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · 回放",
+      "ticker_trending_circuit": "🔥 本周热门赛道：{label}（{n} 场比赛）",
+      "filter_all_circuits": "所有赛道",
+      "ghost_your_record": "你的记录",
+      "ghost_default_label": "幽灵",
+      "time_per_lap_title": "每圈用时",
+      "your_time": "你的成绩：{time}",
+      "your_turn": "轮到你了！",
+      "duel_second_place": " · 第2",
+      "badge_public": "🌍 公开",
+      "badge_friend": "🔒 好友",
+      "label_you": "你",
+      "label_opponent": "对手",
+      "duel_public_none_scope_all": " 目前",
+      "duel_public_none_scope_circuit": " 在这条赛道上目前",
+      "duel_share_result_btn": "分享结果",
+      "country_bahrein": "巴林",
+      "country_arabie_saoudite": "沙特阿拉伯",
+      "country_australie": "澳大利亚",
+      "country_japon": "日本",
+      "country_monaco": "摩纳哥",
+      "country_canada": "加拿大",
+      "country_espagne": "西班牙",
+      "country_autriche": "奥地利",
+      "country_royaume_uni": "英国",
+      "country_hongrie": "匈牙利",
+      "country_belgique": "比利时",
+      "country_pays_bas": "荷兰",
+      "country_monza": "蒙扎",
+      "country_azerbaidjan": "阿塞拜疆",
+      "country_singapour": "新加坡",
+      "country_etats_unis": "美国",
+      "country_mexique": "墨西哥",
+      "country_bresil": "巴西",
+      "country_las_vegas": "拉斯维加斯",
+      "country_emirats": "阿布扎比",
+      "diff_debutant": "初级",
+      "diff_intermediaire": "中级",
+      "diff_difficile": "困难",
+    },
+    id: {
+      "slogan": "Satu jari. Satu sirkuit. Satu juara. 🏆",
+      "account_title": "Akun saya",
+      "account_default_name": "Akun",
+      "label_sens": "Arah",
+      "dir_normal": "Normal",
+      "dir_inverse": "Terbalik",
+      "dir_normal_full": "Arah normal",
+      "dir_inverse_full": "Arah terbalik",
+      "label_tours": "Putaran",
+      "laps_unit_one": "putaran",
+      "laps_unit_many": "putaran",
+      "launch_race": "Mulai balapan",
+      "records_btn": "Rekor",
+      "challenges_title_attr": "Lihat tantanganku",
+      "challenges_btn": "Tantangan",
+      "ticker_loading": "Memuat…",
+      "history_title": "Riwayat",
+      "leaderboard_title": "Papan peringkat minggu ini",
+      "close": "Tutup",
+      "choose_language": "Pilih bahasa",
+      "back_to_menu_title": "Kembali ke menu",
+      "duel_quit_title": "Keluar dari tantangan ini",
+      "duel_share_btn": "Bagikan tantangan",
+      "duel_delete_btn": "🗑️ Hapus",
+      "duel_replay_btn": "Tonton replay hantu",
+      "duel_refresh_title": "Muat ulang tantangan ini",
+      "duel_refresh_btn": "🔄 Segarkan",
+      "duel_empty_p": "Tidak ada tantangan berlangsung untuk {circuit}.",
+      "duel_create_friend": "Tantang teman di sirkuit ini",
+      "duel_create_public": "Tantang lawan (publik)",
+      "duel_empty_sub": "\"Tantang teman\": tautan pribadi yang kamu bagikan sendiri. \"Tantang lawan\": terlihat oleh semua pemain di sirkuit ini, siapa pun bisa menerimanya.",
+      "public_duels_title": "🌍 Tantangan publik",
+      "filter_open": "Terbuka",
+      "filter_done": "Sudah selesai",
+      "filter_all": "Semua",
+      "duels_toplay_title": "⏳ Tantangan yang belum dimainkan",
+      "duels_done_title": "✅ Tantangan selesai",
+      "duel_play_relever": "Terima tantangan",
+      "duel_rematch_again": "🔁 Mulai tantangan baru",
+      "duel_rematch_revenge": "🔥 Minta tanding ulang",
+      "duel_row_waiting": "Belum ada yang menjalankan tantangan ini — mulai balapan untuk mencatat waktu pertama!",
+      "duel_loading_title": "Memuat tantangan…",
+      "duel_title_prefix": "Tantangan — {circuit}",
+      "duel_status_done": "✅ Tantangan selesai",
+      "duel_status_todo": "🏁 Tantangan untuk diterima",
+      "duel_participants_none": "Belum ada waktu yang tercatat — jadilah yang pertama!",
+      "duel_participants_one": "{n} peserta sudah ikut",
+      "duel_participants_many": "{n} peserta sudah ikut",
+      "duel_public_suffix": "{circuit} — Tantangan publik",
+      "duel_public_label_bare": "Tantangan publik",
+      "duel_public_done_badge": "✅ Selesai",
+      "duel_public_new": "🆕 Tantangan publik baru di {circuit} — jadilah yang pertama menerimanya!",
+      "duel_public_ongoing": "🌍 Tantangan publik berlangsung di {circuit} — ayo terima!",
+      "loading": "Memuat…",
+      "duel_public_none_done": "belum ada tantangan publik yang selesai",
+      "duel_public_none_open": "tidak ada tantangan publik yang terbuka",
+      "duel_public_none_all": "tidak ada tantangan publik",
+      "duel_public_none_cta": " — mulai sekarang!",
+      "duel_public_index_missing": "Tantangan publik belum diaktifkan: indeks Firestore perlu dibuat sekali (tautan ada di konsol browser).",
+      "duel_public_load_error": "Tantangan publik tidak dapat dimuat saat ini.",
+      "duel_delete_tooltip": "Hapus tantangan ini dari daftar",
+      "duel_delete_tooltip_confirm": "Ketuk lagi untuk konfirmasi penghapusan",
+      "duel_conn_lost": "⚠️ Koneksi terputus — ketuk Segarkan",
+      "duel_refresh_fail": "Tantangan ini tidak dapat disegarkan ({error}).",
+      "duel_load_fail": "Tantangan ini tidak dapat dimuat: layanan tantangan tidak tersedia (periksa koneksi internetmu).",
+      "link_copied": "Tautan disalin!",
+      "link_copy_prompt": "Salin tautan ini untuk menantang temanmu:",
+      "share_title": "Tantangan F1 Finger Race",
+      "share_text": "Aku menantangmu di sirkuit ini di F1 Finger Race!",
+      "duel_create_fail_conn": "Tidak dapat membuat tantangan: layanan tantangan tidak tersedia (periksa koneksi internetmu).",
+      "duel_create_fail": "Tidak dapat membuat tantangan ({error}).",
+      "duel_create_public_fail": "Tidak dapat membuat tantangan publik ({error}).",
+      "duel_save_run_fail_conn": "Tidak dapat menyimpan waktu ini ke tantangan: layanan tantangan tidak tersedia (periksa koneksi internetmu).",
+      "duel_supprimer_confirm": "Hapus tantangan ini dari daftarmu? (tetap bisa diakses oleh lawan yang memiliki tautannya)",
+      "start_hint_html": "👆 Letakkan jarimu di titik <strong>START / FINISH</strong> dan tetap diam",
+      "banner_touch_start": "Letakkan jarimu di titik putih START / FINISH",
+      "banner_wait_start": "Tetap diam… start segera dimulai",
+      "banner_in_race": "Sedang balapan — tetap di lintasan",
+      "banner_off_track": "Keluar lintasan! +{s} dtk — terus lanjutkan",
+      "banner_lap_progress": "Putaran {lap} / {laps} — ayo!",
+      "hud_lap_chip": "Putaran {lap} / {laps}",
+      "checkpoints_hint": "Lewati semua checkpoint oranye sebelum {action}!",
+      "action_close_lap": "menyelesaikan putaran",
+      "action_finish": "menyelesaikan balapan",
+      "false_start_moved": "Start curang — kamu bergerak sebelum lampu padam",
+      "false_start_released": "Start curang — kamu melepas jari sebelum lampu padam",
+      "lifted_early": "Kamu mengangkat jari sebelum garis finish",
+      "lap_done": "Putaran {lap} selesai",
+      "result_title_finish": "Selesai!",
+      "result_title_fail": "Gagal!",
+      "result_raw_time": "Waktu mentah",
+      "result_offtrack_count": "Keluar lintasan",
+      "result_penalties": "Penalti",
+      "result_total": "Total",
+      "result_new_best": "🏁 Waktu terbaik baru!",
+      "result_best_time": "Waktu terbaik: {time}",
+      "view_run_btn": "Tonton balapanku",
+      "challenge_result_btn": "Tantang teman dengan waktu ini",
+      "retry_btn": "Coba lagi",
+      "change_circuit_btn": "Ganti sirkuit",
+      "back_to_main_menu_btn": "Kembali ke menu utama",
+      "review_back_title": "Kembali ke hasil",
+      "replay_title_duel": "Replay tantangan",
+      "replay_title_solo": "Replay balapanmu",
+      "replay_again_btn": "🔁 Putar ulang replay",
+      "replay_close_btn": "Tutup replay",
+      "history_title_prefix": "Riwayat — {settings}",
+      "history_empty": "Belum ada waktu tercatat dengan pengaturan ini. Ubah tingkat kesulitan, arah, atau jumlah putaran di atas untuk melihat riwayat lain.",
+      "my_records_title": "Rekorku",
+      "leaderboard_loading": "Memuat papan peringkat…",
+      "leaderboard_index_missing": "Papan peringkat belum diaktifkan: indeks Firestore perlu dibuat sekali (tautan ada di konsol browser).",
+      "account_intro": "Nama depanmu digunakan untuk peringkat dalam tantangan antar teman. Masuk akun untuk menyimpannya di semua perangkatmu.",
+      "placeholder_firstname": "Nama depanmu",
+      "google_signin": "🔵 Lanjutkan dengan Google",
+      "or_email": "atau lewat email",
+      "placeholder_email": "Email",
+      "placeholder_password": "Kata sandi (min. 6 karakter)",
+      "signin_btn": "Masuk",
+      "signup_btn": "Buat akun",
+      "placeholder_pseudo": "Nama panggilan yang ditampilkan di tantangan",
+      "save_pseudo_btn": "Simpan nama panggilan",
+      "pseudo_saved": "Nama panggilan tersimpan!",
+      "signout_btn": "Keluar",
+      "name_prompt": "Nama depanmu, untuk peringkat tantangan?",
+      "auth_conn_unavailable": "Masuk akun tidak tersedia (Firebase tidak dimuat).",
+      "auth_err_email_in_use": "Sudah ada akun dengan email ini — coba masuk saja.",
+      "auth_err_invalid_email": "Alamat email tidak valid.",
+      "auth_err_weak_password": "Kata sandi harus minimal 6 karakter.",
+      "auth_err_wrong_password": "Kata sandi salah.",
+      "auth_err_user_not_found": "Tidak ada akun dengan email ini — buat akun terlebih dahulu.",
+      "auth_err_invalid_credential": "Email atau kata sandi salah.",
+      "auth_err_network": "Tidak dapat terhubung — periksa koneksi internetmu.",
+      "auth_err_generic": "Terjadi kesalahan.",
+      "ticker_record_beaten": "🏆 {name} baru saja memecahkan rekor di {flag} {circuit} dalam {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart}!",
+      "ticker_you_hold_record": "👑 Kamu memegang rekor di {flag} {circuit} minggu ini!",
+      "ticker_gap_to_record": "🎯 Kamu tinggal {gap} dari rekor di {flag} {circuit} — ayo pecahkan!",
+      "ticker_current_record": "🏁 Rekor saat ini di {flag} {circuit}: {time} ({name})",
+      "weekly_reset_countdown": "⏳ Papan peringkat direset dalam {countdown}",
+      "today_at": "hari ini pukul {time}",
+      "yesterday_at": "kemarin pukul {time}",
+      "unit_day": "h",
+      "unit_hour": "j",
+      "unit_min": "mnt",
+      "leaderboard_offline": "Papan peringkat tidak tersedia saat offline.",
+      "leaderboard_nobody": "Belum ada yang mencoba kombinasi ini minggu ini.",
+      "leaderboard_load_error": "Papan peringkat tidak dapat dimuat saat ini.",
+      "default_player_name": "Pemain",
+      "hud_duel_suffix": " · Tantangan",
+      "hud_ghost_prefix": " · 👻 {label}",
+      "hud_replay_suffix": " · Replay",
+      "ticker_trending_circuit": "🔥 Sirkuit tren minggu ini: {label} ({n} balapan)",
+      "filter_all_circuits": "Semua sirkuit",
+      "ghost_your_record": "rekormu",
+      "ghost_default_label": "Hantu",
+      "time_per_lap_title": "Waktu per putaran",
+      "your_time": "Waktumu: {time}",
+      "your_turn": "Giliranmu!",
+      "duel_second_place": " · ke-2",
+      "badge_public": "🌍 Publik",
+      "badge_friend": "🔒 Teman",
+      "label_you": "Kamu",
+      "label_opponent": "Lawan",
+      "duel_public_none_scope_all": " untuk saat ini",
+      "duel_public_none_scope_circuit": " di sirkuit ini untuk saat ini",
+      "duel_share_result_btn": "Bagikan hasil",
+      "country_bahrein": "Bahrain",
+      "country_arabie_saoudite": "Arab Saudi",
+      "country_australie": "Australia",
+      "country_japon": "Jepang",
+      "country_monaco": "Monako",
+      "country_canada": "Kanada",
+      "country_espagne": "Spanyol",
+      "country_autriche": "Austria",
+      "country_royaume_uni": "Britania Raya",
+      "country_hongrie": "Hongaria",
+      "country_belgique": "Belgia",
+      "country_pays_bas": "Belanda",
+      "country_monza": "Monza",
+      "country_azerbaidjan": "Azerbaijan",
+      "country_singapour": "Singapura",
+      "country_etats_unis": "Amerika Serikat",
+      "country_mexique": "Meksiko",
+      "country_bresil": "Brasil",
+      "country_las_vegas": "Las Vegas",
+      "country_emirats": "Abu Dhabi",
+      "diff_debutant": "Pemula",
+      "diff_intermediaire": "Menengah",
+      "diff_difficile": "Sulit",
+    },
+  };
+
+  const LANG_KEY = 'sur-la-corde:lang';
+
+  function detectInitialLang() {
+    try {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved && SUPPORTED_LANGS.indexOf(saved) !== -1) return saved;
+    } catch (e) {}
+    // navigator.language est du type 'en-US', 'pt-BR', 'fr'... on ne garde que les deux
+    // premières lettres pour retrouver une langue supportée, sans distinguer les variantes
+    // régionales (pt-BR et pt-PT tombent toutes les deux sur notre 'pt', par exemple).
+    try {
+      const nav = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+      const short = nav.slice(0, 2);
+      if (SUPPORTED_LANGS.indexOf(short) !== -1) return short;
+    } catch (e) {}
+    return 'fr';
+  }
+
+  let currentLang = detectInitialLang();
+
+  function t(key, vars) {
+    let str = (STRINGS[currentLang] && STRINGS[currentLang][key]) ||
+      (STRINGS.en && STRINGS.en[key]) || (STRINGS.fr && STRINGS.fr[key]) || key;
+    if (vars) {
+      Object.keys(vars).forEach(function (k) {
+        str = str.split('{' + k + '}').join(vars[k] == null ? '' : vars[k]);
+      });
+    }
+    return str;
+  }
+
+  function currentLocale() { return (LANG_META[currentLang] && LANG_META[currentLang].locale) || 'fr-FR'; }
+
+  function countryName(c) { return c ? t('country_' + c.id) : ''; }
+  function diffLabel(d) { return d ? t('diff_' + d.id) : ''; }
+  function dirLabelFull(dir) { return dir === 'inverse' ? t('dir_inverse_full') : t('dir_normal_full'); }
+  function lapsText(n) { return n + ' ' + (n > 1 ? t('laps_unit_many') : t('laps_unit_one')); }
+
+  // Les libellés affichés ("Débutant"...) viennent de STRINGS via diffLabel(d) — voir plus haut —
+  // pas d'un champ ici, pour rester traduisibles dans les 11 langues.
   const DIFFICULTIES = [
-    { id: 'debutant', label: 'Débutant', factor: 1.45, icon: '🟢' },
-    { id: 'intermediaire', label: 'Intermédiaire', factor: 1.0, icon: '🟡' },
-    { id: 'difficile', label: 'Difficile', factor: 0.6, icon: '🔴' }
+    { id: 'debutant', factor: 1.45, icon: '🟢' },
+    { id: 'intermediaire', factor: 1.0, icon: '🟡' },
+    { id: 'difficile', factor: 0.6, icon: '🔴' }
   ];
 
   const COUNTRIES = [
-    { id: 'bahrein', name: 'Bahreïn', flag: '🇧🇭', width: 60,
+    { id: 'bahrein', flag: '🇧🇭', width: 60,
       points: [[183,503],[737,530],[776,530],[818,511],[822,496],[806,464],[623,143],[601,136],[573,155],[539,222],[536,254],[561,300],[615,324],[641,347],[655,381],[650,404],[500,402],[495,379],[506,369],[505,357],[414,277],[409,208],[357,174],[288,94],[265,90],[248,105],[235,169],[194,393],[207,443],[178,489]] },
-    { id: 'arabie_saoudite', name: 'Arabie saoudite', flag: '🇸🇦', width: 44,
+    { id: 'arabie_saoudite', flag: '🇸🇦', width: 44,
       points: [[401,477],[544,351],[607,325],[629,288],[701,284],[741,262],[809,163],[816,110],[781,90],[665,178],[562,289],[477,339],[462,375],[422,382],[384,425],[348,412],[248,443],[188,478],[184,522],[226,530],[282,481]] },
-    { id: 'australie', name: 'Australie', flag: '🇦🇺', width: 54,
+    { id: 'australie', flag: '🇦🇺', width: 54,
       points: [[405,524],[733,519],[765,510],[775,470],[795,453],[875,463],[930,372],[914,344],[776,274],[643,283],[591,327],[529,332],[472,319],[415,275],[341,148],[286,108],[226,96],[116,147],[78,249],[70,322],[126,380],[129,403],[109,435],[125,457],[247,481],[359,481]] },
-    { id: 'japon', name: 'Japon', flag: '🇯🇵', width: 42,
+    { id: 'japon', flag: '🇯🇵', width: 42,
       points: [[838,529],[930,518],[924,425],[884,333],[815,252],[849,206],[791,171],[745,212],[688,171],[607,189],[526,206],[434,171],[330,125],[214,96],[110,91],[70,114],[110,160],[214,189],[330,212],[434,206],[526,206],[584,287],[641,368],[699,449],[768,506]] },
-    { id: 'monaco', name: 'Monaco', flag: '🇲🇨', width: 34,
+    { id: 'monaco', flag: '🇲🇨', width: 34,
       points: [[583,246],[269,189],[219,250],[183,338],[168,509],[203,530],[245,522],[229,419],[262,367],[266,295],[307,245],[451,300],[565,313],[677,307],[730,277],[832,138],[728,90],[607,153],[594,178],[603,229]] },
-    { id: 'canada', name: 'Canada', flag: '🇨🇦', width: 52,
+    { id: 'canada', flag: '🇨🇦', width: 52,
       points: [[216,174],[416,328],[629,454],[800,530],[826,519],[828,493],[765,450],[692,359],[688,310],[647,245],[553,157],[515,137],[471,151],[405,105],[337,110],[279,90],[188,121],[172,143],[183,174]] },
-    { id: 'espagne', name: 'Espagne', flag: '🇪🇸', width: 56,
+    { id: 'espagne', flag: '🇪🇸', width: 56,
       points: [[210,443],[861,433],[907,418],[930,381],[930,270],[919,235],[894,214],[792,185],[758,199],[748,235],[764,262],[829,305],[833,322],[811,339],[559,197],[511,187],[470,213],[408,306],[398,357],[380,375],[279,367],[188,309],[202,287],[333,279],[364,257],[378,222],[373,200],[354,182],[282,177],[146,189],[100,217],[73,258],[70,287],[84,324],[171,373],[189,429]] },
-    { id: 'autriche', name: 'Autriche', flag: '🇦🇹', width: 60,
+    { id: 'autriche', flag: '🇦🇹', width: 60,
       points: [[459,530],[776,443],[826,421],[845,402],[818,304],[805,289],[776,281],[527,288],[487,305],[443,345],[414,347],[360,265],[362,226],[383,213],[493,227],[538,219],[594,173],[598,140],[582,130],[479,125],[299,93],[213,90],[168,95],[155,106],[157,117],[259,228],[335,381],[436,528]] },
-    { id: 'royaume_uni', name: 'Royaume-Uni', flag: '🇬🇧', width: 64,
+    { id: 'royaume_uni', flag: '🇬🇧', width: 64,
       points: [[812,355],[595,171],[558,109],[535,105],[496,117],[445,92],[395,101],[256,90],[213,100],[197,119],[179,282],[196,339],[253,388],[278,393],[297,372],[286,346],[255,335],[248,320],[256,305],[445,162],[461,159],[482,166],[476,189],[461,194],[456,208],[495,296],[478,378],[609,527],[640,530],[666,519],[681,506],[685,471],[815,403],[821,379]] },
-    { id: 'hongrie', name: 'Hongrie', flag: '🇭🇺', width: 42,
+    { id: 'hongrie', flag: '🇭🇺', width: 42,
       points: [[311,530],[663,528],[680,522],[690,510],[693,488],[672,464],[679,445],[694,442],[702,428],[710,281],[704,251],[687,237],[627,213],[594,158],[579,144],[562,143],[514,163],[467,128],[455,103],[363,90],[337,94],[322,106],[319,136],[386,192],[423,392],[439,414],[488,437],[490,451],[473,462],[347,468],[298,498],[290,508],[293,521]] },
-    { id: 'belgique', name: 'Belgique', flag: '🇧🇪', width: 62,
+    { id: 'belgique', flag: '🇧🇪', width: 62,
       points: [[688,90],[440,170],[356,224],[305,243],[190,359],[149,433],[150,452],[175,451],[304,372],[335,380],[401,373],[507,336],[598,378],[649,463],[689,502],[741,530],[781,526],[816,478],[814,457],[744,406],[753,365],[741,342],[620,291],[607,269],[609,236],[630,216],[770,180],[788,187],[823,227],[844,220],[851,200],[778,101],[737,106]] },
-    { id: 'pays_bas', name: 'Pays-Bas', flag: '🇳🇱', width: 40,
+    { id: 'pays_bas', flag: '🇳🇱', width: 40,
       points: [[361,110],[256,428],[252,468],[272,509],[317,530],[361,528],[385,519],[396,505],[397,487],[367,369],[376,351],[407,368],[492,325],[552,306],[637,298],[670,307],[673,321],[662,337],[591,363],[578,378],[578,390],[592,407],[625,423],[663,427],[689,422],[748,297],[744,266],[715,239],[616,237],[529,282],[439,277],[352,304],[337,295],[343,281],[381,260],[390,242],[388,199],[411,108],[400,94],[383,90]] },
-    { id: 'monza', name: 'Monza', flag: '🇮🇹', width: 74,
+    { id: 'monza', flag: '🇮🇹', width: 74,
       points: [[396,500],[728,530],[823,526],[868,496],[875,458],[853,436],[533,403],[497,380],[458,372],[321,216],[253,98],[225,90],[145,99],[125,134],[172,260],[185,403],[206,446],[235,475],[281,491],[369,489]] },
-    { id: 'azerbaidjan', name: 'Azerbaïdjan', flag: '🇦🇿', width: 42,
+    { id: 'azerbaidjan', flag: '🇦🇿', width: 42,
       points: [[546,303],[803,220],[774,106],[749,90],[575,147],[581,198],[526,223],[477,295],[460,239],[406,197],[338,211],[247,250],[202,343],[197,447],[315,527],[338,530],[388,459],[469,395],[501,331]] },
-    { id: 'singapour', name: 'Singapour', flag: '🇸🇬', width: 36,
+    { id: 'singapour', flag: '🇸🇬', width: 36,
       points: [[844,360],[814,141],[802,117],[743,90],[731,97],[723,123],[753,252],[740,275],[537,261],[399,182],[376,192],[342,244],[319,244],[268,204],[239,227],[156,373],[162,404],[193,427],[209,469],[273,530],[290,514],[314,382],[340,307],[364,306],[449,365],[649,378],[670,409],[686,416],[814,421],[842,382]] },
-    { id: 'etats_unis', name: 'États-Unis', flag: '🇺🇸', width: 58,
+    { id: 'etats_unis', flag: '🇺🇸', width: 58,
       points: [[659,147],[401,188],[373,223],[347,233],[384,311],[377,336],[346,354],[309,346],[243,272],[159,304],[127,331],[312,480],[390,530],[401,514],[383,429],[459,371],[478,337],[510,316],[535,262],[556,253],[615,272],[656,236],[704,251],[766,236],[869,118],[873,98],[856,90]] },
-    { id: 'mexique', name: 'Mexique', flag: '🇲🇽', width: 50,
+    { id: 'mexique', flag: '🇲🇽', width: 50,
       points: [[719,90],[166,382],[143,421],[149,462],[167,473],[244,445],[288,483],[454,401],[533,391],[576,413],[652,378],[743,402],[808,520],[823,530],[835,526],[857,464],[819,435],[800,188],[778,130],[744,116]] },
-    { id: 'bresil', name: 'Brésil', flag: '🇧🇷', width: 48,
+    { id: 'bresil', flag: '🇧🇷', width: 48,
       points: [[291,530],[688,510],[725,498],[735,475],[729,422],[699,363],[469,282],[450,266],[441,240],[448,199],[522,156],[542,166],[535,203],[543,224],[563,235],[585,232],[632,163],[667,136],[682,157],[652,228],[670,277],[727,304],[808,323],[833,320],[844,301],[846,234],[814,170],[747,103],[673,90],[486,112],[178,303],[154,344],[203,389],[200,448],[223,495],[249,517]] },
-    { id: 'las_vegas', name: 'Las Vegas', flag: '🇺🇸', width: 50,
+    { id: 'las_vegas', flag: '🇺🇸', width: 50,
       points: [[402,525],[835,530],[862,484],[859,218],[844,184],[768,115],[741,98],[717,115],[718,142],[745,183],[739,201],[720,215],[428,222],[411,209],[411,154],[399,121],[358,92],[336,90],[269,107],[255,267],[237,288],[159,331],[138,373],[143,417],[306,500]] },
-    { id: 'emirats', name: 'Abou Dhabi', flag: '🇦🇪', width: 56,
+    { id: 'emirats', flag: '🇦🇪', width: 56,
       points: [[901,282],[371,107],[347,144],[291,163],[251,193],[129,345],[70,465],[75,493],[102,513],[135,510],[158,489],[176,369],[215,316],[241,311],[262,321],[284,363],[339,359],[349,340],[340,225],[348,209],[406,177],[427,189],[458,431],[471,446],[589,424],[626,352],[653,336],[779,352],[906,337],[930,318],[926,298]] },
   ];
 
@@ -1583,7 +3796,6 @@
   const screenDuel = document.getElementById('screenDuel');
   const duelBackBtn = document.getElementById('duelBackBtn');
   const duelEmpty = document.getElementById('duelEmpty');
-  const duelEmptyCircuit = document.getElementById('duelEmptyCircuit');
   const duelCreateBtn = document.getElementById('duelCreateBtn');
   const duelCreatePublicBtn = document.getElementById('duelCreatePublicBtn');
   const publicDuelSection = document.getElementById('publicDuelSection');
@@ -1625,6 +3837,11 @@
   const accountChipName = document.getElementById('accountChipName');
   const accountOverlay = document.getElementById('accountOverlay');
   const closeAccountBtn = document.getElementById('closeAccountBtn');
+  const langChip = document.getElementById('langChip');
+  const langOverlay = document.getElementById('langOverlay');
+  const langList = document.getElementById('langList');
+  const closeLangBtn = document.getElementById('closeLangBtn');
+  const duelEmptyText = document.getElementById('duelEmptyText');
   const accountSignedOut = document.getElementById('accountSignedOut');
   const accountSignedIn = document.getElementById('accountSignedIn');
   const googleSignInBtn = document.getElementById('googleSignInBtn');
@@ -1943,9 +4160,9 @@
     const days = Math.floor(totalMin / (24 * 60));
     const hours = Math.floor((totalMin % (24 * 60)) / 60);
     const mins = totalMin % 60;
-    if (days > 0) return days + 'j ' + hours + 'h';
-    if (hours > 0) return hours + 'h ' + mins + 'min';
-    return mins + 'min';
+    if (days > 0) return days + t('unit_day') + ' ' + hours + t('unit_hour');
+    if (hours > 0) return hours + t('unit_hour') + ' ' + mins + t('unit_min');
+    return mins + t('unit_min');
   }
 
   let tickerMessages = [];       // file de messages textuels affichés à tour de rôle
@@ -1984,10 +4201,10 @@
     const now = new Date();
     const yest = new Date(now);
     yest.setDate(now.getDate() - 1);
-    const time = String(d.getHours()).padStart(2, '0') + 'h' + String(d.getMinutes()).padStart(2, '0');
-    if (d.toDateString() === now.toDateString()) return "aujourd'hui à " + time;
-    if (d.toDateString() === yest.toDateString()) return 'hier à ' + time;
-    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' à ' + time;
+    const time = d.toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return t('today_at', { time: time });
+    if (d.toDateString() === yest.toDateString()) return t('yesterday_at', { time: time });
+    return d.toLocaleDateString(currentLocale(), { day: '2-digit', month: '2-digit' }) + ' ' + time;
   }
 
   function renderTickerNow() {
@@ -2029,24 +4246,25 @@
     recentRecordEvents.forEach(function (ev) {
       const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
       const flag = country ? country.flag : '🏁';
-      const label = country ? country.name : ev.cid;
+      const label = country ? countryName(country) : ev.cid;
       const diff = DIFFICULTIES.find(function (d) { return d.id === ev.diff; });
       const diffIcon = diff ? diff.icon : '⚙️';
-      const diffLabel = diff ? diff.label : (ev.diff || '');
+      const diffLbl = diff ? diffLabel(diff) : (ev.diff || '');
       const dirIcon = ev.dir === 'inverse' ? '⬅️' : '➡️';
-      const dirLabel = ev.dir === 'inverse' ? 'sens inversé' : 'sens normal';
+      const dirLbl = dirLabelFull(ev.dir);
       const laps = ev.laps || 1;
-      const lapsTxt = laps + (laps > 1 ? ' tours' : ' tour');
       const when = formatEventDateTime(recordEventMillis(ev));
-      msgs.push('🏆 ' + ev.name + ' vient de battre le record sur ' + flag + ' ' + label +
-        ' en ' + diffIcon + ' ' + diffLabel + ' · ' + dirIcon + ' ' + dirLabel + ' · 🔁 ' + lapsTxt +
-        (ev.margin > 0 ? ' (−' + fmt(ev.margin) + ')' : '') +
-        (when ? ' · 🕒 ' + when : '') + ' !');
+      msgs.push(t('ticker_record_beaten', {
+        name: ev.name, flag: flag, circuit: label, diffIcon: diffIcon, diffLabel: diffLbl,
+        dirIcon: dirIcon, dirLabel: dirLbl, laps: lapsText(laps),
+        marginPart: (ev.margin > 0 ? ' (−' + fmt(ev.margin) + ')' : ''),
+        whenPart: (when ? ' · 🕒 ' + when : '')
+      }));
     });
     if (leaderGapMsg) msgs.push(leaderGapMsg);
     if (latestPublicDuelMsg) msgs.push(latestPublicDuelMsg);
     if (trendingCircuitMsg) msgs.push(trendingCircuitMsg);
-    msgs.push('⏳ Classement remis à zéro dans ' + formatCountdown(msUntilWeeklyReset()));
+    msgs.push(t('weekly_reset_countdown', { countdown: formatCountdown(msUntilWeeklyReset()) }));
     tickerMessages = msgs;
     if (!tickerLoopStarted) {
       tickerLoopStarted = true;
@@ -2090,13 +4308,13 @@
         const top = rows[0];
         const mine = rows.find(function (r) { return r.key === myKey; });
         if (mine && Math.abs(mine.time - top.time) < 0.001) {
-          leaderGapMsg = '👑 Tu détiens le record de ' + country.flag + ' ' + country.name + ' cette semaine !';
+          leaderGapMsg = t('ticker_you_hold_record', { flag: country.flag, circuit: countryName(country) });
         } else if (mine) {
-          leaderGapMsg = '🎯 Tu es à ' + fmt(mine.time - top.time) + ' du record de ' + country.flag + ' ' + country.name + ' — file le battre !';
+          leaderGapMsg = t('ticker_gap_to_record', { gap: fmt(mine.time - top.time), flag: country.flag, circuit: countryName(country) });
         } else {
           // tickerTextEl est mis à jour via .textContent (pas innerHTML) : pas besoin
           // d'échapper le nom ici, contrairement aux listes construites en HTML ailleurs.
-          leaderGapMsg = '🏁 Record actuel sur ' + country.flag + ' ' + country.name + ' : ' + fmt(top.time) + ' (' + top.name + ')';
+          leaderGapMsg = t('ticker_current_record', { flag: country.flag, circuit: countryName(country), time: fmt(top.time), name: top.name });
         }
         rebuildTickerMessages();
       }).catch(function () { leaderGapMsg = null; });
@@ -2109,11 +4327,11 @@
       snap.forEach(function (d) { entry = d.data(); });
       if (!entry) { latestPublicDuelMsg = null; return; }
       const country = COUNTRIES.find(function (c) { return c.id === entry.cid; });
-      const label = country ? (country.flag + ' ' + country.name) : entry.cid;
+      const label = country ? (country.flag + ' ' + countryName(country)) : entry.cid;
       const n = Object.keys(entry.runs || {}).length;
       latestPublicDuelMsg = n === 0 ?
-        ('🆕 Nouveau défi public sur ' + label + ' — sois le premier à le relever !') :
-        ('🌍 Défi public en cours sur ' + label + ' — viens le relever !');
+        t('duel_public_new', { circuit: label }) :
+        t('duel_public_ongoing', { circuit: label });
       rebuildTickerMessages();
     }).catch(function () { latestPublicDuelMsg = null; });
   }
@@ -2131,8 +4349,8 @@
         const top = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })[0];
         if (!top || counts[top] < 2) { trendingCircuitMsg = null; return; }
         const country = COUNTRIES.find(function (c) { return c.id === top; });
-        const label = country ? (country.flag + ' ' + country.name) : top;
-        trendingCircuitMsg = '🔥 Circuit tendance cette semaine : ' + label + ' (' + counts[top] + ' courses)';
+        const label = country ? (country.flag + ' ' + countryName(country)) : top;
+        trendingCircuitMsg = t('ticker_trending_circuit', { label: label, n: counts[top] });
         rebuildTickerMessages();
       }).catch(function () { trendingCircuitMsg = null; });
   }
@@ -2154,10 +4372,10 @@
   function renderLeaderboard(cid, diff, dir, laps) {
     if (!leaderboardList) return;
     if (!db) {
-      leaderboardList.innerHTML = '<div class="history-empty">Classement indisponible hors connexion.</div>';
+      leaderboardList.innerHTML = '<div class="history-empty">' + t('leaderboard_offline') + '</div>';
       return;
     }
-    leaderboardList.innerHTML = '<div class="history-empty">Chargement du classement…</div>';
+    leaderboardList.innerHTML = '<div class="history-empty">' + t('leaderboard_loading') + '</div>';
     const rk = raceKeyFor(cid, diff, dir, laps);
     const wk = currentWeekId();
     const myUid = auth && auth.currentUser && auth.currentUser.uid;
@@ -2166,7 +4384,7 @@
       .orderBy('time', 'asc').limit(20).get().then(function (snap) {
         if (requestToken !== renderLeaderboard._token) return; // une requête plus récente a pris le relais
         if (snap.empty) {
-          leaderboardList.innerHTML = '<div class="history-empty">Personne n\'a encore couru cette combinaison cette semaine.</div>';
+          leaderboardList.innerHTML = '<div class="history-empty">' + t('leaderboard_nobody') + '</div>';
           return;
         }
         const rows = [];
@@ -2181,9 +4399,9 @@
         if (requestToken !== renderLeaderboard._token) return;
         console.error('Classement : lecture impossible', err);
         if (err && err.code === 'failed-precondition') {
-          leaderboardList.innerHTML = '<div class="history-empty">Classement pas encore activé : un index Firestore doit être créé une fois (lien dans la console du navigateur).</div>';
+          leaderboardList.innerHTML = '<div class="history-empty">' + t('leaderboard_index_missing') + '</div>';
         } else {
-          leaderboardList.innerHTML = '<div class="history-empty">Impossible de charger le classement pour le moment.</div>';
+          leaderboardList.innerHTML = '<div class="history-empty">' + t('leaderboard_load_error') + '</div>';
         }
       });
   }
@@ -2261,7 +4479,7 @@
       // croire que tout va bien, avec un bouton "Actualiser" pour reprendre la main.
       console.error('Défi : lecture Firestore impossible', err);
       if (!screenDuel.hidden && duelTag) {
-        duelTag.textContent = '⚠️ Connexion perdue — appuie sur Actualiser';
+        duelTag.textContent = t('duel_conn_lost');
         duelTag.className = 'duel-tag to-play';
       }
     });
@@ -2281,7 +4499,7 @@
     }).catch(function (err) {
       console.error('Défi : actualisation impossible', err);
       if (btn) btn.textContent = original;
-      if (showFeedback) alert('Impossible d\'actualiser ce défi (' + err.message + ').');
+      if (showFeedback) alert(t('duel_refresh_fail', { error: err.message }));
     });
   }
 
@@ -2470,7 +4688,7 @@
       card.innerHTML =
         '<div class="card-plate">' +
           '<canvas class="card-preview"></canvas>' +
-          '<span class="card-name">' + c.name + '</span>' +
+          '<span class="card-name">' + countryName(c) + '</span>' +
         '</div>';
       card.addEventListener('click', () => {
         if (i === menuIndex) { enterRace(c); }
@@ -2484,7 +4702,7 @@
       chip.className = 'flag-chip';
       chip.type = 'button';
       chip.textContent = c.flag;
-      chip.title = c.name;
+      chip.title = countryName(c);
       chip.addEventListener('click', () => goTo(i));
       flagRail.appendChild(chip);
       flagChipEls.push(chip);
@@ -2743,14 +4961,14 @@
       const bestTele = getBestTele(country.id, selectedDifficulty, selectedDirection, selectedLaps);
       if (bestTele) {
         ghostTele = bestTele.tele;
-        ghostLabel = 'ton record';
+        ghostLabel = t('ghost_your_record');
         ghostTime = bestTele.time;
         ghostOff = bestTele.off || null;
       }
     }
     ghostPenaltyTimesArr = ghostPenaltyTimes(ghostTele, ghostOff);
-    hudCountryChip.textContent = country.flag + ' ' + country.name + ' · ' + diff.label +
-      (activeDuel ? ' · Défi' : '') + (ghostTele ? ' · 👻 ' + ghostLabel : '');
+    hudCountryChip.textContent = country.flag + ' ' + countryName(country) + ' · ' + diffLabel(diff) +
+      (activeDuel ? t('hud_duel_suffix') : '') + (ghostTele ? t('hud_ghost_prefix', { label: ghostLabel }) : '');
     drawMask();
     resizeCanvas();
     resetRun();
@@ -2994,7 +5212,7 @@
     hudTime.textContent = '0.00 s';
     if (selectedLaps > 1) {
       hudLapChip.hidden = false;
-      hudLapChip.textContent = 'Tour 1 / ' + selectedLaps;
+      hudLapChip.textContent = t('hud_lap_chip', { lap: 1, laps: selectedLaps });
     } else {
       hudLapChip.hidden = true;
     }
@@ -3285,7 +5503,7 @@
   function startCountdown() {
     state = 'countdown';
     countdownAbort = false;
-    setBanner('Reste immobile... départ imminent');
+    setBanner(t('banner_wait_start'));
     lightsEl.classList.add('show');
     lightEls.forEach(l => l.classList.remove('on'));
     let i = 0;
@@ -3320,7 +5538,7 @@
     lastMoveX = heldPoint ? heldPoint[0] : 0;
     lastMoveY = heldPoint ? heldPoint[1] : 0;
     instSpeed = 0;
-    setBanner('En course — reste sur la piste');
+    setBanner(t('banner_in_race'));
     // Le moteur tourne déjà au ralenti depuis que le doigt a touché la ligne de départ (voir
     // onPointerDown/engineIdleIn) — pas besoin de le relancer ici, updateEngineSound() (appelé
     // à chaque image par tickTimer) prend simplement le relais sur le volume/les fréquences.
@@ -3352,21 +5570,21 @@
     lastSplits = splits.slice();
     let splitsHtml = '';
     if (lastSplits.length) {
-      splitsHtml = '<div class="result-splits"><div class="history-title">Temps par tour</div>' +
+      splitsHtml = '<div class="result-splits"><div class="history-title">' + t('time_per_lap_title') + '</div>' +
         lapSplitRows(lastSplits, function (lap, delta) {
-          return '<div class="result-row"><span>' + escapeHtml('Tour ' + lap + ' terminé') + '</span><span class="val">' + fmt(delta) + '</span></div>';
+          return '<div class="result-row"><span>' + escapeHtml(t('lap_done', { lap: lap })) + '</span><span class="val">' + fmt(delta) + '</span></div>';
         }) + '</div>';
     }
 
-    resultTitle.textContent = 'Arrivée !';
-    resultSub.textContent = current.flag + ' ' + current.name;
+    resultTitle.textContent = t('result_title_finish');
+    resultSub.textContent = current.flag + ' ' + countryName(current);
     resultBody.innerHTML =
-      '<div class="result-row"><span>Temps brut</span><span class="val">' + fmt(rawTime) + '</span></div>' +
-      '<div class="result-row"><span>Sorties de piste</span><span class="val">' + penalties + '</span></div>' +
-      '<div class="result-row"><span>Pénalités</span><span class="val">+' + fmt(penaltyTime) + '</span></div>' +
-      '<div class="result-total"><span>Total</span><span class="val">' + fmt(total) + '</span></div>' +
+      '<div class="result-row"><span>' + t('result_raw_time') + '</span><span class="val">' + fmt(rawTime) + '</span></div>' +
+      '<div class="result-row"><span>' + t('result_offtrack_count') + '</span><span class="val">' + penalties + '</span></div>' +
+      '<div class="result-row"><span>' + t('result_penalties') + '</span><span class="val">+' + fmt(penaltyTime) + '</span></div>' +
+      '<div class="result-total"><span>' + t('result_total') + '</span><span class="val">' + fmt(total) + '</span></div>' +
       splitsHtml;
-    bestNote.textContent = isNewBest ? '🏁 Nouveau meilleur temps !' : (best !== null ? 'Meilleur temps : ' + fmt(best) : '');
+    bestNote.textContent = isNewBest ? t('result_new_best') : (best !== null ? t('result_best_time', { time: fmt(best) }) : '');
     viewRunBtn.hidden = false;
     renderHistoryList(history);
     overlay.classList.add('show');
@@ -3380,7 +5598,7 @@
       const name = ensureChallengeName();
       challengeResultBtn.hidden = true;
       retryBtn.hidden = true;
-      menuBtn.textContent = 'Retour au menu principal';
+      menuBtn.textContent = t('back_to_main_menu_btn');
       if (name) {
         addRunToActiveDuel(name, lastResult);
       } else {
@@ -3390,23 +5608,22 @@
       // Course normale : propose de la transformer en défi, et de recommencer comme avant.
       challengeResultBtn.hidden = false;
       retryBtn.hidden = false;
-      menuBtn.textContent = 'Changer de circuit';
+      menuBtn.textContent = t('change_circuit_btn');
       duelResultPanel.hidden = true;
     }
   }
 
   function settingsLabel() {
     const diff = DIFFICULTIES.find(d => d.id === selectedDifficulty) || DIFFICULTIES[1];
-    return diff.label + ' · ' + (selectedDirection === 'inverse' ? 'Sens inversé' : 'Sens normal') + ' · ' +
-      selectedLaps + (selectedLaps > 1 ? ' tours' : ' tour');
+    return diffLabel(diff) + ' · ' + dirLabelFull(selectedDirection) + ' · ' + lapsText(selectedLaps);
   }
 
   function historyRowsHtml(history) {
     const bestTime = Math.min.apply(null, history.map(h => h.time));
     return history.map(h => {
       const d = new Date(h.date);
-      const dstr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' +
-        d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const dstr = d.toLocaleDateString(currentLocale(), { day: '2-digit', month: '2-digit' }) + ' ' +
+        d.toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' });
       const isBest = h.time === bestTime;
       return '<div class="history-row' + (isBest ? ' best' : '') + '"><span>' + dstr + '</span><span class="val">' +
         fmt(h.time) + (isBest ? ' 🏁' : '') + '</span></div>';
@@ -3416,18 +5633,18 @@
   function renderHistoryList(history) {
     if (!history || !history.length) { historyList.hidden = true; historyList.innerHTML = ''; return; }
     historyList.hidden = false;
-    historyList.innerHTML = '<div class="history-title">Historique — ' + settingsLabel() + '</div>' + historyRowsHtml(history);
+    historyList.innerHTML = '<div class="history-title">' + t('history_title_prefix', { settings: settingsLabel() }) + '</div>' + historyRowsHtml(history);
   }
 
   function openHistoryModal() {
     if (!COUNTRIES[menuIndex]) return;
     const c = COUNTRIES[menuIndex];
-    historyTitle.textContent = c.flag + ' ' + c.name;
+    historyTitle.textContent = c.flag + ' ' + countryName(c);
     historySub.textContent = settingsLabel();
     const history = getHistory(c.id, selectedDifficulty, selectedDirection, selectedLaps);
-    menuHistoryList.innerHTML = '<div class="history-title">Mes records</div>' + (history.length
+    menuHistoryList.innerHTML = '<div class="history-title">' + t('my_records_title') + '</div>' + (history.length
       ? historyRowsHtml(history)
-      : '<div class="history-empty">Aucun temps enregistré avec ces réglages pour le moment. Change la difficulté, le sens ou le nombre de tours ci-dessus pour voir un autre historique.</div>');
+      : '<div class="history-empty">' + t('history_empty') + '</div>');
     renderLeaderboard(c.id, selectedDifficulty, selectedDirection, selectedLaps);
     historyOverlay.classList.add('show');
   }
@@ -3442,8 +5659,8 @@
     stopEngineSound();
     setBanner('');
     updateNextCpPulse();
-    resultTitle.textContent = 'Raté !';
-    resultSub.textContent = current.flag + ' ' + current.name;
+    resultTitle.textContent = t('result_title_fail');
+    resultSub.textContent = current.flag + ' ' + countryName(current);
     resultBody.innerHTML = '<div class="result-row"><span>' + message + '</span><span class="val"></span></div>';
     bestNote.textContent = '';
     viewRunBtn.hidden = telemetry.length < 2;
@@ -3530,7 +5747,7 @@
     // seuls "Fermer le rejeu" et "Rejouer la lecture" doivent pouvoir en sortir.
     if (state === 'racing' || state === 'countdown' || state === 'replay') return;
     if (dist(lx, ly, startGate.pos) > START_RADIUS) {
-      setBanner('Pose le doigt sur le point blanc DÉPART / ARRIVÉE (D/A)');
+      setBanner(t('banner_touch_start'));
       return;
     }
     view.setPointerCapture(evt.pointerId);
@@ -3558,7 +5775,7 @@
 
     if (state === 'countdown') {
       if (dist(lx, ly, startGate.pos) > FALSE_START_MOVE) {
-        abortRun('Faux départ — tu as bougé avant l\'extinction des feux');
+        abortRun(t('false_start_moved'));
         return;
       }
       heldPoint = [lx, ly];
@@ -3591,9 +5808,9 @@
       hudPenChip.textContent = '+' + fmt(penalties * PENALTY_SECONDS);
       hudPenChip.className = 'hud-chip danger';
       flash(lx, ly);
-      setBanner('Sortie de piste ! +' + PENALTY_SECONDS + ' s — continue');
+      setBanner(t('banner_off_track', { s: PENALTY_SECONDS }));
     } else if (!onTrack && onNow) {
-      setBanner('En course — reste sur la piste');
+      setBanner(t('banner_in_race'));
     }
     onTrack = onNow;
 
@@ -3639,26 +5856,26 @@
           // Temps du tour lui-même (pas le cumul) pour le chip flash — voir lapSplitRows.
           const lapDelta = elapsed - (splits.length ? splits[splits.length - 1].t : 0);
           splits.push({ n: 'lap', lap: currentLap, t: elapsed });
-          showSplitFlash('Tour ' + currentLap + ' terminé', lapDelta);
+          showSplitFlash(t('lap_done', { lap: currentLap }), lapDelta);
           currentLap += 1;
           nextCpPtr = 0;
           hudLapChip.hidden = false;
-          hudLapChip.textContent = 'Tour ' + currentLap + ' / ' + selectedLaps;
-          setBanner('Tour ' + currentLap + ' / ' + selectedLaps + ' — vas-y !');
+          hudLapChip.textContent = t('hud_lap_chip', { lap: currentLap, laps: selectedLaps });
+          setBanner(t('banner_lap_progress', { lap: currentLap, laps: selectedLaps }));
           drawScene();
           updateNextCpPulse();
         }
       } else {
-        setBanner('Passe par tous les points de contrôle oranges avant de ' + (selectedLaps > 1 ? 'boucler le tour' : 'finir') + ' !');
+        setBanner(t('checkpoints_hint', { action: selectedLaps > 1 ? t('action_close_lap') : t('action_finish') }));
       }
     }
   }
 
   function onPointerUp() {
     if (state === 'countdown') {
-      abortRun('Faux départ — tu as relâché avant l\'extinction des feux');
+      abortRun(t('false_start_released'));
     } else if (state === 'racing') {
-      abortRun('Tu as levé le doigt avant la ligne d\'arrivée');
+      abortRun(t('lifted_early'));
     }
   }
 
@@ -3739,7 +5956,7 @@
   function ensureChallengeName() {
     let name = (playerNameInput.value || playerName || '').trim();
     if (!name) {
-      name = ((typeof window.prompt === 'function' && window.prompt('Ton prénom, pour le classement du défi ?')) || '').trim();
+      name = ((typeof window.prompt === 'function' && window.prompt(t('name_prompt'))) || '').trim();
     }
     if (name) {
       playerName = name;
@@ -3756,7 +5973,7 @@
       // On n'utilise jamais la photo de profil Google : juste une initiale, comme pour un
       // compte e-mail ou invité (cohérent visuellement, et ça évite d'afficher une photo
       // personnelle par-dessus l'interface du jeu).
-      const label = playerName || user.displayName || (user.email ? user.email.split('@')[0] : 'Compte');
+      const label = playerName || user.displayName || (user.email ? user.email.split('@')[0] : t('account_default_name'));
       accountAvatar.textContent = label[0].toUpperCase();
       accountChipName.textContent = label;
       return;
@@ -3767,7 +5984,7 @@
       accountChipName.textContent = name;
     } else {
       accountAvatar.textContent = '👤';
-      accountChipName.textContent = 'Compte';
+      accountChipName.textContent = t('account_default_name');
     }
   }
 
@@ -3775,18 +5992,18 @@
   function authErrorMessage(err) {
     const code = err && err.code;
     const map = {
-      'auth/email-already-in-use': "Un compte existe déjà avec cet e-mail — essaie de te connecter plutôt.",
-      'auth/invalid-email': 'Adresse e-mail invalide.',
-      'auth/weak-password': 'Le mot de passe doit faire au moins 6 caractères.',
-      'auth/wrong-password': 'Mot de passe incorrect.',
-      'auth/user-not-found': "Aucun compte avec cet e-mail — crée un compte d'abord.",
-      'auth/invalid-credential': 'E-mail ou mot de passe incorrect.',
+      'auth/email-already-in-use': t('auth_err_email_in_use'),
+      'auth/invalid-email': t('auth_err_invalid_email'),
+      'auth/weak-password': t('auth_err_weak_password'),
+      'auth/wrong-password': t('auth_err_wrong_password'),
+      'auth/user-not-found': t('auth_err_user_not_found'),
+      'auth/invalid-credential': t('auth_err_invalid_credential'),
       'auth/popup-closed-by-user': null,
       'auth/cancelled-popup-request': null,
-      'auth/network-request-failed': 'Connexion impossible — vérifie ta connexion internet.'
+      'auth/network-request-failed': t('auth_err_network')
     };
     if (code && Object.prototype.hasOwnProperty.call(map, code)) return map[code];
-    return (err && err.message) || 'Une erreur est survenue.';
+    return (err && err.message) || t('auth_err_generic');
   }
 
   function showAccountAuthError(text) {
@@ -3830,7 +6047,7 @@
     }
     if (savePseudoBtn) {
       const original = savePseudoBtn.textContent;
-      savePseudoBtn.textContent = 'Pseudo enregistré !';
+      savePseudoBtn.textContent = t('pseudo_saved');
       setTimeout(() => { savePseudoBtn.textContent = original; }, 1500);
     }
   }
@@ -3846,7 +6063,7 @@
   function duelRowsHtml(runs) {
     const sorted = runs.slice().sort((a, b) => a.time - b.time);
     if (sorted.length === 0) {
-      return '<div class="duel-row waiting">Personne n\'a encore couru ce défi — lance la course pour poser le premier temps !</div>';
+      return '<div class="duel-row waiting">' + t('duel_row_waiting') + '</div>';
     }
     return sorted.map((r, i) => {
       const color = DUEL_COLORS[i % DUEL_COLORS.length];
@@ -3879,7 +6096,7 @@
       // Abonnement Firestore pas encore établi (juste après avoir ouvert un lien ou un
       // historique) — court état de chargement, le temps que le premier instantané arrive.
       duelFlag.textContent = '⏳';
-      duelTitle.textContent = 'Chargement du défi…';
+      duelTitle.textContent = t('duel_loading_title');
       duelSub.textContent = '';
       duelTag.textContent = '';
       duelParticipants.innerHTML = '';
@@ -3894,18 +6111,17 @@
     saveDuelToHistory(duel);
     const country = COUNTRIES.find(c => c.id === duel.cid);
     duelFlag.textContent = (country && country.flag) || '🏁';
-    duelTitle.textContent = 'Défi — ' + (country ? country.name : duel.cid);
+    duelTitle.textContent = t('duel_title_prefix', { circuit: country ? countryName(country) : duel.cid });
     const diff = DIFFICULTIES.find(d => d.id === duel.diff) || DIFFICULTIES[1];
-    duelSub.textContent = diff.label + ' · ' + (duel.dir === 'inverse' ? 'Sens inversé' : 'Sens normal') + ' · ' +
-      duel.laps + (duel.laps > 1 ? ' tours' : ' tour');
+    duelSub.textContent = diffLabel(diff) + ' · ' + dirLabelFull(duel.dir) + ' · ' + lapsText(duel.laps);
     duelParticipants.innerHTML = duelRowsHtml(duel.runs);
     const alreadyRan = playerHasRunDuel(duel);
-    duelTag.textContent = alreadyRan ? '✅ Défi réalisé' : '🏁 Défi à relever';
+    duelTag.textContent = alreadyRan ? t('duel_status_done') : t('duel_status_todo');
     duelTag.className = 'duel-tag ' + (alreadyRan ? 'done' : 'to-play');
     if (!alreadyRan) {
       // Le joueur n'a pas encore couru : un seul essai, donc juste le bouton normal.
       duelPlayBtn.hidden = false;
-      duelPlayBtn.textContent = duel.runs.length ? 'Relever le défi' : 'Lancer la course';
+      duelPlayBtn.textContent = duel.runs.length ? t('duel_play_relever') : t('launch_race');
       duelRematchBtn.hidden = true;
     } else {
       // Un seul essai par défi : plus de "Relancer la course" une fois couru.
@@ -3917,7 +6133,7 @@
         const sorted = duel.runs.slice().sort((a, b) => a.time - b.time);
         const isWinner = sorted[0].key === currentRunKey();
         duelRematchBtn.hidden = false;
-        duelRematchBtn.textContent = isWinner ? '🔁 Relancer un défi' : '🔥 Demander une revanche';
+        duelRematchBtn.textContent = isWinner ? t('duel_rematch_again') : t('duel_rematch_revenge');
       }
     }
     duelReplayBtn.hidden = duel.runs.length < 2;
@@ -3933,14 +6149,14 @@
     const runs = entry.runs || [];
     const n = runs.length;
     const mineDone = playerHasRunDuel(entry);
-    const sub = n === 0 ? 'Aucun temps posé — sois le premier !' :
-      (n + (n > 1 ? ' participants' : ' participant') + ' déjà inscrit' + (n > 1 ? 's' : ''));
+    const sub = n === 0 ? t('duel_participants_none') :
+      t(n > 1 ? 'duel_participants_many' : 'duel_participants_one', { n: n });
     const country = showCircuit ? COUNTRIES.find(c => c.id === entry.cid) : null;
     const flag = country ? country.flag : '🌍';
-    const label = country ? (country.name + ' — Défi public') : 'Défi public';
+    const label = country ? t('duel_public_suffix', { circuit: countryName(country) }) : t('duel_public_label_bare');
     // Un badge "Réalisé" distingue au premier coup d'œil ceux déjà joués par CE joueur des
     // vrais défis ouverts, une fois qu'on affiche aussi les défis publics déjà réalisés.
-    const statusHtml = mineDone ? '<span class="duel-status-badge done">✅ Réalisé</span>' : '';
+    const statusHtml = mineDone ? '<span class="duel-status-badge done">' + t('duel_public_done_badge') + '</span>' : '';
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
       '<span class="duel-history-flag">' + flag + '</span>' +
       '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(label) + '</span>' +
@@ -3957,12 +6173,12 @@
     publicDuelFilter.dataset.filled = '1';
     const optAll = document.createElement('option');
     optAll.value = '';
-    optAll.textContent = 'Tous les circuits';
+    optAll.textContent = t('filter_all_circuits');
     publicDuelFilter.appendChild(optAll);
     COUNTRIES.forEach(function (c) {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = c.flag + ' ' + c.name;
+      opt.textContent = c.flag + ' ' + countryName(c);
       publicDuelFilter.appendChild(opt);
     });
     publicDuelFilter.addEventListener('change', function () {
@@ -3990,7 +6206,7 @@
     if (publicDuelStatusFilter) publicDuelStatusFilter.value = publicDuelStatus;
     if (!db) { publicDuelSection.hidden = true; return; }
     publicDuelSection.hidden = false;
-    publicDuelList.innerHTML = '<div class="history-empty">Chargement…</div>';
+    publicDuelList.innerHTML = '<div class="history-empty">' + t('loading') + '</div>';
     const requestToken = (renderPublicDuelBoard._token = (renderPublicDuelBoard._token || 0) + 1);
     let query = db.collection('public_duels');
     query = showAll ? query.orderBy('createdAt', 'desc') : query.where('cid', '==', cid).orderBy('createdAt', 'desc');
@@ -4023,11 +6239,11 @@
         if (publicDuelStatus === 'open') entries = entries.filter(function (e) { return !playerHasRunDuel(e); });
         else if (publicDuelStatus === 'done') entries = entries.filter(function (e) { return playerHasRunDuel(e); });
         if (!entries.length) {
-          const statusText = publicDuelStatus === 'done' ? 'aucun défi public déjà réalisé' :
-            publicDuelStatus === 'open' ? 'aucun défi public ouvert' : 'aucun défi public';
+          const statusText = publicDuelStatus === 'done' ? t('duel_public_none_done') :
+            publicDuelStatus === 'open' ? t('duel_public_none_open') : t('duel_public_none_all');
           publicDuelList.innerHTML = '<div class="history-empty">' +
-            escapeHtml(statusText + (showAll ? ' pour l\'instant' : ' sur ce circuit pour l\'instant') +
-              (publicDuelStatus !== 'done' ? ' — lance-toi !' : '.')) +
+            escapeHtml(statusText + (showAll ? t('duel_public_none_scope_all') : t('duel_public_none_scope_circuit')) +
+              (publicDuelStatus !== 'done' ? t('duel_public_none_cta') : '.')) +
             '</div>';
           return;
         }
@@ -4042,9 +6258,9 @@
         if (requestToken !== renderPublicDuelBoard._token) return;
         console.error('Défis publics : lecture impossible', err);
         if (err && err.code === 'failed-precondition') {
-          publicDuelList.innerHTML = '<div class="history-empty">Défis publics pas encore activés : un index Firestore doit être créé une fois (lien dans la console du navigateur).</div>';
+          publicDuelList.innerHTML = '<div class="history-empty">' + t('duel_public_index_missing') + '</div>';
         } else {
-          publicDuelList.innerHTML = '<div class="history-empty">Impossible de charger les défis publics pour le moment.</div>';
+          publicDuelList.innerHTML = '<div class="history-empty">' + t('duel_public_load_error') + '</div>';
         }
       });
   }
@@ -4055,7 +6271,8 @@
     duelEmpty.hidden = hasActive;
     const country = COUNTRIES[menuIndex] || COUNTRIES[0];
     if (!hasActive) {
-      duelEmptyCircuit.textContent = country ? (country.flag + ' ' + country.name) : '';
+      const circuitHtml = country ? '<strong>' + escapeHtml(country.flag + ' ' + countryName(country)) + '</strong>' : '';
+      duelEmptyText.innerHTML = t('duel_empty_p', {circuit: circuitHtml});
     }
     // Tant que le joueur n'a jamais touché le filtre, le tableau des défis publics suit le
     // circuit affiché dans le carrousel ; dès qu'il a choisi une valeur, elle reste active.
@@ -4100,7 +6317,7 @@
   function duelHistoryRowHtml(entry) {
     const country = COUNTRIES.find(c => c.id === entry.cid);
     const flag = (country && country.flag) || '🏁';
-    const name = country ? country.name : entry.cid;
+    const name = country ? countryName(country) : entry.cid;
     const runs = entry.runs || [];
     const key = currentRunKey();
     const mineDone = playerHasRunDuel(entry);
@@ -4110,23 +6327,23 @@
       const sorted = runs.slice().sort((a, b) => a.time - b.time);
       const rank = sorted.findIndex(r => r.key === key);
       const mine = rank >= 0 ? sorted[rank] : runs[0];
-      sub = 'Ton temps : ' + fmt(mine.time) + (sorted.length > 1 ? (rank === 0 ? ' 🏆' : ' · ' + (rank + 1) + 'e') : '');
+      sub = t('your_time', {time: fmt(mine.time)}) + (sorted.length > 1 ? (rank === 0 ? ' 🏆' : t('duel_second_place')) : '');
     } else if (opponentDone) {
-      sub = 'À toi de jouer !';
+      sub = t('your_turn');
     }
     const visibilityHtml = '<span class="duel-visibility-badge ' + (entry.public ? 'is-public' : 'is-private') + '">' +
-      (entry.public ? '🌍 Public' : '🔒 Ami') + '</span>';
+      (entry.public ? t('badge_public') : t('badge_friend')) + '</span>';
     const statusHtml = '<span class="duel-history-status">' +
       visibilityHtml +
-      '<span class="duel-status-badge' + (mineDone ? ' done' : '') + '">' + (mineDone ? '✅' : '⏳') + ' Toi</span>' +
-      '<span class="duel-status-badge' + (opponentDone ? ' done' : '') + '">' + (opponentDone ? '✅' : '⏳') + ' Adversaire</span>' +
+      '<span class="duel-status-badge' + (mineDone ? ' done' : '') + '">' + (mineDone ? '✅' : '⏳') + ' ' + t('label_you') + '</span>' +
+      '<span class="duel-status-badge' + (opponentDone ? ' done' : '') + '">' + (opponentDone ? '✅' : '⏳') + ' ' + t('label_opponent') + '</span>' +
       '</span>';
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
       '<span class="duel-history-flag">' + flag + '</span>' +
       '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(name) + '</span>' +
       statusHtml +
       (sub ? '<span class="duel-history-sub">' + escapeHtml(sub) + '</span>' : '') + '</span>' +
-      '<button class="duel-history-delete" type="button" data-id="' + entry.id + '" title="Retirer ce défi de la liste">✕</button></div>';
+      '<button class="duel-history-delete" type="button" data-id="' + entry.id + '" title="' + escapeHtml(t('duel_delete_tooltip')) + '">✕</button></div>';
   }
 
   // Suppression d'un défi de la liste en double-tap sur sa croix, au lieu d'une popup de
@@ -4143,7 +6360,7 @@
     if (armedDuelDeleteBtn) {
       armedDuelDeleteBtn.classList.remove('confirm-delete');
       armedDuelDeleteBtn.textContent = '✕';
-      armedDuelDeleteBtn.title = 'Retirer ce défi de la liste';
+      armedDuelDeleteBtn.title = t('duel_delete_tooltip');
     }
     armedDuelDeleteBtn = null;
   }
@@ -4290,7 +6507,7 @@
     // barre d'adresse, sinon actualiser la page rouvrirait ce même défi indéfiniment.
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
     if (!db) {
-      alert('Impossible de charger ce défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      alert(t('duel_load_fail'));
       return;
     }
     // Un ami qui ouvre un lien de défi arrive directement sur l'écran Défis, pas sur le menu.
@@ -4316,7 +6533,7 @@
     };
     const clipboardFallback = () => {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => flashLabel('Lien copié !')).catch(promptFallback);
+        navigator.clipboard.writeText(url).then(() => flashLabel(t('link_copied'))).catch(promptFallback);
       } else {
         promptFallback();
       }
@@ -4328,7 +6545,7 @@
         inputEl.focus();
         inputEl.select();
       } else if (typeof window.prompt === 'function') {
-        window.prompt('Copie ce lien pour défier ton ami :', url);
+        window.prompt(t('link_copy_prompt'), url);
       }
     };
     // Le partage natif (mail, SMS, WhatsApp...) est prioritaire ; le presse-papiers puis
@@ -4336,8 +6553,8 @@
     // pas sur ce navigateur/appareil, ou s'il échoue pour une autre raison qu'une annulation.
     if (navigator.share) {
       navigator.share({
-        title: 'Défi F1 Finger Race',
-        text: 'Je te défie sur ce circuit dans F1 Finger Race !',
+        title: t('share_title'),
+        text: t('share_text'),
         url: url
       }).catch(err => {
         if (err && err.name === 'AbortError') return; // annulé volontairement — rien à faire
@@ -4354,7 +6571,7 @@
     // course. Seul quelqu'un qui reçoit ce lien peut le relever (la collection "duels" refuse
     // le listing : impossible à découvrir par un autre moyen).
     if (!db) {
-      alert('Impossible de créer un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      alert(t('duel_create_fail_conn'));
       return;
     }
     const ref = db.collection('duels').doc();
@@ -4371,7 +6588,7 @@
       }
     }).catch(function (err) {
       console.error(err);
-      alert('Impossible de créer le défi (' + err.message + ').');
+      alert(t('duel_create_fail', { error: err.message }));
     });
   }
 
@@ -4380,7 +6597,7 @@
     // autorise le listing (voir firestore.rules), donc ce défi apparaît pour TOUT joueur qui
     // ouvre l'écran Défis sur ce circuit, qui peut le relever sans avoir reçu de lien.
     if (!db) {
-      alert('Impossible de créer un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      alert(t('duel_create_fail_conn'));
       return;
     }
     const ref = db.collection('public_duels').doc();
@@ -4399,7 +6616,7 @@
       }
     }).catch(function (err) {
       console.error(err);
-      alert('Impossible de créer le défi public (' + err.message + ').');
+      alert(t('duel_create_public_fail', { error: err.message }));
     });
   }
 
@@ -4418,7 +6635,7 @@
 
   function addRunToActiveDuel(name, result) {
     if (!db) {
-      alert('Impossible d\'enregistrer ce temps dans un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).');
+      alert(t('duel_save_run_fail_conn'));
       return;
     }
     const key = currentRunKey();
@@ -4495,7 +6712,7 @@
           activeDuel = null;
           if (!screenRace.hidden) renderDuelResultPanel();
         }
-        alert('Impossible de créer le défi (' + err.message + ').');
+        alert(t('duel_create_fail', { error: err.message }));
       });
     }
   }
@@ -4559,9 +6776,9 @@
     hudLapChip.hidden = true;
     screenMenu.hidden = true;
     screenRace.hidden = false;
-    hudCountryChip.textContent = country.flag + ' ' + country.name + ' · Rejeu';
+    hudCountryChip.textContent = country.flag + ' ' + countryName(country) + t('hud_replay_suffix');
     if (startHintEl) startHintEl.hidden = true;
-    if (replayTitle) replayTitle.textContent = duel.__solo ? 'Rejeu de ta course' : 'Rejeu du défi';
+    if (replayTitle) replayTitle.textContent = duel.__solo ? t('replay_title_solo') : t('replay_title_duel');
     drawMask();
     resizeCanvas();
     state = 'replay';
@@ -4616,7 +6833,7 @@
     if (duel.splits && duel.splits.length) {
       splitsHtml = '<div class="replay-splits"><div class="replay-splits-title">Temps par tour</div>' +
         lapSplitRows(duel.splits, function (lap, delta) {
-          return '<div class="replay-row"><span class="name">' + escapeHtml('Tour ' + lap + ' terminé') + '</span><span class="val">' + fmt(delta) + '</span></div>';
+          return '<div class="replay-row"><span class="name">' + escapeHtml(t('lap_done', {lap: lap})) + '</span><span class="val">' + fmt(delta) + '</span></div>';
         }) + '</div>';
     }
 
@@ -4673,7 +6890,7 @@
       tele: telemetry.slice(), off: offFlags.slice(), key: 'solo-me'
     }];
     if (ghostTele && ghostTele.length) {
-      runs.push({ name: ghostLabel || 'Fantôme', time: ghostTime || 0, pen: 0, tele: ghostTele, off: ghostOff || [], key: 'solo-ghost' });
+      runs.push({ name: ghostLabel || t('ghost_default_label'), time: ghostTime || 0, pen: 0, tele: ghostTele, off: ghostOff || [], key: 'solo-ghost' });
     }
     startGhostReplay({
       id: 'solo', cid: current.id, dir: selectedDirection, diff: selectedDifficulty, laps: selectedLaps,
@@ -4708,7 +6925,7 @@
   duelCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelCopyBtn, duelLinkFallback, duelLinkInput));
   duelDeleteBtn.addEventListener('click', () => {
     if (!activeDuel) return;
-    if (!window.confirm('Retirer ce défi de ta liste ? (il reste accessible à l\'adversaire qui a le lien)')) return;
+    if (!window.confirm(t('duel_supprimer_confirm'))) return;
     removeDuelFromHistory(activeDuel.id);
     stopWatchingDuel();
     activeDuel = null;
@@ -4760,6 +6977,71 @@
     updateAccountChip();
   });
 
+  // ==================== Sélecteur de langue ====================
+  // Chaque langue s'affiche dans SA PROPRE langue (nom natif + drapeau), jamais traduite dans la
+  // langue actuellement active : sinon un joueur qui ne lit pas la langue en cours ne pourrait
+  // jamais repérer la sienne dans la liste pour en changer.
+  function renderLangList() {
+    langList.innerHTML = SUPPORTED_LANGS.map(function (lg) {
+      const m = LANG_META[lg];
+      const active = lg === currentLang;
+      return '<button type="button" class="lang-row' + (active ? ' active' : '') + '" data-lang="' + lg + '">' +
+        '<span class="lang-flag">' + m.flag + '</span>' +
+        '<span class="lang-label">' + escapeHtml(m.label) + '</span>' +
+        '<span class="lang-check">✓</span></button>';
+    }).join('');
+    Array.from(langList.querySelectorAll('.lang-row')).forEach(function (row) {
+      row.addEventListener('click', function () { setLanguage(row.dataset.lang); });
+    });
+  }
+
+  function applyStaticTranslations() {
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = (LANG_META[currentLang] && LANG_META[currentLang].rtl) ? 'rtl' : 'ltr';
+    Array.from(document.querySelectorAll('[data-i18n]')).forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    Array.from(document.querySelectorAll('[data-i18n-title]')).forEach(function (el) {
+      el.title = t(el.getAttribute('data-i18n-title'));
+    });
+    Array.from(document.querySelectorAll('[data-i18n-placeholder]')).forEach(function (el) {
+      el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+    });
+    Array.from(document.querySelectorAll('[data-i18n-html]')).forEach(function (el) {
+      el.innerHTML = t(el.getAttribute('data-i18n-html'));
+    });
+  }
+
+  function setLanguage(lang) {
+    if (SUPPORTED_LANGS.indexOf(lang) === -1 || lang === currentLang) {
+      if (!langOverlay.hidden && langOverlay.classList.contains('show')) langOverlay.classList.remove('show');
+      return;
+    }
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStaticTranslations();
+    // Tout ce qui a été construit une seule fois au démarrage avec du texte traduit doit être
+    // reconstruit pour refléter la nouvelle langue — sinon le carrousel des circuits ou la liste
+    // déroulante des circuits des défis publics resteraient figés dans l'ancienne langue.
+    buildCarousel();
+    if (publicDuelFilter) delete publicDuelFilter.dataset.filled;
+    populatePublicDuelFilter();
+    updateAccountChip();
+    renderLangList();
+    if (state === 'duel') renderDuelScreen();
+    if (!screenRace.hidden) refreshCardBests();
+    rebuildTickerMessages();
+    langOverlay.classList.remove('show');
+  }
+
+  langChip.addEventListener('click', () => {
+    renderLangList();
+    langOverlay.classList.add('show');
+  });
+  closeLangBtn.addEventListener('click', () => {
+    langOverlay.classList.remove('show');
+  });
+
   if (auth) {
     auth.onAuthStateChanged(function (user) {
       if (user && user.displayName) {
@@ -4773,7 +7055,7 @@
   }
 
   googleSignInBtn.addEventListener('click', () => {
-    if (!auth) { showAccountAuthError('Connexion indisponible (Firebase non chargé).'); return; }
+    if (!auth) { showAccountAuthError(t('auth_conn_unavailable')); return; }
     showAccountAuthError('');
     auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => {
       const msg = authErrorMessage(err);
@@ -4782,7 +7064,7 @@
   });
 
   emailSignInBtn.addEventListener('click', () => {
-    if (!auth) { showAccountAuthError('Connexion indisponible (Firebase non chargé).'); return; }
+    if (!auth) { showAccountAuthError(t('auth_conn_unavailable')); return; }
     const email = authEmailInput.value.trim();
     const pass = authPasswordInput.value;
     if (!email || !pass) { showAccountAuthError('Renseigne ton e-mail et ton mot de passe.'); return; }
@@ -4791,7 +7073,7 @@
   });
 
   emailSignUpBtn.addEventListener('click', () => {
-    if (!auth) { showAccountAuthError('Connexion indisponible (Firebase non chargé).'); return; }
+    if (!auth) { showAccountAuthError(t('auth_conn_unavailable')); return; }
     const email = authEmailInput.value.trim();
     const pass = authPasswordInput.value;
     const name = playerNameInput.value.trim();
@@ -4822,6 +7104,7 @@
     playerName = localStorage.getItem('sur-la-corde:playerName') || '';
     playerNameInput.value = playerName;
   } catch (e) {}
+  applyStaticTranslations();
   updateAccountChip();
 
   view.addEventListener('pointerdown', onPointerDown);

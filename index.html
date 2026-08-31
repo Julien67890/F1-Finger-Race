@@ -61,6 +61,50 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Le bandeau live est fixe en bas de l'écran (voir .live-ticker) : cette marge évite qu'il
+     ne recouvre les boutons "Lancer la course"/"Records"/"Défis" du bas de l'accueil. */
+  .menu-screen .menu-foot { margin-bottom: 44px; }
+
+  .live-ticker {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    background: var(--accent);
+    color: #1a0d05;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 12.5px;
+  }
+
+  .live-ticker .ticker-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #1a0d05;
+    flex: none;
+    animation: tickerPulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes tickerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .live-ticker .ticker-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  .live-ticker .ticker-text.fade { opacity: 0; }
+
   .menu-head {
     padding: 0 20px;
     flex: none;
@@ -439,6 +483,15 @@
 
   .duel-history-title-row .duel-history-title { margin-bottom: 0; }
 
+  .duel-history-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
   .public-duel-filter {
     font-family: 'Manrope', sans-serif;
     font-size: 12px;
@@ -448,7 +501,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 6px 8px;
-    max-width: 56%;
+    max-width: 46vw;
   }
 
   .duel-history-row {
@@ -1155,7 +1208,7 @@
           <span class="account-name" id="accountChipName">Compte</span>
         </button>
       </div>
-      <p class="lede">Celui qui aura le doigt le plus rapide et le plus précis sera champion.</p>
+      <p class="lede">Un doigt. Une piste. Un champion. 🏆</p>
 
       <div class="difficulty-picker">
         <div class="seg" id="difficultySeg">
@@ -1199,6 +1252,11 @@
       <button class="cta" id="launchBtn">Lancer la course</button>
       <button class="cta ghost" id="historyBtn">Records</button>
       <button class="cta ghost" id="challengeBtn" title="Voir mes défis">Défis</button>
+    </div>
+
+    <div class="live-ticker" id="liveTicker">
+      <span class="ticker-dot"></span>
+      <span class="ticker-text" id="tickerText">Chargement…</span>
     </div>
 
     <div class="overlay" id="historyOverlay">
@@ -1255,8 +1313,15 @@
 
       <div class="duel-history" id="publicDuelSection" hidden>
         <div class="duel-history-title-row">
-          <div class="duel-history-title section-public">🌍 Défis publics ouverts</div>
-          <select class="public-duel-filter" id="publicDuelFilter"></select>
+          <div class="duel-history-title section-public">🌍 Défis publics</div>
+          <div class="duel-history-filters">
+            <select class="public-duel-filter" id="publicDuelFilter"></select>
+            <select class="public-duel-filter" id="publicDuelStatusFilter">
+              <option value="open">Ouverts</option>
+              <option value="done">Déjà réalisés</option>
+              <option value="all">Tous</option>
+            </select>
+          </div>
         </div>
         <div id="publicDuelList"></div>
       </div>
@@ -1416,7 +1481,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-t';
+  const BUILD_TAG = '2026-08-31-v';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1484,11 +1549,16 @@
   const duelCreatePublicBtn = document.getElementById('duelCreatePublicBtn');
   const publicDuelSection = document.getElementById('publicDuelSection');
   const publicDuelFilter = document.getElementById('publicDuelFilter');
+  const publicDuelStatusFilter = document.getElementById('publicDuelStatusFilter');
   const publicDuelList = document.getElementById('publicDuelList');
   // undefined tant que le joueur n'a jamais touché le filtre : le tableau suit alors le circuit
   // actuellement affiché dans le carrousel. Dès qu'il choisit une valeur ("tous" ou un autre
   // circuit précis), ce choix est mémorisé et reste actif même en changeant de circuit.
   let publicDuelFilterCid;
+  // 'open' par défaut (défis publics pas encore joués par ce joueur) — sinon le tableau des
+  // défis publics grossirait indéfiniment avec ceux déjà réalisés, ce qui était tout l'objet
+  // du problème d'ergonomie signalé.
+  let publicDuelStatus = 'open';
   const duelToPlaySection = document.getElementById('duelToPlaySection');
   const duelToPlayList = document.getElementById('duelToPlayList');
   const duelHistorySection = document.getElementById('duelHistorySection');
@@ -1531,6 +1601,7 @@
   const pseudoInput = document.getElementById('pseudoInput');
   const savePseudoBtn = document.getElementById('savePseudoBtn');
   const challengeBtn = document.getElementById('challengeBtn');
+  const tickerTextEl = document.getElementById('tickerText');
   const duelPanel = document.getElementById('duelPanel');
   const duelFlag = document.getElementById('duelFlag');
   const duelTitle = document.getElementById('duelTitle');
@@ -1711,11 +1782,20 @@
       uid: (user && user.uid) || null,
       email: (user && user.email) || null,
       name: name,
+      // Même clé que dans les défis (currentRunKey()) : permet de retrouver de façon fiable
+      // "mes" courses dans le classement partagé, y compris en tant qu'invité (le nom seul
+      // n'aurait pas suffi en cas d'homonymes).
+      key: currentRunKey(),
       cid: cid, diff: diff, dir: dir, laps: laps,
       time: time, pen: pen,
       raceKey: rk,
       weekId: currentWeekId(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function () {
+      // Vient-on de battre le record de la semaine sur ce circuit/réglages ? Ça alimente le
+      // bandeau live en bas de l'accueil (voir maybeAnnounceRecord) — sans Cloud Functions
+      // (plan Spark gratuit), c'est le client qui vient de courir qui vérifie et annonce.
+      maybeAnnounceRecord(cid, diff, dir, laps, time, name);
     }).catch(function (err) { console.error('Enregistrement de la course (classement) impossible', err); });
 
     if (user) {
@@ -1738,6 +1818,188 @@
         });
       }).catch(function (err) { console.error('Enregistrement du record personnel (compte) impossible', err); });
     }
+  }
+
+  // ---------------- Bandeau live (bas de l'accueil) ----------------
+  // Un bandeau orange en bas de l'écran d'accueil qui fait tourner quelques messages pour
+  // donner un sentiment de vie/activité à l'app : records tout juste battus, écart au record
+  // du circuit affiché, défis publics tout frais, tendance de la semaine, compte à rebours
+  // avant la remise à zéro du classement. Rien de tout ça ne nécessite de Cloud Function :
+  // c'est le client qui vient de courir qui détecte et annonce un record battu (voir
+  // maybeAnnounceRecord ci-dessous), et le reste se recalcule périodiquement côté client.
+
+  function maybeAnnounceRecord(cid, diff, dir, laps, time, name) {
+    if (!db) return;
+    const rk = raceKeyFor(cid, diff, dir, laps);
+    const wk = currentWeekId();
+    db.collection('races').where('weekId', '==', wk).where('raceKey', '==', rk)
+      .orderBy('time', 'asc').limit(2).get().then(function (snap) {
+        const rows = [];
+        snap.forEach(function (d) { rows.push(d.data()); });
+        if (rows.length < 2) return; // rien à battre : première course sur ce circuit/réglages cette semaine
+        const top = rows[0], prev = rows[1];
+        // Le tout meilleur temps de la semaine est-il justement CETTE course ? (comparaison par
+        // temps + nom, faute d'un id de document fiable à comparer après un .add() séparé.)
+        if (Math.abs(top.time - time) < 0.001 && top.name === name && prev.time > time) {
+          db.collection('record_events').add({
+            cid: cid, diff: diff, dir: dir, laps: laps, name: name, time: time,
+            margin: Math.round((prev.time - time) * 100) / 100,
+            weekId: wk,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(function (err) { console.error('Évènement "record battu" : écriture impossible', err); });
+        }
+      }).catch(function (err) { console.error('Vérification de record impossible', err); });
+  }
+
+  function msUntilWeeklyReset() {
+    // Même logique approximative que weekIdForDate (lundi 00h00 traité comme un instant UTC) :
+    // suffisant pour un compte à rebours affiché, pas pour une precision à la seconde près.
+    const wk = currentWeekId();
+    const parts = wk.split('-').map(Number);
+    const mondayThisWeek = Date.UTC(parts[0], parts[1] - 1, parts[2]);
+    const nextMonday = mondayThisWeek + 7 * 24 * 3600 * 1000;
+    return Math.max(0, nextMonday - Date.now());
+  }
+
+  function formatCountdown(ms) {
+    const totalMin = Math.floor(ms / 60000);
+    const days = Math.floor(totalMin / (24 * 60));
+    const hours = Math.floor((totalMin % (24 * 60)) / 60);
+    const mins = totalMin % 60;
+    if (days > 0) return days + 'j ' + hours + 'h';
+    if (hours > 0) return hours + 'h ' + mins + 'min';
+    return mins + 'min';
+  }
+
+  let tickerMessages = [];       // file de messages textuels affichés à tour de rôle
+  let tickerRotateIndex = 0;
+  let tickerRotateTimer = null;
+  let recentRecordEvents = [];   // derniers évènements "record battu" reçus en direct (onSnapshot)
+  let latestPublicDuelMsg = null;
+  let trendingCircuitMsg = null;
+  let leaderGapMsg = null;
+
+  function renderTickerNow() {
+    if (!tickerTextEl || !tickerMessages.length) return;
+    tickerTextEl.classList.add('fade');
+    setTimeout(function () {
+      tickerRotateIndex = tickerRotateIndex % tickerMessages.length;
+      tickerTextEl.textContent = tickerMessages[tickerRotateIndex];
+      tickerTextEl.classList.remove('fade');
+    }, 220);
+  }
+
+  function rebuildTickerMessages() {
+    const msgs = [];
+    recentRecordEvents.forEach(function (ev) {
+      const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
+      const flag = country ? country.flag : '🏁';
+      const label = country ? country.name : ev.cid;
+      msgs.push('🏆 ' + ev.name + ' vient de battre le record de ' + flag + ' ' + label +
+        (ev.margin > 0 ? ' (-' + fmt(ev.margin) + ')' : '') + ' !');
+    });
+    if (leaderGapMsg) msgs.push(leaderGapMsg);
+    if (latestPublicDuelMsg) msgs.push(latestPublicDuelMsg);
+    if (trendingCircuitMsg) msgs.push(trendingCircuitMsg);
+    msgs.push('⏳ Classement remis à zéro dans ' + formatCountdown(msUntilWeeklyReset()));
+    tickerMessages = msgs;
+    if (!tickerRotateTimer) {
+      renderTickerNow();
+      tickerRotateTimer = setInterval(function () {
+        tickerRotateIndex += 1;
+        renderTickerNow();
+      }, 5000);
+    }
+  }
+
+  function watchRecordEvents() {
+    if (!db || watchRecordEvents._started) return;
+    watchRecordEvents._started = true;
+    db.collection('record_events').orderBy('createdAt', 'desc').limit(10)
+      .onSnapshot(function (snap) {
+        const rows = [];
+        snap.forEach(function (d) { rows.push(d.data()); });
+        recentRecordEvents = rows.slice(0, 5);
+        rebuildTickerMessages();
+      }, function (err) {
+        // Index composite pas encore créé, ou lecture indisponible — le bandeau continue de
+        // fonctionner avec les autres messages (écart au record, tendance, compte à rebours...).
+        console.error('Bandeau live : suivi des records impossible', err);
+      });
+  }
+
+  function refreshLeaderGapMessage() {
+    // "Écart au record" pour le circuit/réglages actuellement affichés dans le carrousel — pas
+    // le record perso (déjà consultable dans "Records"), mais celui du classement partagé de la
+    // semaine, pour inviter à aller le battre.
+    if (!db) { leaderGapMsg = null; return; }
+    const country = COUNTRIES[menuIndex];
+    if (!country) { leaderGapMsg = null; return; }
+    const rk = raceKeyFor(country.id, selectedDifficulty, selectedDirection, selectedLaps);
+    const wk = currentWeekId();
+    const myKey = currentRunKey();
+    const requestToken = (refreshLeaderGapMessage._token = (refreshLeaderGapMessage._token || 0) + 1);
+    db.collection('races').where('weekId', '==', wk).where('raceKey', '==', rk)
+      .orderBy('time', 'asc').limit(20).get().then(function (snap) {
+        if (requestToken !== refreshLeaderGapMessage._token) return;
+        const rows = [];
+        snap.forEach(function (d) { rows.push(d.data()); });
+        if (!rows.length) { leaderGapMsg = null; rebuildTickerMessages(); return; }
+        const top = rows[0];
+        const mine = rows.find(function (r) { return r.key === myKey; });
+        if (mine && Math.abs(mine.time - top.time) < 0.001) {
+          leaderGapMsg = '👑 Tu détiens le record de ' + country.flag + ' ' + country.name + ' cette semaine !';
+        } else if (mine) {
+          leaderGapMsg = '🎯 Tu es à ' + fmt(mine.time - top.time) + ' du record de ' + country.flag + ' ' + country.name + ' — file le battre !';
+        } else {
+          // tickerTextEl est mis à jour via .textContent (pas innerHTML) : pas besoin
+          // d'échapper le nom ici, contrairement aux listes construites en HTML ailleurs.
+          leaderGapMsg = '🏁 Record actuel sur ' + country.flag + ' ' + country.name + ' : ' + fmt(top.time) + ' (' + top.name + ')';
+        }
+        rebuildTickerMessages();
+      }).catch(function () { leaderGapMsg = null; });
+  }
+
+  function refreshRecentPublicDuelMessage() {
+    if (!db) { latestPublicDuelMsg = null; return; }
+    db.collection('public_duels').orderBy('createdAt', 'desc').limit(1).get().then(function (snap) {
+      let entry = null;
+      snap.forEach(function (d) { entry = d.data(); });
+      if (!entry) { latestPublicDuelMsg = null; return; }
+      const country = COUNTRIES.find(function (c) { return c.id === entry.cid; });
+      const label = country ? (country.flag + ' ' + country.name) : entry.cid;
+      const n = Object.keys(entry.runs || {}).length;
+      latestPublicDuelMsg = n === 0 ?
+        ('🆕 Nouveau défi public sur ' + label + ' — sois le premier à le relever !') :
+        ('🌍 Défi public en cours sur ' + label + ' — viens le relever !');
+      rebuildTickerMessages();
+    }).catch(function () { latestPublicDuelMsg = null; });
+  }
+
+  function refreshTrendingCircuitMessage() {
+    if (!db) { trendingCircuitMsg = null; return; }
+    const wk = currentWeekId();
+    db.collection('races').where('weekId', '==', wk).orderBy('createdAt', 'desc').limit(50).get()
+      .then(function (snap) {
+        const counts = {};
+        snap.forEach(function (d) {
+          const cid = (d.data() || {}).cid;
+          if (cid) counts[cid] = (counts[cid] || 0) + 1;
+        });
+        const top = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })[0];
+        if (!top || counts[top] < 2) { trendingCircuitMsg = null; return; }
+        const country = COUNTRIES.find(function (c) { return c.id === top; });
+        const label = country ? (country.flag + ' ' + country.name) : top;
+        trendingCircuitMsg = '🔥 Circuit tendance cette semaine : ' + label + ' (' + counts[top] + ' courses)';
+        rebuildTickerMessages();
+      }).catch(function () { trendingCircuitMsg = null; });
+  }
+
+  function refreshLiveTicker() {
+    // Regroupe les rafraîchissements des messages qui dépendent du circuit/réglages affichés
+    // (écart au record) — appelé chaque fois que refreshCardBests() l'est déjà (changement de
+    // circuit, de difficulté, de sens ou de nombre de tours), pas besoin d'un point d'appel en plus.
+    refreshLeaderGapMessage();
   }
 
   function leaderboardRowHtml(entry, rank, isMine) {
@@ -2088,8 +2350,10 @@
 
   function refreshCardBests() {
     // Le temps perso ne s'affiche plus sous l'image du circuit (retiré à la demande de
-    // Julien — redondant avec l'écran "Records"). Fonction gardée en no-op pour ne pas avoir
-    // à retoucher tous ses points d'appel (changement de difficulté/sens/tours, etc.).
+    // Julien — redondant avec l'écran "Records"). Fonction gardée (plutôt qu'un no-op) car
+    // c'est le point d'appel déjà présent partout où le circuit/difficulté/sens/tours affichés
+    // changent — parfait pour aussi rafraîchir le message "écart au record" du bandeau live.
+    refreshLiveTicker();
   }
 
   function renderCarousel() {
@@ -3439,14 +3703,19 @@
   function publicDuelRowHtml(entry, showCircuit) {
     const runs = entry.runs || [];
     const n = runs.length;
+    const mineDone = playerHasRunDuel(entry);
     const sub = n === 0 ? 'Aucun temps posé — sois le premier !' :
       (n + (n > 1 ? ' participants' : ' participant') + ' déjà inscrit' + (n > 1 ? 's' : ''));
     const country = showCircuit ? COUNTRIES.find(c => c.id === entry.cid) : null;
     const flag = country ? country.flag : '🌍';
     const label = country ? (country.name + ' — Défi public') : 'Défi public';
+    // Un badge "Réalisé" distingue au premier coup d'œil ceux déjà joués par CE joueur des
+    // vrais défis ouverts, une fois qu'on affiche aussi les défis publics déjà réalisés.
+    const statusHtml = mineDone ? '<span class="duel-status-badge done">✅ Réalisé</span>' : '';
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
       '<span class="duel-history-flag">' + flag + '</span>' +
       '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(label) + '</span>' +
+      statusHtml +
       '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span>' +
       '<span class="duel-history-arrow">→</span></div>';
   }
@@ -3471,17 +3740,25 @@
       publicDuelFilterCid = publicDuelFilter.value; // '' = tous ; sinon un id de circuit précis
       renderPublicDuelBoard(publicDuelFilterCid);
     });
+    if (publicDuelStatusFilter) {
+      publicDuelStatusFilter.addEventListener('change', function () {
+        publicDuelStatus = publicDuelStatusFilter.value; // 'open' | 'done' | 'all'
+        renderPublicDuelBoard(publicDuelFilterCid);
+      });
+    }
   }
 
   function renderPublicDuelBoard(cid) {
-    // Liste les défis publics encore ouverts que n'importe quel joueur peut relever
-    // (contrairement à "duels", qui n'est accessible qu'à qui a reçu le lien précis — voir
-    // firestore.rules). cid === '' (ou falsy autre que undefined) signifie "tous les circuits" ;
-    // sinon un id de circuit précis limite la liste à celui-ci.
+    // Liste les défis publics que n'importe quel joueur peut relever ou revoir (contrairement
+    // à "duels", qui n'est accessible qu'à qui a reçu le lien précis — voir firestore.rules).
+    // cid === '' (ou falsy autre que undefined) signifie "tous les circuits" ; sinon un id de
+    // circuit précis limite la liste à celui-ci. Un deuxième filtre (ouverts / déjà réalisés /
+    // tous) évite que la liste ne devienne un vrac dès que beaucoup de défis publics existent.
     if (!publicDuelList) return;
     populatePublicDuelFilter();
     const showAll = !cid;
     publicDuelFilter.value = cid || '';
+    if (publicDuelStatusFilter) publicDuelStatusFilter.value = publicDuelStatus;
     if (!db) { publicDuelSection.hidden = true; return; }
     publicDuelSection.hidden = false;
     publicDuelList.innerHTML = '<div class="history-empty">Chargement…</div>';
@@ -3491,7 +3768,7 @@
     query.limit(20).get()
       .then(function (snap) {
         if (requestToken !== renderPublicDuelBoard._token) return; // une requête plus récente a pris le relais
-        const entries = [];
+        let entries = [];
         snap.forEach(function (doc) {
           if (activeDuel && activeDuel.id === doc.id) return; // pas la peine de lister son propre défi actif
           const data = doc.data() || {};
@@ -3501,9 +3778,14 @@
           });
           entries.push({ id: doc.id, cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, public: true, runs: runs });
         });
+        if (publicDuelStatus === 'open') entries = entries.filter(function (e) { return !playerHasRunDuel(e); });
+        else if (publicDuelStatus === 'done') entries = entries.filter(function (e) { return playerHasRunDuel(e); });
         if (!entries.length) {
+          const statusText = publicDuelStatus === 'done' ? 'aucun défi public déjà réalisé' :
+            publicDuelStatus === 'open' ? 'aucun défi public ouvert' : 'aucun défi public';
           publicDuelList.innerHTML = '<div class="history-empty">' +
-            (showAll ? 'Aucun défi public ouvert pour l\'instant — lance-toi !' : 'Aucun défi public ouvert sur ce circuit pour l\'instant — lance-toi !') +
+            escapeHtml(statusText + (showAll ? ' pour l\'instant' : ' sur ce circuit pour l\'instant') +
+              (publicDuelStatus !== 'done' ? ' — lance-toi !' : '.')) +
             '</div>';
           return;
         }
@@ -4226,7 +4508,19 @@
   buildDifficultySeg();
   buildDirectionSeg();
   buildLapsSeg();
-  buildCarousel();
+  buildCarousel(); // déclenche déjà refreshCardBests()/refreshLiveTicker() pour le 1er message
+  watchRecordEvents();
+  refreshRecentPublicDuelMessage();
+  refreshTrendingCircuitMessage();
+  // Les messages du bandeau live qui viennent d'une requête Firestore (défi récent, tendance,
+  // écart au record) sont réactualisés de temps en temps ; le compte à rebours, lui, doit
+  // simplement continuer d'avancer même sans nouvelle donnée.
+  setInterval(function () {
+    refreshRecentPublicDuelMessage();
+    refreshTrendingCircuitMessage();
+    refreshLeaderGapMessage();
+  }, 90000);
+  setInterval(rebuildTickerMessages, 5 * 60000);
   applyHashDuel();
   // Si l'appli est déjà ouverte dans cet onglet et qu'un nouveau lien de défi n'y arrive
   // que par un changement de #fragment (pas un rechargement complet — certains navigateurs

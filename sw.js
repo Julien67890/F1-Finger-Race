@@ -40,6 +40,17 @@ const NEVER_CACHE_HOSTS = [
   'www.googleapis.com'
 ];
 
+// Pareil pour les requêtes de mesure Google Analytics ("beacons" g/collect envoyées à chaque
+// évènement) : chaque appel a une URL quasi unique (paramètres différents à chaque fois), donc
+// les mettre en cache ne sert jamais à rien et ferait juste grossir le cache indéfiniment. Le
+// nom exact varie selon la région Google (region1, region2...), d'où un test par suffixe plutôt
+// qu'une liste figée — contrairement à firebase-analytics-compat.js et gtag.js eux-mêmes (le
+// code de la librairie, pas les mesures) qui restent mis en cache normalement, comme les autres
+// fichiers statiques.
+function isAnalyticsCollectHost(hostname) {
+  return /(^|\.)google-analytics\.com$/.test(hostname) || /(^|\.)analytics\.google\.com$/.test(hostname);
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return; // laisse passer les écritures Firestore (POST) sans y toucher
@@ -47,6 +58,7 @@ self.addEventListener('fetch', (event) => {
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   if (NEVER_CACHE_HOSTS.indexOf(url.hostname) !== -1) return;
+  if (isAnalyticsCollectHost(url.hostname)) return;
 
   if (req.mode === 'navigate') {
     // La page principale : toujours la dernière version en ligne en priorité : le cache ne

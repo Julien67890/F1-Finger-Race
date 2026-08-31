@@ -30,6 +30,7 @@
     --accent-strong: #ff5a1f;
     --good: #33d38a;
     --danger: #f0483f;
+    --info: #4fa8ff;
   }
 
   * { box-sizing: border-box; }
@@ -477,6 +478,26 @@
   }
   .duel-status-badge.done { color: #8fe3a8; border-color: rgba(143,227,168,0.4); background: rgba(143,227,168,0.12); }
 
+  .duel-visibility-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .duel-visibility-badge.is-public { background: rgba(79,168,255,0.16); color: var(--info); }
+  .duel-visibility-badge.is-private { background: rgba(255,122,61,0.14); color: var(--accent); }
+
+  /* Un accent de couleur par section (public / à relever / réalisés) pour s'y retrouver
+     d'un coup d'œil même avec beaucoup de défis dans la liste. */
+  #publicDuelSection .duel-history-row { border-left: 3px solid var(--info); }
+  #duelToPlaySection .duel-history-row { border-left: 3px solid var(--accent); }
+  #duelHistorySection .duel-history-row { border-left: 3px solid var(--good); }
+
+  .duel-history-title.section-public { color: var(--info); }
+  .duel-history-title.section-toplay { color: var(--accent); }
+  .duel-history-title.section-done { color: var(--good); }
+
   .duel-history-sub {
     font-size: 11.5px;
     color: var(--text-dim);
@@ -697,15 +718,22 @@
     top: 14px;
     left: 14px;
     right: 14px;
-    display: flex;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    flex-wrap: wrap;
+    gap: 8px;
     z-index: 4;
     pointer-events: none;
   }
 
   .race-hud > * { pointer-events: auto; }
+
+  .race-hud-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .race-hud-right { justify-content: flex-end; }
+
+  .race-hud-center { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+  #hudCountryChip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .hud-btn {
     background: var(--surface);
@@ -762,6 +790,11 @@
   .replay-row .val { font-variant-numeric: tabular-nums; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
 
   #replayHud .cta.ghost { margin-top: 10px; padding: 8px 10px; font-size: 12.5px; }
+
+  .replay-splits { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .replay-splits-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); font-weight: 700; margin-bottom: 4px; }
+
+  .result-splits { margin-top: 10px; }
 
   .replay-car {
     position: fixed;
@@ -844,6 +877,56 @@
   }
 
   .lights.show { opacity: 1; }
+
+  .start-hint {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20,27,37,0.95);
+    border: 2px solid var(--accent);
+    color: var(--text);
+    padding: 14px 20px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 82vw;
+    z-index: 4;
+    pointer-events: none;
+    animation: hintPulse 1.6s ease-in-out infinite;
+  }
+
+  .start-hint strong { color: var(--accent); }
+
+  @keyframes hintPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,122,61,0.45); }
+    50% { box-shadow: 0 0 22px rgba(255,122,61,0.45); }
+  }
+
+  .split-flash {
+    position: absolute;
+    top: 84px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    background: rgba(20,27,37,0.95);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .split-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .light {
     width: 30px;
@@ -1156,19 +1239,19 @@
 
       <div class="duel-history" id="publicDuelSection" hidden>
         <div class="duel-history-title-row">
-          <div class="duel-history-title">Défis publics ouverts</div>
+          <div class="duel-history-title section-public">🌍 Défis publics ouverts</div>
           <select class="public-duel-filter" id="publicDuelFilter"></select>
         </div>
         <div id="publicDuelList"></div>
       </div>
 
       <div class="duel-history" id="duelToPlaySection" hidden>
-        <div class="duel-history-title">Défis à relever</div>
+        <div class="duel-history-title section-toplay">⏳ Défis à relever</div>
         <div id="duelToPlayList"></div>
       </div>
 
       <div class="duel-history" id="duelHistorySection" hidden>
-        <div class="duel-history-title">Défis réalisés</div>
+        <div class="duel-history-title section-done">✅ Défis réalisés</div>
         <div id="duelHistoryList"></div>
       </div>
     </div>
@@ -1178,16 +1261,24 @@
     <canvas id="view"></canvas>
     <canvas id="mask" style="display:none;"></canvas>
 
-    <div class="race-hud">
-      <button class="hud-btn" id="backBtn" title="Retour au menu">&larr;</button>
-      <div class="hud-chip" id="hudCountryChip"></div>
-      <div class="hud-chip" id="hudTime">0.00 s</div>
-      <div class="hud-chip" id="hudPenChip">+0.00 s</div>
-      <div class="hud-chip" id="hudLapChip" hidden></div>
+    <div class="race-hud" id="raceHud">
+      <div class="race-hud-side race-hud-left">
+        <button class="hud-btn" id="backBtn" title="Retour au menu">&larr;</button>
+        <div class="hud-chip" id="hudCountryChip"></div>
+      </div>
+      <div class="race-hud-center">
+        <div class="hud-chip" id="hudTime">0.00 s</div>
+        <div class="hud-chip" id="hudPenChip">+0.00 s</div>
+        <div class="hud-chip" id="hudLapChip" hidden></div>
+      </div>
+      <div class="race-hud-side race-hud-right"></div>
     </div>
+
+    <div class="start-hint" id="startHint">👆 Pose le doigt sur le point <strong>DÉPART / ARRIVÉE</strong> et reste immobile</div>
 
     <div class="flash" id="flash"></div>
     <div class="banner" id="banner"></div>
+    <div class="split-flash" id="splitFlash"></div>
 
     <div class="lights" id="lights">
       <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
@@ -1305,7 +1396,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-30-m';
+  const BUILD_TAG = '2026-08-31-n';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1448,6 +1539,9 @@
   const hudTime = document.getElementById('hudTime');
   const hudPenChip = document.getElementById('hudPenChip');
   const hudLapChip = document.getElementById('hudLapChip');
+  const raceHud = document.getElementById('raceHud');
+  const startHintEl = document.getElementById('startHint');
+  const splitFlashEl = document.getElementById('splitFlash');
   const banner = document.getElementById('banner');
   const flashEl = document.getElementById('flash');
   const carSprite = document.getElementById('carSprite');
@@ -1471,6 +1565,7 @@
   const lightsEl = document.getElementById('lights');
   const lightEls = Array.from(lightsEl.querySelectorAll('.light'));
   const replayHud = document.getElementById('replayHud');
+  const replayTitle = document.getElementById('replayTitle');
   const replayRows = document.getElementById('replayRows');
   const replayCloseBtn = document.getElementById('replayCloseBtn');
   const replayAgainBtn = document.getElementById('replayAgainBtn');
@@ -1505,6 +1600,10 @@
   let ghostTele = null; // tracé rejoué en fantôme pendant la course (adversaire du défi en priorité, sinon meilleur temps perso)
   let ghostLabel = '';  // nom affiché pour ce fantôme ("ton record" ou le prénom de l'adversaire)
   let ghostScale = 1;   // étire le temps du fantôme pour que son avancement reflète aussi ses pénalités
+  let ghostTime = 0;    // temps total du fantôme (utilisé par le rejeu solo "Voir ma course")
+  let splits = [];      // temps intermédiaires de la course en cours : { n ou 'lap', lap, t }
+  let lastSplits = [];  // copie des splits de la dernière course terminée (pour le rejeu solo)
+  let splitFlashTimer = null;
 
   // Un fantôme est enregistré sans pénalité "rejouée" dans son tracé (le tracé, c'est juste le
   // doigt) — mais son temps officiel inclut ses pénalités. On étire donc son avancement dans le
@@ -1679,6 +1778,8 @@
   let replayStartPerf = 0;
   let replayCarEls = [];
   let lastReplayDuel = null; // pour pouvoir relancer la même lecture avec "Rejouer la lecture"
+  let replayReturnToResult = false; // le rejeu a été lancé depuis l'écran de résultat : "Fermer" doit y revenir
+  let savedHudCountryText = '';
 
   // Les défis "entre amis" (lien privé) vivent dans la collection "duels" ; les défis
   // "publics" (visibles de tous, n'importe qui peut les relever) vivent dans une collection
@@ -2239,6 +2340,7 @@
     ghostTele = null;
     ghostLabel = '';
     ghostScale = 1;
+    ghostTime = 0;
     if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
       const myKey = currentRunKey();
       const others = activeDuel.runs.filter(r => r.key !== myKey && r.tele && r.tele.length);
@@ -2248,6 +2350,7 @@
         ghostTele = best.tele;
         ghostLabel = best.name;
         ghostScale = ghostTimeScale(ghostTele, best.pen || 0);
+        ghostTime = best.time;
       }
     }
     if (!ghostTele) {
@@ -2256,6 +2359,7 @@
         ghostTele = bestTele.tele;
         ghostLabel = 'ton record';
         ghostScale = ghostTimeScale(ghostTele, bestTele.pen || 0);
+        ghostTime = bestTele.time;
       }
     }
     hudCountryChip.textContent = country.flag + ' ' + country.name + ' · ' + diff.label +
@@ -2286,6 +2390,19 @@
     viewOffsetX = bounds.x - padX / s;
     viewOffsetY = bounds.y - padY / s;
     drawScene();
+    positionHudExtras();
+  }
+
+  // Les feux de départ (et le chip de temps intermédiaire) se positionnent juste sous le HUD
+  // du haut, quel que soit son nombre de lignes (le nom du circuit + "Défi" + le fantôme peuvent
+  // le faire passer sur deux lignes sur un petit téléphone) — fini le chevauchement avec un
+  // décalage fixe qui ne marchait que sur un seul gabarit d'écran.
+  function positionHudExtras() {
+    if (!raceHud || !lightsEl) return;
+    const rect = raceHud.getBoundingClientRect();
+    const top = Math.max(64, Math.round(rect.bottom + 12));
+    lightsEl.style.top = top + 'px';
+    if (splitFlashEl) splitFlashEl.style.top = top + 'px';
   }
 
   function drawScene() {
@@ -2412,6 +2529,16 @@
 
   function setBanner(text) { banner.textContent = text; banner.style.display = text ? 'block' : 'none'; }
 
+  // Chip transitoire affiché à chaque passage de secteur ou de ligne de tour, avec le temps
+  // intermédiaire — se replie tout seul après un peu moins de 2 secondes.
+  function showSplitFlash(label, t) {
+    if (!splitFlashEl) return;
+    splitFlashEl.textContent = label + ' — ' + fmt(t);
+    splitFlashEl.classList.add('show');
+    clearTimeout(splitFlashTimer);
+    splitFlashTimer = setTimeout(() => splitFlashEl.classList.remove('show'), 1800);
+  }
+
   function flash(lx, ly) {
     flashEl.style.setProperty('--fx', (lx / LOGICAL_W * 100) + '%');
     flashEl.style.setProperty('--fy', (ly / LOGICAL_H * 100) + '%');
@@ -2435,6 +2562,9 @@
     trail = [];
     telemetry = [];
     lastTelemetryPush = 0;
+    splits = [];
+    clearTimeout(splitFlashTimer);
+    if (splitFlashEl) splitFlashEl.classList.remove('show');
     hudPenChip.textContent = '+0.00 s';
     hudPenChip.className = 'hud-chip';
     hudTime.textContent = '0.00 s';
@@ -2458,7 +2588,8 @@
     clearTimeout(countdownTimer);
     countdownAbort = true;
     drawScene();
-    setBanner('Pose le doigt sur le point DÉPART / ARRIVÉE et reste appuyé, immobile');
+    setBanner('');
+    if (startHintEl) startHintEl.hidden = false;
   }
 
   // ---------------- Son (feux de départ façon F1 + moteur qui suit la vitesse) ----------------
@@ -2698,13 +2829,25 @@
     // Chaque course (solo ou défi) compte pour le classement hebdomadaire partagé.
     recordRaceCloud(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, penalties);
 
+    lastSplits = splits.slice();
+    let splitsHtml = '';
+    if (lastSplits.length) {
+      splitsHtml = '<div class="result-splits"><div class="history-title">Temps intermédiaires</div>' +
+        lastSplits.map(function (s) {
+          const label = s.n === 'lap' ? ('Tour ' + s.lap + ' terminé') :
+            ('Secteur ' + s.n + (selectedLaps > 1 ? ' (tour ' + s.lap + ')' : ''));
+          return '<div class="result-row"><span>' + escapeHtml(label) + '</span><span class="val">' + fmt(s.t) + '</span></div>';
+        }).join('') + '</div>';
+    }
+
     resultTitle.textContent = 'Arrivée !';
     resultSub.textContent = current.flag + ' ' + current.name;
     resultBody.innerHTML =
       '<div class="result-row"><span>Temps brut</span><span class="val">' + fmt(rawTime) + '</span></div>' +
       '<div class="result-row"><span>Sorties de piste</span><span class="val">' + penalties + '</span></div>' +
       '<div class="result-row"><span>Pénalités</span><span class="val">+' + fmt(penaltyTime) + '</span></div>' +
-      '<div class="result-total"><span>Total</span><span class="val">' + fmt(total) + '</span></div>';
+      '<div class="result-total"><span>Total</span><span class="val">' + fmt(total) + '</span></div>' +
+      splitsHtml;
     bestNote.textContent = isNewBest ? '🏁 Nouveau meilleur temps !' : (best !== null ? 'Meilleur temps : ' + fmt(best) : '');
     viewRunBtn.hidden = false;
     renderHistoryList(history);
@@ -2784,7 +2927,7 @@
     resultSub.textContent = current.flag + ' ' + current.name;
     resultBody.innerHTML = '<div class="result-row"><span>' + message + '</span><span class="val"></span></div>';
     bestNote.textContent = '';
-    viewRunBtn.hidden = false;
+    viewRunBtn.hidden = telemetry.length < 2;
     historyList.hidden = true;
     historyList.innerHTML = '';
     overlay.classList.add('show');
@@ -2872,6 +3015,7 @@
     view.setPointerCapture(evt.pointerId);
     ensureAudioCtx(); // geste utilisateur — c'est le seul moment sûr pour démarrer l'audio
     resetRun();
+    if (startHintEl) startHintEl.hidden = true;
     heldPoint = [lx, ly];
     pushPos(evt.clientX, evt.clientY);
     showCarSprite(evt.clientX, evt.clientY);
@@ -2944,6 +3088,9 @@
       const cpPt = checkpointAnchors[nextCpPtr];
       if (dist(lx, ly, cpPt) < checkpointRadius()) {
         nextCpPtr += 1;
+        const cpTime = (performance.now() - startTime) / 1000;
+        splits.push({ n: nextCpPtr, lap: currentLap, t: cpTime });
+        showSplitFlash('Secteur ' + nextCpPtr + (selectedLaps > 1 ? ' (tour ' + currentLap + ')' : ''), cpTime);
         drawScene();
       }
     }
@@ -2960,6 +3107,8 @@
         if (currentLap >= selectedLaps) {
           finishRun();
         } else {
+          splits.push({ n: 'lap', lap: currentLap, t: elapsed });
+          showSplitFlash('Tour ' + currentLap + ' terminé', elapsed);
           currentLap += 1;
           nextCpPtr = 0;
           hudLapChip.hidden = false;
@@ -3374,7 +3523,10 @@
     } else if (opponentDone) {
       sub = 'À toi de jouer !';
     }
+    const visibilityHtml = '<span class="duel-visibility-badge ' + (entry.public ? 'is-public' : 'is-private') + '">' +
+      (entry.public ? '🌍 Public' : '🔒 Ami') + '</span>';
     const statusHtml = '<span class="duel-history-status">' +
+      visibilityHtml +
       '<span class="duel-status-badge' + (mineDone ? ' done' : '') + '">' + (mineDone ? '✅' : '⏳') + ' Toi</span>' +
       '<span class="duel-status-badge' + (opponentDone ? ' done' : '') + '">' + (opponentDone ? '✅' : '⏳') + ' Adversaire</span>' +
       '</span>';
@@ -3734,6 +3886,8 @@
     screenMenu.hidden = true;
     screenRace.hidden = false;
     hudCountryChip.textContent = country.flag + ' ' + country.name + ' · Rejeu';
+    if (startHintEl) startHintEl.hidden = true;
+    if (replayTitle) replayTitle.textContent = duel.__solo ? 'Rejeu de ta course' : 'Rejeu du défi';
     drawMask();
     resizeCanvas();
     state = 'replay';
@@ -3748,7 +3902,18 @@
     replayCarEls = [];
     hudTime.style.display = '';
     hudPenChip.style.display = '';
-    goBackFromRace();
+    if (replayReturnToResult) {
+      // Rejeu lancé depuis l'écran de résultat ("Voir ma course" ou "Revoir en fantôme" côté
+      // défi) : "Fermer le rejeu" doit y ramener, pas quitter la course vers le menu principal.
+      replayReturnToResult = false;
+      state = 'finished';
+      hudCountryChip.textContent = savedHudCountryText;
+      lightsEl.classList.remove('show');
+      drawScene();
+      overlay.classList.add('show');
+    } else {
+      goBackFromRace();
+    }
   }
 
   function startGhostReplay(duel) {
@@ -3779,10 +3944,20 @@
       return el;
     });
 
+    let splitsHtml = '';
+    if (duel.splits && duel.splits.length) {
+      splitsHtml = '<div class="replay-splits"><div class="replay-splits-title">Temps intermédiaires</div>' +
+        duel.splits.map(function (s) {
+          const label = s.n === 'lap' ? ('Tour ' + s.lap + ' terminé') :
+            ('Secteur ' + s.n + (duel.laps > 1 ? ' (tour ' + s.lap + ')' : ''));
+          return '<div class="replay-row"><span class="name">' + escapeHtml(label) + '</span><span class="val">' + fmt(s.t) + '</span></div>';
+        }).join('') + '</div>';
+    }
+
     replayRows.innerHTML = runs.map(r =>
       '<div class="replay-row"><span class="dot" style="background:' + r.color + '"></span><span class="name">' +
       escapeHtml(r.name) + '</span><span class="val">' + fmt(r.time) + '</span></div>'
-    ).join('');
+    ).join('') + splitsHtml;
     replayHud.hidden = false;
 
     const maxT = Math.max.apply(null, runs.map(r => r.time || 0)) + 0.6;
@@ -3808,6 +3983,25 @@
     tick();
   }
 
+  // "Voir ma course" (course solo, hors défi) : on réutilise le même moteur de rejeu animé que
+  // pour les défis, en construisant un "faux défi" à la volée avec ta course tout juste terminée
+  // (et, si un fantôme était affiché pendant la course, son propre tracé) — ça évite de dupliquer
+  // toute la logique d'animation/mise à l'échelle pour un seul joueur de plus.
+  function startSoloReplay() {
+    if (!current || !telemetry.length) return;
+    const runs = [{
+      name: 'Toi', time: lastResult ? lastResult.time : 0, pen: lastResult ? lastResult.penalties : 0,
+      tele: telemetry.slice(), key: 'solo-me'
+    }];
+    if (ghostTele && ghostTele.length) {
+      runs.push({ name: ghostLabel || 'Fantôme', time: ghostTime || 0, pen: 0, tele: ghostTele, key: 'solo-ghost' });
+    }
+    startGhostReplay({
+      id: 'solo', cid: current.id, dir: selectedDirection, diff: selectedDifficulty, laps: selectedLaps,
+      runs: runs, __solo: true, splits: lastSplits.slice()
+    });
+  }
+
   function goBackFromRace() {
     // Toujours retour au menu principal (le résultat du défi est déjà visible juste au-dessus,
     // sur l'écran de fin de course lui-même — pas besoin de repasser par l'écran Défis).
@@ -3818,12 +4012,9 @@
   retryBtn.addEventListener('click', resetRun);
 
   viewRunBtn.addEventListener('click', () => {
-    overlay.classList.remove('show');
-    reviewBackBtn.hidden = false;
-  });
-  reviewBackBtn.addEventListener('click', () => {
-    overlay.classList.add('show');
-    reviewBackBtn.hidden = true;
+    replayReturnToResult = true;
+    savedHudCountryText = hudCountryChip.textContent;
+    startSoloReplay();
   });
 
   historyBtn.addEventListener('click', openHistoryModal);
@@ -3845,7 +4036,11 @@
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
     renderDuelScreen();
   });
-  duelReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
+  duelReplayBtn.addEventListener('click', () => {
+    if (!activeDuel) return;
+    replayReturnToResult = false;
+    startGhostReplay(activeDuel);
+  });
   duelCloseBtn.addEventListener('click', () => {
     stopWatchingDuel();
     activeDuel = null;
@@ -3862,7 +4057,12 @@
     challengeResultBtn.hidden = true;
   });
   duelResultCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelResultCopyBtn, null, null));
-  duelResultReplayBtn.addEventListener('click', () => { if (activeDuel) startGhostReplay(activeDuel); });
+  duelResultReplayBtn.addEventListener('click', () => {
+    if (!activeDuel) return;
+    replayReturnToResult = true;
+    savedHudCountryText = hudCountryChip.textContent;
+    startGhostReplay(activeDuel);
+  });
 
   accountChip.addEventListener('click', () => {
     renderAccountOverlay();

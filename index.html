@@ -73,13 +73,15 @@
     gap: 12px;
   }
 
-  .menu-head-titles { min-width: 0; display: flex; align-items: center; gap: 10px; }
+  .menu-head-titles { min-width: 0; }
+
+  .menu-head-right { flex: none; display: flex; align-items: center; gap: 10px; }
 
   .app-logo {
     flex: none;
-    width: 38px;
-    height: 38px;
-    border-radius: 9px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     display: block;
   }
 
@@ -258,6 +260,7 @@
     letter-spacing: 0.08em;
     color: var(--text-dim);
     font-weight: 700;
+    text-align: center;
   }
 
   .seg {
@@ -539,8 +542,8 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding: 2px 2px 4px;
-    margin-top: 14px;
-    margin-bottom: 22px;
+    margin-top: 24px;
+    margin-bottom: 12px;
   }
 
   .flag-rail::-webkit-scrollbar { display: none; }
@@ -649,14 +652,6 @@
   .carousel-nav.next { right: 6px; }
   .carousel-nav:disabled { opacity: 0.25; }
 
-  .carousel-counter {
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-dim);
-    font-variant-numeric: tabular-nums;
-    margin-top: 8px;
-  }
-
   .menu-foot {
     padding: 0 20px;
     flex: none;
@@ -755,6 +750,12 @@
     border-radius: 14px;
     padding: 12px 14px;
     max-width: 320px;
+    /* Même avec les temps par tour (jusqu'à 10 lignes sur un circuit à 10 tours), ce panneau
+       ne doit jamais s'étendre au point de cacher la piste pendant le rejeu — il défile en
+       interne à la place de grandir sans limite par-dessus la vue. */
+    max-height: min(60vh, 420px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .replay-title {
@@ -1120,13 +1121,15 @@
     <div class="menu-head">
       <div class="menu-head-top">
         <div class="menu-head-titles">
-          <img class="app-logo" src="icon-192.png" alt="" width="38" height="38">
           <h1>F1 Finger Race</h1>
         </div>
-        <button class="account-chip" id="accountChip" type="button" title="Mon compte">
-          <span class="account-avatar" id="accountAvatar">👤</span>
-          <span class="account-name" id="accountChipName">Compte</span>
-        </button>
+        <div class="menu-head-right">
+          <img class="app-logo" src="icon-192.png" alt="F1 Finger Race" width="34" height="34">
+          <button class="account-chip" id="accountChip" type="button" title="Mon compte">
+            <span class="account-avatar" id="accountAvatar">👤</span>
+            <span class="account-name" id="accountChipName">Compte</span>
+          </button>
+        </div>
       </div>
       <p class="lede">Celui qui aura le doigt le plus rapide et le plus précis sera champion.</p>
 
@@ -1169,7 +1172,6 @@
     </div>
 
     <div class="menu-foot">
-      <div class="carousel-counter" id="carouselCounter"></div>
       <button class="cta" id="launchBtn">Lancer la course</button>
       <button class="cta ghost" id="historyBtn">Records</button>
       <button class="cta ghost" id="challengeBtn" title="Voir mes défis">Défis</button>
@@ -1386,7 +1388,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-p';
+  const BUILD_TAG = '2026-08-31-q';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1468,7 +1470,6 @@
   const lapsSeg = document.getElementById('lapsSeg');
   const carouselViewport = document.getElementById('carouselViewport');
   const carouselTrack = document.getElementById('carouselTrack');
-  const carouselCounter = document.getElementById('carouselCounter');
   const flagRail = document.getElementById('flagRail');
   const navPrev = document.getElementById('navPrev');
   const navNext = document.getElementById('navNext');
@@ -2074,7 +2075,6 @@
       el.style.transform = 'scale(' + s + ')';
       el.style.opacity = String(o);
     });
-    carouselCounter.textContent = (menuIndex + 1) + ' / ' + COUNTRIES.length;
     navPrev.disabled = menuIndex <= 0;
     navNext.disabled = menuIndex >= COUNTRIES.length - 1;
     flagChipEls.forEach((chip, i) => chip.classList.toggle('active', i === menuIndex));
@@ -2805,10 +2805,9 @@
     lastSplits = splits.slice();
     let splitsHtml = '';
     if (lastSplits.length) {
-      splitsHtml = '<div class="result-splits"><div class="history-title">Temps intermédiaires</div>' +
+      splitsHtml = '<div class="result-splits"><div class="history-title">Temps par tour</div>' +
         lastSplits.map(function (s) {
-          const label = s.n === 'lap' ? ('Tour ' + s.lap + ' terminé') :
-            ('Secteur ' + s.n + (selectedLaps > 1 ? ' (tour ' + s.lap + ')' : ''));
+          const label = 'Tour ' + s.lap + ' terminé';
           return '<div class="result-row"><span>' + escapeHtml(label) + '</span><span class="val">' + fmt(s.t) + '</span></div>';
         }).join('') + '</div>';
     }
@@ -3061,9 +3060,6 @@
       const cpPt = checkpointAnchors[nextCpPtr];
       if (dist(lx, ly, cpPt) < checkpointRadius()) {
         nextCpPtr += 1;
-        const cpTime = (performance.now() - startTime) / 1000;
-        splits.push({ n: nextCpPtr, lap: currentLap, t: cpTime });
-        showSplitFlash('Secteur ' + nextCpPtr + (selectedLaps > 1 ? ' (tour ' + currentLap + ')' : ''), cpTime);
         drawScene();
       }
     }
@@ -3919,10 +3915,9 @@
 
     let splitsHtml = '';
     if (duel.splits && duel.splits.length) {
-      splitsHtml = '<div class="replay-splits"><div class="replay-splits-title">Temps intermédiaires</div>' +
+      splitsHtml = '<div class="replay-splits"><div class="replay-splits-title">Temps par tour</div>' +
         duel.splits.map(function (s) {
-          const label = s.n === 'lap' ? ('Tour ' + s.lap + ' terminé') :
-            ('Secteur ' + s.n + (duel.laps > 1 ? ' (tour ' + s.lap + ')' : ''));
+          const label = 'Tour ' + s.lap + ' terminé';
           return '<div class="replay-row"><span class="name">' + escapeHtml(label) + '</span><span class="val">' + fmt(s.t) + '</span></div>';
         }).join('') + '</div>';
     }

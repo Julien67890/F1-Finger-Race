@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>F1 Finger Race</title>
 <!-- Web App Manifest : permet d'installer le jeu ("Ajouter à l'écran d'accueil") pour qu'il
      se lance en plein écran, sans barre d'adresse ni barre de statut. Le fichier manifest.json
@@ -1481,7 +1481,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-y';
+  const BUILD_TAG = '2026-08-31-z';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -4696,6 +4696,18 @@
   // et applis de messagerie font ça), on doit quand même prendre en compte le nouveau défi.
   window.addEventListener('hashchange', applyHashDuel);
 })();
+
+// Enregistrement du service worker : condition nécessaire (en plus du manifest) pour qu'une
+// installation ("Ajouter à l'écran d'accueil") devienne une vraie appli plein écran sans barre
+// d'adresse sur Android, au lieu d'un simple raccourci qui rouvre un onglet de navigateur normal
+// — voir sw.js pour le détail. sw.js doit être uploadé dans le même dossier que cette page.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function (err) {
+      console.error('Service worker : enregistrement impossible', err);
+    });
+  });
+}
 </script>
 </body>
 </html>

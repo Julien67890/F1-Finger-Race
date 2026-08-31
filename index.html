@@ -343,6 +343,16 @@
     max-width: 60ch;
   }
 
+  /* Sans ça, l'emoji trophée "pend" plus bas que le texte : les emoji ont des métriques de
+     police différentes du texte latin, et s'alignent par défaut sur la ligne de base du texte
+     au lieu d'être centrés dessus. */
+  .menu-head p.lede .lede-icon {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1;
+    transform: translateY(-0.05em);
+  }
+
   .player-name-row { margin-top: 14px; }
 
   .player-name-row input {
@@ -1303,7 +1313,7 @@
           <span class="account-name" id="accountChipName">Compte</span>
         </button>
       </div>
-      <p class="lede" data-i18n="slogan">Un doigt. Une piste. Un champion. 🏆</p>
+      <p class="lede" data-i18n-html="slogan">Un doigt. Une piste. Un champion. <span class="lede-icon">🏆</span></p>
 
       <div class="difficulty-picker">
         <div class="seg" id="difficultySeg">
@@ -1498,6 +1508,8 @@
     <div class="result-card">
       <h2 data-i18n="account_title">Mon compte</h2>
 
+      <button class="cta ghost" id="accountLangBtn" type="button">🌐 <span data-i18n="choose_language">Choisir la langue</span></button>
+
       <div id="accountSignedOut">
         <div class="sub" data-i18n="account_intro">Ton prénom sert au classement dans les défis entre amis. Connecte-toi pour le retrouver sur tous tes appareils.</div>
         <div class="player-name-row">
@@ -1627,7 +1639,7 @@
 
   const STRINGS = {
     fr: {
-      "slogan": "Un doigt. Une piste. Un champion. 🏆",
+      "slogan": "Un doigt. Une piste. Un champion. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mon compte",
       "account_default_name": "Compte",
       "label_sens": "Sens",
@@ -1817,7 +1829,7 @@
       "diff_difficile": "Difficile",
     },
     en: {
-      "slogan": "One finger. One track. One champion. 🏆",
+      "slogan": "One finger. One track. One champion. <span class=\"lede-icon\">🏆</span>",
       "account_title": "My account",
       "account_default_name": "Account",
       "label_sens": "Direction",
@@ -2007,7 +2019,7 @@
       "diff_difficile": "Hard",
     },
     es: {
-      "slogan": "Un dedo. Un circuito. Un campeón. 🏆",
+      "slogan": "Un dedo. Un circuito. Un campeón. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mi cuenta",
       "account_default_name": "Cuenta",
       "label_sens": "Sentido",
@@ -2197,7 +2209,7 @@
       "diff_difficile": "Difícil",
     },
     pt: {
-      "slogan": "Um dedo. Um circuito. Um campeão. 🏆",
+      "slogan": "Um dedo. Um circuito. Um campeão. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Minha conta",
       "account_default_name": "Conta",
       "label_sens": "Sentido",
@@ -2387,7 +2399,7 @@
       "diff_difficile": "Difícil",
     },
     de: {
-      "slogan": "Ein Finger. Eine Strecke. Ein Champion. 🏆",
+      "slogan": "Ein Finger. Eine Strecke. Ein Champion. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mein Konto",
       "account_default_name": "Konto",
       "label_sens": "Richtung",
@@ -2577,7 +2589,7 @@
       "diff_difficile": "Schwer",
     },
     it: {
-      "slogan": "Un dito. Un circuito. Un campione. 🏆",
+      "slogan": "Un dito. Un circuito. Un campione. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Il mio account",
       "account_default_name": "Account",
       "label_sens": "Senso",
@@ -2767,7 +2779,7 @@
       "diff_difficile": "Difficile",
     },
     nl: {
-      "slogan": "Eén vinger. Eén circuit. Eén kampioen. 🏆",
+      "slogan": "Eén vinger. Eén circuit. Eén kampioen. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mijn account",
       "account_default_name": "Account",
       "label_sens": "Richting",
@@ -2957,7 +2969,7 @@
       "diff_difficile": "Moeilijk",
     },
     ar: {
-      "slogan": "إصبع واحد. حلبة واحدة. بطل واحد. 🏆",
+      "slogan": "إصبع واحد. حلبة واحدة. بطل واحد. <span class=\"lede-icon\">🏆</span>",
       "account_title": "حسابي",
       "account_default_name": "الحساب",
       "label_sens": "الاتجاه",
@@ -3147,7 +3159,7 @@
       "diff_difficile": "صعب",
     },
     ja: {
-      "slogan": "指一本。サーキット一つ。チャンピオン一人。🏆",
+      "slogan": "指一本。サーキット一つ。チャンピオン一人。 <span class=\"lede-icon\">🏆</span>",
       "account_title": "マイアカウント",
       "account_default_name": "アカウント",
       "label_sens": "方向",
@@ -3337,7 +3349,7 @@
       "diff_difficile": "上級",
     },
     zh: {
-      "slogan": "一根手指，一条赛道，一位冠军。🏆",
+      "slogan": "一根手指，一条赛道，一位冠军。 <span class=\"lede-icon\">🏆</span>",
       "account_title": "我的账户",
       "account_default_name": "账户",
       "label_sens": "方向",
@@ -3527,7 +3539,7 @@
       "diff_difficile": "困难",
     },
     id: {
-      "slogan": "Satu jari. Satu sirkuit. Satu juara. 🏆",
+      "slogan": "Satu jari. Satu sirkuit. Satu juara. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Akun saya",
       "account_default_name": "Akun",
       "label_sens": "Arah",
@@ -3854,6 +3866,7 @@
   const accountOverlay = document.getElementById('accountOverlay');
   const closeAccountBtn = document.getElementById('closeAccountBtn');
   const langChip = document.getElementById('langChip');
+  const accountLangBtn = document.getElementById('accountLangBtn');
   const langOverlay = document.getElementById('langOverlay');
   const langList = document.getElementById('langList');
   const closeLangBtn = document.getElementById('closeLangBtn');
@@ -4698,6 +4711,16 @@
   function buildCarousel() {
     carouselTrack.innerHTML = '';
     flagRail.innerHTML = '';
+    // buildCarousel() est rappelée à chaque changement de langue (les noms de circuits doivent
+    // être reconstruits). Sans ce vidage, cardEls/flagChipEls — déclarés une seule fois plus
+    // haut — accumulaient les anciennes cartes détachées du DOM à chaque appel au lieu d'être
+    // remplacés : renderCarousel() calculait alors l'opacité/l'échelle de chaque carte avec un
+    // index décalé (les vraies cartes visibles se retrouvaient loin dans un tableau deux fois
+    // trop long), ce qui les affichait toutes en permanence comme "loin du centre" — sombres et
+    // réduites — dès la première langue changée. C'était la cause des images de circuits grises
+    // signalées par Julien.
+    cardEls.length = 0;
+    flagChipEls.length = 0;
     COUNTRIES.forEach((c, i) => {
       const card = document.createElement('div');
       card.className = 'country-card';
@@ -5561,6 +5584,28 @@
     rafId = requestAnimationFrame(tickTimer);
   }
 
+  // Centralise la logique des boutons de l'écran de résultat (Recommencer / Changer de
+  // circuit / Défier un ami) selon qu'il s'agit d'une tentative de défi (un seul essai, donc
+  // pas de "Recommencer") ou d'une course normale. Utilisée à la fois par finishRun() (arrivée
+  // réussie) ET abortRun() (faux départ / relâché trop tôt) — avant ce correctif, abortRun() ne
+  // touchait à aucun de ces boutons : "Recommencer" restait affiché même après l'échec d'une
+  // tentative de défi (un joueur pouvait donc retenter indéfiniment), et le texte du bouton
+  // "Changer de circuit" restait bloqué dans la dernière langue où une course avait été
+  // *terminée avec succès*, au lieu de suivre la langue actuellement active.
+  function applyResultActionButtons(isDuelAttempt) {
+    if (isDuelAttempt) {
+      // Un seul essai par défi : ni "Recommencer", ni "Défier un ami avec ce temps" (il n'y a
+      // pas de temps valide à défier en cas d'échec).
+      challengeResultBtn.hidden = true;
+      retryBtn.hidden = true;
+      menuBtn.textContent = t('back_to_main_menu_btn');
+    } else {
+      challengeResultBtn.hidden = false;
+      retryBtn.hidden = false;
+      menuBtn.textContent = t('change_circuit_btn');
+    }
+  }
+
   function finishRun() {
     const rawTime = (performance.now() - startTime) / 1000;
     const penaltyTime = penalties * PENALTY_SECONDS;
@@ -5606,25 +5651,17 @@
     overlay.classList.add('show');
 
     lastResult = { time: total, penalties: penalties };
-    if (shouldAttachRunToActiveDuel(current.id)) {
-      // Course lancée depuis un lien de défi : le temps s'ajoute automatiquement. Un seul
-      // essai compte pour un défi — on ne propose donc pas de "Recommencer" ici (ça
-      // resterait possible depuis l'écran Défis via "Relancer la course", en connaissance de
-      // cause), juste revoir sa course ou retourner au menu.
+    const isDuelAttempt = shouldAttachRunToActiveDuel(current.id);
+    applyResultActionButtons(isDuelAttempt);
+    if (isDuelAttempt) {
+      // Course lancée depuis un lien de défi : le temps s'ajoute automatiquement.
       const name = ensureChallengeName();
-      challengeResultBtn.hidden = true;
-      retryBtn.hidden = true;
-      menuBtn.textContent = t('back_to_main_menu_btn');
       if (name) {
         addRunToActiveDuel(name, lastResult);
       } else {
         duelResultPanel.hidden = true;
       }
     } else {
-      // Course normale : propose de la transformer en défi, et de recommencer comme avant.
-      challengeResultBtn.hidden = false;
-      retryBtn.hidden = false;
-      menuBtn.textContent = t('change_circuit_btn');
       duelResultPanel.hidden = true;
     }
   }
@@ -5682,6 +5719,9 @@
     viewRunBtn.hidden = telemetry.length < 2;
     historyList.hidden = true;
     historyList.innerHTML = '';
+    const isDuelAttempt = shouldAttachRunToActiveDuel(current.id);
+    applyResultActionButtons(isDuelAttempt);
+    if (isDuelAttempt) duelResultPanel.hidden = true;
     overlay.classList.add('show');
   }
 
@@ -6847,7 +6887,7 @@
 
     let splitsHtml = '';
     if (duel.splits && duel.splits.length) {
-      splitsHtml = '<div class="replay-splits"><div class="replay-splits-title">Temps par tour</div>' +
+      splitsHtml = '<div class="replay-splits"><div class="replay-splits-title">' + t('time_per_lap_title') + '</div>' +
         lapSplitRows(duel.splits, function (lap, delta) {
           return '<div class="replay-row"><span class="name">' + escapeHtml(t('lap_done', {lap: lap})) + '</span><span class="val">' + fmt(delta) + '</span></div>';
         }) + '</div>';
@@ -7028,9 +7068,23 @@
     });
   }
 
+  // "langOpenedFromAccount" retient si on a ouvert le sélecteur de langue depuis le panneau
+  // "Mon compte" (plutôt que depuis l'icône 🌐 du menu principal), pour rouvrir ce panneau
+  // derrière une fois la langue choisie / la fenêtre refermée — sinon le joueur se retrouverait
+  // sur le menu principal au lieu de revenir à "Mon compte".
+  let langOpenedFromAccount = false;
+  function closeLangOverlay() {
+    langOverlay.classList.remove('show');
+    if (langOpenedFromAccount) {
+      langOpenedFromAccount = false;
+      renderAccountOverlay();
+      accountOverlay.classList.add('show');
+    }
+  }
+
   function setLanguage(lang) {
     if (SUPPORTED_LANGS.indexOf(lang) === -1 || lang === currentLang) {
-      if (!langOverlay.hidden && langOverlay.classList.contains('show')) langOverlay.classList.remove('show');
+      if (!langOverlay.hidden && langOverlay.classList.contains('show')) closeLangOverlay();
       return;
     }
     currentLang = lang;
@@ -7047,16 +7101,21 @@
     if (state === 'duel') renderDuelScreen();
     if (!screenRace.hidden) refreshCardBests();
     rebuildTickerMessages();
-    langOverlay.classList.remove('show');
+    closeLangOverlay();
   }
 
   langChip.addEventListener('click', () => {
+    langOpenedFromAccount = false;
     renderLangList();
     langOverlay.classList.add('show');
   });
-  closeLangBtn.addEventListener('click', () => {
-    langOverlay.classList.remove('show');
+  accountLangBtn.addEventListener('click', () => {
+    langOpenedFromAccount = true;
+    accountOverlay.classList.remove('show');
+    renderLangList();
+    langOverlay.classList.add('show');
   });
+  closeLangBtn.addEventListener('click', closeLangOverlay);
 
   if (auth) {
     auth.onAuthStateChanged(function (user) {

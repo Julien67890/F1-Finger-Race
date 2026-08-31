@@ -16,6 +16,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="F1 Finger Race">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
+<!-- Les drapeaux des circuits sont des émojis Unicode (🇲🇨, 🇯🇵...), pas des images — sur
+     Windows, Chrome/Edge n'a pas de police couleur pour ces émojis précis (Microsoft les exclut
+     volontairement de Segoe UI Emoji) et affiche à la place les deux lettres du code pays
+     ("MC", "JP"...) au lieu du drapeau. Android/iOS/macOS ont cette police et affichent le vrai
+     drapeau normalement. Ce polyfill détecte ce cas précis et ne charge une police de secours
+     (juste les drapeaux, ~77 Ko) que sur les navigateurs qui en ont besoin — rien n'est
+     téléchargé en plus pour les autres. -->
+<script type="module">
+  import { polyfillCountryFlagEmojis } from "https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.10/dist/index.mjs";
+  polyfillCountryFlagEmojis();
+</script>
 <style>
   :root {
     --bg: #0e131a;
@@ -1509,7 +1520,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-ae';
+  const BUILD_TAG = '2026-08-31-af';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;

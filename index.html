@@ -97,13 +97,22 @@
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     opacity: 1;
     transition: opacity 0.2s ease;
   }
 
   .live-ticker .ticker-text.fade { opacity: 0; }
+
+  /* Le message lui-même vit dans ce span interne, qu'on fait glisser horizontalement (voir
+     renderTickerNow()) quand il est trop long pour tenir entier dans le bandeau — pour pouvoir
+     lire un message complet ("Julien vient de battre le record sur...") au lieu de le voir
+     coupé par des points de suspension. */
+  .live-ticker .ticker-text-inner {
+    display: inline-block;
+    white-space: nowrap;
+    transform: translateX(0);
+  }
 
   .menu-head {
     padding: 0 20px;
@@ -582,6 +591,15 @@
     cursor: pointer;
   }
   .duel-history-delete:active { background: rgba(255,90,90,0.18); color: #ffb3b3; border-color: rgba(255,90,90,0.4); }
+
+  /* Un premier tap "arme" la croix (au lieu d'une popup de confirmation native) : elle devient
+     rouge pleine avec une coche, et un second tap dans les quelques secondes qui suivent supprime
+     réellement le défi. Sans second tap, elle revient toute seule à son état normal. */
+  .duel-history-delete.confirm-delete {
+    background: #ff5a5a;
+    color: #1a0d05;
+    border-color: #ff5a5a;
+  }
 
   .duel-history-arrow { flex: none; margin-left: auto; color: var(--accent); font-size: 18px; font-weight: 700; }
 
@@ -1256,7 +1274,7 @@
 
     <div class="live-ticker" id="liveTicker">
       <span class="ticker-dot"></span>
-      <span class="ticker-text" id="tickerText">Chargement…</span>
+      <span class="ticker-text" id="tickerText"><span class="ticker-text-inner" id="tickerTextInner">Chargement…</span></span>
     </div>
 
     <div class="overlay" id="historyOverlay">
@@ -1481,7 +1499,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-ab';
+  const BUILD_TAG = '2026-08-31-ad';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1491,9 +1509,9 @@
   const LOGICAL_W = 1000, LOGICAL_H = 600;
 
   const DIFFICULTIES = [
-    { id: 'debutant', label: 'Débutant', factor: 1.45 },
-    { id: 'intermediaire', label: 'Intermédiaire', factor: 1.0 },
-    { id: 'difficile', label: 'Difficile', factor: 0.6 }
+    { id: 'debutant', label: 'Débutant', factor: 1.45, icon: '🟢' },
+    { id: 'intermediaire', label: 'Intermédiaire', factor: 1.0, icon: '🟡' },
+    { id: 'difficile', label: 'Difficile', factor: 0.6, icon: '🔴' }
   ];
 
   const COUNTRIES = [
@@ -1602,6 +1620,7 @@
   const savePseudoBtn = document.getElementById('savePseudoBtn');
   const challengeBtn = document.getElementById('challengeBtn');
   const tickerTextEl = document.getElementById('tickerText');
+  const tickerTextInnerEl = document.getElementById('tickerTextInner');
   const duelPanel = document.getElementById('duelPanel');
   const duelFlag = document.getElementById('duelFlag');
   const duelTitle = document.getElementById('duelTitle');
@@ -1910,19 +1929,77 @@
 
   let tickerMessages = [];       // file de messages textuels affichés à tour de rôle
   let tickerRotateIndex = 0;
-  let tickerRotateTimer = null;
+  let tickerRotateTimer = null;  // setTimeout (pas setInterval) : voir renderTickerNow()
+  let tickerLoopStarted = false; // évite que plusieurs listeners Firestore proches (record events,
+                                  // écart leader, défi public, circuit tendance) ne démarrent chacun
+                                  // leur propre boucle d'affichage avant que tickerRotateTimer ne
+                                  // soit posé (celui-ci n'est affecté qu'après un léger délai)
   let recentRecordEvents = [];   // derniers évènements "record battu" reçus en direct (onSnapshot)
   let latestPublicDuelMsg = null;
   let trendingCircuitMsg = null;
   let leaderGapMsg = null;
 
+  // Vitesse de défilement du bandeau, en pixels par seconde — un message plus long défile donc
+  // plus longtemps, pour qu'il ait toujours le temps d'être lu en entier quelle que soit sa
+  // longueur (Julien a signalé que les messages étaient coupés par des points de suspension).
+  const TICKER_SCROLL_PX_PER_SEC = 55;
+
+  function recordEventMillis(ev) {
+    const c = ev && ev.createdAt;
+    if (!c) return 0;
+    if (typeof c.toMillis === 'function') return c.toMillis();
+    if (c.seconds) return c.seconds * 1000;
+    const t = Date.parse(c);
+    return isNaN(t) ? 0 : t;
+  }
+
+  // Date/heure lisible d'un évènement, dans le fuseau horaire local du joueur qui regarde le
+  // bandeau (contrairement à la semaine du classement, calée sur Paris pour que tout le monde
+  // partage la même remise à zéro — ici on affiche juste "à quelle heure ça vient de se passer
+  // pour moi").
+  function formatEventDateTime(ms) {
+    if (!ms) return '';
+    const d = new Date(ms);
+    const now = new Date();
+    const yest = new Date(now);
+    yest.setDate(now.getDate() - 1);
+    const time = String(d.getHours()).padStart(2, '0') + 'h' + String(d.getMinutes()).padStart(2, '0');
+    if (d.toDateString() === now.toDateString()) return "aujourd'hui à " + time;
+    if (d.toDateString() === yest.toDateString()) return 'hier à ' + time;
+    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' à ' + time;
+  }
+
   function renderTickerNow() {
-    if (!tickerTextEl || !tickerMessages.length) return;
+    if (!tickerTextEl || !tickerTextInnerEl || !tickerMessages.length) return;
+    clearTimeout(tickerRotateTimer);
     tickerTextEl.classList.add('fade');
     setTimeout(function () {
       tickerRotateIndex = tickerRotateIndex % tickerMessages.length;
-      tickerTextEl.textContent = tickerMessages[tickerRotateIndex];
+      tickerTextInnerEl.style.transition = 'none';
+      tickerTextInnerEl.style.transform = 'translateX(0)';
+      tickerTextInnerEl.textContent = tickerMessages[tickerRotateIndex];
       tickerTextEl.classList.remove('fade');
+
+      // On ne fait défiler que si le message est effectivement trop long pour tenir dans le
+      // bandeau — sinon il reste simplement affiché, immobile, le temps normal d'affichage. Le
+      // requestAnimationFrame laisse le navigateur peindre la remise à zéro ("transition:none")
+      // avant qu'on pose la nouvelle transition, pour un vrai départ fluide (pas de saut).
+      requestAnimationFrame(function () {
+        const overflow = tickerTextInnerEl.scrollWidth - tickerTextEl.clientWidth;
+        let nextDelay;
+        if (overflow > 4) {
+          const durationMs = Math.max(2500, (overflow / TICKER_SCROLL_PX_PER_SEC) * 1000);
+          tickerTextInnerEl.style.transition = 'transform ' + (durationMs / 1000) + 's linear';
+          tickerTextInnerEl.style.transform = 'translateX(-' + overflow + 'px)';
+          nextDelay = durationMs + 900; // petite pause une fois le message lu en entier
+        } else {
+          nextDelay = 3600; // message assez court pour tenir : pas besoin de défiler
+        }
+        tickerRotateTimer = setTimeout(function () {
+          tickerRotateIndex += 1;
+          renderTickerNow();
+        }, nextDelay);
+      });
     }, 220);
   }
 
@@ -1932,20 +2009,27 @@
       const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
       const flag = country ? country.flag : '🏁';
       const label = country ? country.name : ev.cid;
-      msgs.push('🏆 ' + ev.name + ' vient de battre le record de ' + flag + ' ' + label +
-        (ev.margin > 0 ? ' (-' + fmt(ev.margin) + ')' : '') + ' !');
+      const diff = DIFFICULTIES.find(function (d) { return d.id === ev.diff; });
+      const diffIcon = diff ? diff.icon : '⚙️';
+      const diffLabel = diff ? diff.label : (ev.diff || '');
+      const dirIcon = ev.dir === 'inverse' ? '⬅️' : '➡️';
+      const dirLabel = ev.dir === 'inverse' ? 'sens inversé' : 'sens normal';
+      const laps = ev.laps || 1;
+      const lapsTxt = laps + (laps > 1 ? ' tours' : ' tour');
+      const when = formatEventDateTime(recordEventMillis(ev));
+      msgs.push('🏆 ' + ev.name + ' vient de battre le record sur ' + flag + ' ' + label +
+        ' en ' + diffIcon + ' ' + diffLabel + ' · ' + dirIcon + ' ' + dirLabel + ' · 🔁 ' + lapsTxt +
+        (ev.margin > 0 ? ' (−' + fmt(ev.margin) + ')' : '') +
+        (when ? ' · 🕒 ' + when : '') + ' !');
     });
     if (leaderGapMsg) msgs.push(leaderGapMsg);
     if (latestPublicDuelMsg) msgs.push(latestPublicDuelMsg);
     if (trendingCircuitMsg) msgs.push(trendingCircuitMsg);
     msgs.push('⏳ Classement remis à zéro dans ' + formatCountdown(msUntilWeeklyReset()));
     tickerMessages = msgs;
-    if (!tickerRotateTimer) {
-      renderTickerNow();
-      tickerRotateTimer = setInterval(function () {
-        tickerRotateIndex += 1;
-        renderTickerNow();
-      }, 5000);
+    if (!tickerLoopStarted) {
+      tickerLoopStarted = true;
+      renderTickerNow(); // amorce la boucle ; elle se replanifie elle-même ensuite (setTimeout chaîné)
     }
   }
 
@@ -4024,13 +4108,44 @@
       '<button class="duel-history-delete" type="button" data-id="' + entry.id + '" title="Retirer ce défi de la liste">✕</button></div>';
   }
 
+  // Suppression d'un défi de la liste en double-tap sur sa croix, au lieu d'une popup de
+  // confirmation native (bloquante et peu adaptée au tactile) : un premier tap "arme" la croix
+  // (elle passe en rouge plein avec une coche ✓), un second tap dans les 3 secondes qui suivent
+  // supprime réellement ; sans second tap, ou en tapant une autre croix entre-temps, elle revient
+  // toute seule à son état normal (une seule croix armée à la fois).
+  let armedDuelDeleteBtn = null;
+  let armedDuelDeleteTimer = null;
+
+  function disarmDuelDelete() {
+    clearTimeout(armedDuelDeleteTimer);
+    armedDuelDeleteTimer = null;
+    if (armedDuelDeleteBtn) {
+      armedDuelDeleteBtn.classList.remove('confirm-delete');
+      armedDuelDeleteBtn.textContent = '✕';
+      armedDuelDeleteBtn.title = 'Retirer ce défi de la liste';
+    }
+    armedDuelDeleteBtn = null;
+  }
+
   function wireDuelHistoryRows(container, list) {
     Array.from(container.querySelectorAll('.duel-history-delete')).forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (!window.confirm('Retirer ce défi de ta liste ? (il reste accessible aux autres joueurs qui ont le lien)')) return;
-        removeDuelFromHistory(btn.dataset.id);
-        renderDuelHistoryList();
+        if (armedDuelDeleteBtn === btn) {
+          // Second tap sur la même croix : suppression confirmée.
+          disarmDuelDelete();
+          removeDuelFromHistory(btn.dataset.id);
+          renderDuelHistoryList();
+          return;
+        }
+        // Premier tap (ou tap sur une autre croix pendant qu'une autre l'était déjà) : on arme
+        // celle-ci sans encore rien supprimer.
+        disarmDuelDelete();
+        armedDuelDeleteBtn = btn;
+        btn.classList.add('confirm-delete');
+        btn.textContent = '✓';
+        btn.title = 'Retape pour confirmer la suppression';
+        armedDuelDeleteTimer = setTimeout(disarmDuelDelete, 3000);
       });
     });
     Array.from(container.querySelectorAll('.duel-history-row')).forEach(row => {

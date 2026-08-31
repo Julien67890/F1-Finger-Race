@@ -1480,6 +1480,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics-compat.js"></script>
 <script>
   if (typeof firebase !== 'undefined') {
     firebase.initializeApp({
@@ -1488,8 +1489,17 @@
       projectId: "f1-finger-race",
       storageBucket: "f1-finger-race.firebasestorage.app",
       messagingSenderId: "268367210331",
-      appId: "1:268367210331:web:5ee262b17201477b2f5c7e"
+      appId: "1:268367210331:web:5ee262b17201477b2f5c7e",
+      measurementId: "G-0WPB9KXWZQ"
     });
+    // Analytics est chargé depuis un script séparé (bloqué par certains bloqueurs de pub/vie
+    // privée, contrairement à Auth/Firestore) : on vérifie sa présence à part pour ne jamais
+    // faire planter le reste de l'appli si ce script précis n'a pas pu se charger.
+    try {
+      if (typeof firebase.analytics === 'function') firebase.analytics();
+    } catch (e) {
+      console.error('Firebase Analytics : initialisation impossible', e);
+    }
   }
 </script>
 
@@ -1499,7 +1509,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-ad';
+  const BUILD_TAG = '2026-08-31-ae';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;

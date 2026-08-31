@@ -1416,7 +1416,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-s';
+  const BUILD_TAG = '2026-08-31-t';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -3998,13 +3998,6 @@
       scale: ghostTimeScale(r.tele, r.pen || 0)
     }));
 
-    runs.forEach(r => {
-      const tele = r.tele || [];
-      for (let i = 1; i < tele.length; i++) {
-        drawGhostTrailSegment([tele[i - 1][1], tele[i - 1][2]], [tele[i][1], tele[i][2]], r.color);
-      }
-    });
-
     replayCarEls.forEach(el => el.remove());
     replayCarEls = runs.map(r => {
       const el = document.createElement('div');
@@ -4027,7 +4020,17 @@
       escapeHtml(r.name) + '</span><span class="val">' + fmt(r.time) + '</span></div>'
     ).join('') + splitsHtml;
     replayHud.hidden = false;
+    // resizeCanvas() efface et redessine la scène de base (piste + points de contrôle) : il
+    // doit donc tourner AVANT de tracer les tracés fantômes ci-dessous, sinon il les efface
+    // aussitôt dessinés (c'est exactement ce qui faisait disparaître les tracés des rejeux).
     resizeCanvas();
+
+    runs.forEach(r => {
+      const tele = r.tele || [];
+      for (let i = 1; i < tele.length; i++) {
+        drawGhostTrailSegment([tele[i - 1][1], tele[i - 1][2]], [tele[i][1], tele[i][2]], r.color);
+      }
+    });
 
     const maxT = Math.max.apply(null, runs.map(r => r.time || 0)) + 0.6;
 

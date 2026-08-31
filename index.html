@@ -1481,7 +1481,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-w';
+  const BUILD_TAG = '2026-08-31-x';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1687,11 +1687,13 @@
   let lastPoint = null;
   let heldPoint = null;
   let telemetry = []; // [t, x, y] samples, logical space — toujours enregistré, réutilisé si la course devient un défi
+  let offFlags = []; // tableau parallèle à "telemetry" (même index) : 1 = hors piste à cet instant, 0 = sur la piste
   let lastTelemetryPush = 0;
   let ghostTele = null; // tracé rejoué en fantôme pendant la course (adversaire du défi en priorité, sinon meilleur temps perso)
   let ghostLabel = '';  // nom affiché pour ce fantôme ("ton record" ou le prénom de l'adversaire)
   let ghostScale = 1;   // étire le temps du fantôme pour que son avancement reflète aussi ses pénalités
   let ghostTime = 0;    // temps total du fantôme (utilisé par le rejeu solo "Voir ma course")
+  let ghostOff = null;  // tableau parallèle à ghostTele (hors piste), si connu — absent pour les vieux tracés stockés
   let splits = [];      // temps intermédiaires de la course en cours : { n ou 'lap', lap, t }
   let lastSplits = [];  // copie des splits de la dernière course terminée (pour le rejeu solo)
   let splitFlashTimer = null;
@@ -2097,6 +2099,7 @@
       diff: data.diff,
       dir: data.dir,
       laps: data.laps,
+      createdAt: data.createdAt,
       public: !!isPublic,
       runs: Object.keys(runsMap).map(function (k) {
         return Object.assign({ key: k }, runsMap[k], { tele: unflattenTele(runsMap[k].tele) });
@@ -2233,12 +2236,13 @@
     return null;
   }
 
-  function saveBestTele(id, diff, dir, laps, time, pen, tele) {
+  function saveBestTele(id, diff, dir, laps, time, pen, tele, off) {
     try {
       localStorage.setItem(bestTeleKey(id, diff, dir, laps), JSON.stringify({
         time: time,
         pen: pen || 0,
-        tele: resampleTelemetry(tele, GHOST_TELE_POINTS)
+        tele: resampleTelemetry(tele, GHOST_TELE_POINTS),
+        off: resampleOffFlags(off, tele.length, GHOST_TELE_POINTS)
       }));
     } catch (e) {}
   }
@@ -2607,6 +2611,7 @@
     ghostLabel = '';
     ghostScale = 1;
     ghostTime = 0;
+    ghostOff = null;
     if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
       const myKey = currentRunKey();
       const others = activeDuel.runs.filter(r => r.key !== myKey && r.tele && r.tele.length);
@@ -2617,6 +2622,7 @@
         ghostLabel = best.name;
         ghostScale = ghostTimeScale(ghostTele, best.pen || 0);
         ghostTime = best.time;
+        ghostOff = best.off || null;
       }
     }
     if (!ghostTele) {
@@ -2626,6 +2632,7 @@
         ghostLabel = 'ton record';
         ghostScale = ghostTimeScale(ghostTele, bestTele.pen || 0);
         ghostTime = bestTele.time;
+        ghostOff = bestTele.off || null;
       }
     }
     hudCountryChip.textContent = country.flag + ' ' + country.name + ' · ' + diff.label +
@@ -2863,6 +2870,7 @@
     lastCarRenderPos = null;
     trail = [];
     telemetry = [];
+    offFlags = [];
     lastTelemetryPush = 0;
     splits = [];
     clearTimeout(splitFlashTimer);
@@ -3203,7 +3211,7 @@
     const history = addHistory(current.id, selectedDifficulty, selectedDirection, selectedLaps,
       { time: total, penalties: penalties, date: Date.now() });
     if (isNewBest) {
-      saveBestTele(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, penalties, telemetry);
+      saveBestTele(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, penalties, telemetry, offFlags);
     }
     // Chaque course (solo ou défi) compte pour le classement hebdomadaire partagé.
     recordRaceCloud(current.id, selectedDifficulty, selectedDirection, selectedLaps, total, penalties);
@@ -3456,6 +3464,7 @@
       const now = performance.now();
       if (now - lastTelemetryPush >= 90) {
         telemetry.push([Math.round(((now - startTime) / 1000) * 10) / 10, Math.round(lx), Math.round(ly)]);
+        offFlags.push(onNow ? 0 : 1);
         lastTelemetryPush = now;
       }
     }
@@ -3536,6 +3545,23 @@
       const idx = Math.round(i * (tele.length - 1) / (maxPoints - 1));
       const p = tele[idx];
       out.push([p[0], p[1], p[2]]);
+    }
+    return out;
+  }
+
+  // Tableau parallèle à "tele" (zones hors piste, un 0/1 par point) : ré-échantillonné avec
+  // EXACTEMENT la même formule d'indices que resampleTelemetry ci-dessus, pour que les deux
+  // tableaux restent alignés point à point une fois le nombre de points réduit. "off" peut être
+  // absent (undefined) pour un tracé enregistré avant l'ajout de cette fonctionnalité : on
+  // renvoie alors un tableau vide plutôt que de planter, et le rejeu retombera sur la couleur
+  // normale du joueur (voir startGhostReplay).
+  function resampleOffFlags(off, teleLen, maxPoints) {
+    if (!off || !teleLen) return [];
+    if (teleLen <= maxPoints) return off.slice(0, teleLen).map(v => v ? 1 : 0);
+    const out = [];
+    for (let i = 0; i < maxPoints; i++) {
+      const idx = Math.round(i * (teleLen - 1) / (maxPoints - 1));
+      out.push(off[idx] ? 1 : 0);
     }
     return out;
   }
@@ -3831,7 +3857,20 @@
           const runs = Object.keys(runsMap).map(function (k) {
             return Object.assign({ key: k }, runsMap[k], { tele: unflattenTele(runsMap[k].tele) });
           });
-          entries.push({ id: doc.id, cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, public: true, runs: runs });
+          entries.push({ id: doc.id, cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, createdAt: data.createdAt, public: true, runs: runs });
+        });
+        // Défis publics incomplets (il manque un ou deux adversaires) qui traînent depuis plus
+        // de 48h sans jamais avoir été complétés : nettoyage best-effort, même logique que pour
+        // les défis privés (voir isStaleIncompleteDuel/buildDuelHistoryLists) — cette lecture
+        // vient d'être faite fraîchement depuis Firestore, donc sûre pour une suppression.
+        entries = entries.filter(function (e) {
+          if (!isStaleIncompleteDuel(e)) return true;
+          if (db) {
+            duelDocRef(e.id, true).delete().catch(function (err) {
+              console.error('Nettoyage défi public périmé : suppression Firestore impossible', e.id, err);
+            });
+          }
+          return false;
         });
         if (publicDuelStatus === 'open') entries = entries.filter(function (e) { return !playerHasRunDuel(e); });
         else if (publicDuelStatus === 'done') entries = entries.filter(function (e) { return playerHasRunDuel(e); });
@@ -3904,7 +3943,7 @@
     if (idx >= 0) { menuIndex = idx; renderCarousel(); }
     activeDuel = {
       id: duelRef.id, cid: duelRef.cid, diff: duelRef.diff, dir: duelRef.dir,
-      laps: duelRef.laps, public: !!duelRef.public, runs: duelRef.runs || []
+      laps: duelRef.laps, createdAt: duelRef.createdAt, public: !!duelRef.public, runs: duelRef.runs || []
     };
     watchDuel(duelRef.id, !!duelRef.public);
     showDuelScreen();
@@ -3959,16 +3998,37 @@
     });
   }
 
+  // "createdAt" arrive tantôt en Timestamp Firestore (objet avec .toMillis()), tantôt en objet
+  // brut {seconds} (rejoué depuis un cache local sérialisé en JSON), tantôt en chaîne ISO — les
+  // trois formes possibles selon d'où vient l'entrée (direct/local/JSON).
+  function duelCreatedAtMillis(entry) {
+    const c = entry && entry.createdAt;
+    if (!c) return 0;
+    if (typeof c.toMillis === 'function') return c.toMillis();
+    if (c.seconds) return c.seconds * 1000;
+    const t = Date.parse(c);
+    return isNaN(t) ? 0 : t;
+  }
+
+  // Un défi où il manque un ou deux adversaires (moins de 2 temps posés au total) qui traîne
+  // depuis plus de 48h sans jamais avoir été complété est considéré comme abandonné : on
+  // l'efface pour ne pas laisser les listes "Défis" et "Défis publics" s'encombrer indéfiniment
+  // (voir firestore.rules, qui n'autorise la suppression que dans ce cas précis). Sans date de
+  // création connue (ancien format, ou pas encore reçue du serveur), on ne supprime jamais, par
+  // prudence — mieux vaut un défi périmé encore affiché qu'un défi valide supprimé par erreur.
+  function isStaleIncompleteDuel(entry) {
+    if ((entry.runs || []).length >= 2) return false;
+    const createdMs = duelCreatedAtMillis(entry);
+    if (!createdMs) return false;
+    return (Date.now() - createdMs) > 48 * 3600 * 1000;
+  }
+
   function duelSortKey(entry) {
     // Le plus récent en haut : on prend l'horodatage du run le plus récent posé sur ce défi
     // (date/heure de "réalisation"), et à défaut (aucun temps encore posé) la date de création.
     let latest = 0;
     (entry.runs || []).forEach(function (r) { if (r.at && r.at > latest) latest = r.at; });
-    if (!latest && entry.createdAt) {
-      if (typeof entry.createdAt.toMillis === 'function') latest = entry.createdAt.toMillis();
-      else if (entry.createdAt.seconds) latest = entry.createdAt.seconds * 1000;
-      else { const t = Date.parse(entry.createdAt); if (!isNaN(t)) latest = t; }
-    }
+    if (!latest) latest = duelCreatedAtMillis(entry);
     return latest;
   }
 
@@ -3977,7 +4037,7 @@
     // On distingue ce qu'il reste à jouer (le joueur de cet appareil n'a pas encore posé de
     // temps) de ce qui est déjà réalisé, pour retrouver facilement les résultats des défis
     // qu'on a déjà courus.
-    const toPlay = list.filter(d => !playerHasRunDuel(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
+    const toPlay = list.filter(d => !playerHasRunDuel(d) && !isStaleIncompleteDuel(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
     const done = list.filter(d => playerHasRunDuel(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
 
     duelToPlaySection.hidden = toPlay.length === 0;
@@ -3987,6 +4047,24 @@
     duelHistorySection.hidden = done.length === 0;
     duelHistoryList.innerHTML = done.map(duelHistoryRowHtml).join('');
     wireDuelHistoryRows(duelHistoryList, done);
+  }
+
+  // Nettoyage effectif (best-effort) des défis privés incomplets et périmés — n'est appelé QUE
+  // sur une liste fraîchement relue depuis Firestore (jamais sur le cache local affiché en
+  // attendant ce rechargement) : une lecture périmée pourrait croire à tort qu'un défi est
+  // encore incomplet (l'adversaire a peut-être posé son temps depuis) et effacer par erreur un
+  // défi pourtant bien terminé.
+  function cleanupStaleDuels(list) {
+    return list.filter(function (d) {
+      if (!isStaleIncompleteDuel(d)) return true;
+      if (db) {
+        duelDocRef(d.id, d.public).delete().catch(function (err) {
+          console.error('Nettoyage défi périmé : suppression Firestore impossible', d.id, err);
+        });
+      }
+      removeDuelFromHistory(d.id);
+      return false;
+    });
   }
 
   function renderDuelHistoryList() {
@@ -4000,17 +4078,22 @@
     // Firestore à chaque passage sur l'écran Défis, pour que "Défis réalisés" soit à jour.
     Promise.all(cached.map(function (entry) {
       return duelDocRef(entry.id, entry.public).get().then(function (snap) {
-        if (!snap.exists) return entry;
+        if (!snap.exists) {
+          // Le défi a disparu côté serveur (par ex. nettoyage automatique 48h déclenché par un
+          // autre appareil) : on ne le garde plus non plus dans l'historique local.
+          removeDuelFromHistory(entry.id);
+          return null;
+        }
         const data = snap.data() || {};
         const runsMap = data.runs || {};
         const runs = Object.keys(runsMap).map(function (k) { return Object.assign({ key: k }, runsMap[k], { tele: unflattenTele(runsMap[k].tele) }); });
-        const updated = Object.assign({}, entry, { cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, runs: runs });
+        const updated = Object.assign({}, entry, { cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, createdAt: data.createdAt, runs: runs });
         saveDuelToHistory(updated);
         return updated;
       }).catch(function () { return entry; });
     })).then(function (freshList) {
       if (screenDuel.hidden) return; // on a déjà quitté l'écran Défis entre-temps
-      buildDuelHistoryLists(freshList);
+      buildDuelHistoryLists(cleanupStaleDuels(freshList.filter(Boolean)));
     });
   }
 
@@ -4161,9 +4244,12 @@
     }
     const key = currentRunKey();
     const tele = resampleTelemetry(telemetry, DUEL_TELE_POINTS);
+    const off = resampleOffFlags(offFlags, telemetry.length, DUEL_TELE_POINTS);
     // "at" (horodatage client) sert uniquement à trier les défis par date/heure de
     // réalisation dans les listes — pas besoin d'un vrai serverTimestamp pour ça.
-    const run = { name: name, time: result.time, pen: result.penalties, tele: tele, at: Date.now() };
+    // "off" (zones hors piste) est un simple tableau de 0/1 déjà "plat" — pas besoin de le
+    // passer par flattenTele, seul "tele" (tableau de triplets) pose un problème à Firestore.
+    const run = { name: name, time: result.time, pen: result.penalties, tele: tele, off: off, at: Date.now() };
     // Firestore refuse les tableaux de tableaux : on envoie "tele" aplati, mais on garde la
     // version normale (imbriquée) dans "run" pour l'état local/le rejeu fantôme.
     const runForFirestore = Object.assign({}, run, { tele: flattenTele(tele) });
@@ -4258,14 +4344,17 @@
     return { x: a[1] + (b[1] - a[1]) * f, y: a[2] + (b[2] - a[2]) * f };
   }
 
-  function drawGhostTrailSegment(a, b, color) {
+  // "offTrack" force la couleur rouge de sortie de piste (comme en course live, voir
+  // drawTrailSegment) par-dessus la couleur du joueur — absent (false) pour un tracé enregistré
+  // avant l'ajout de cette fonctionnalité, qui retombe alors simplement sur sa couleur normale.
+  function drawGhostTrailSegment(a, b, color, offTrack) {
     vctx.beginPath();
     vctx.moveTo(a[0], a[1]);
     vctx.lineTo(b[0], b[1]);
     vctx.lineWidth = 4;
     vctx.lineCap = 'round';
-    vctx.strokeStyle = color;
-    vctx.globalAlpha = 0.55;
+    vctx.strokeStyle = offTrack ? '#f0483f' : color;
+    vctx.globalAlpha = offTrack ? 0.8 : 0.55;
     vctx.stroke();
     vctx.globalAlpha = 1;
   }
@@ -4364,8 +4453,10 @@
 
     runs.forEach(r => {
       const tele = r.tele || [];
+      const off = r.off || [];
       for (let i = 1; i < tele.length; i++) {
-        drawGhostTrailSegment([tele[i - 1][1], tele[i - 1][2]], [tele[i][1], tele[i][2]], r.color);
+        const offTrack = !!(off[i] || off[i - 1]);
+        drawGhostTrailSegment([tele[i - 1][1], tele[i - 1][2]], [tele[i][1], tele[i][2]], r.color, offTrack);
       }
     });
 
@@ -4400,10 +4491,10 @@
     if (!current || !telemetry.length) return;
     const runs = [{
       name: 'Toi', time: lastResult ? lastResult.time : 0, pen: lastResult ? lastResult.penalties : 0,
-      tele: telemetry.slice(), key: 'solo-me'
+      tele: telemetry.slice(), off: offFlags.slice(), key: 'solo-me'
     }];
     if (ghostTele && ghostTele.length) {
-      runs.push({ name: ghostLabel || 'Fantôme', time: ghostTime || 0, pen: 0, tele: ghostTele, key: 'solo-ghost' });
+      runs.push({ name: ghostLabel || 'Fantôme', time: ghostTime || 0, pen: 0, tele: ghostTele, off: ghostOff || [], key: 'solo-ghost' });
     }
     startGhostReplay({
       id: 'solo', cid: current.id, dir: selectedDirection, diff: selectedDifficulty, laps: selectedLaps,

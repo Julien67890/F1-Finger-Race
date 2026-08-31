@@ -1481,7 +1481,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-v';
+  const BUILD_TAG = '2026-08-31-w';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -2901,8 +2901,10 @@
   // pose le doigt sur le point de départ.
   let audioCtx = null;
   let engineOsc = null, engineOsc2 = null, engineGain = null;
-  let engineFilter = null, engineWhine = null, engineWhineGain = null, engineNoise = null, engineNoiseGain = null;
+  let engineFilter = null, engineShaper = null;
+  let engineWhine = null, engineWhineGain = null, engineNoise = null, engineNoiseGain = null;
   let engineSpeed = 0;      // vitesse lissée utilisée pour moduler le son moteur
+  let engineLevel = 0;      // dernier niveau (0-1) calculé, pour détecter les grosses décélérations (wastegate)
   let lastMoveT = 0, lastMoveX = 0, lastMoveY = 0, instSpeed = 0;
 
   function ensureAudioCtx() {
@@ -2987,63 +2989,109 @@
     });
   }
 
+  // Courbe de saturation (waveshaper) : donne le grain légèrement "crunchy"/synthétique façon
+  // jeu d'arcade, plutôt qu'une onde carrée toute propre.
+  function makeEngineDistortionCurve(amount) {
+    const n = 44100;
+    const curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / n - 1;
+      curve[i] = ((3 + amount) * x * 20 * (Math.PI / 180)) / (Math.PI + amount * Math.abs(x));
+    }
+    return curve;
+  }
+
+  function makeEngineNoiseBuffer(ctx, seconds) {
+    const bufferSize = Math.round(ctx.sampleRate * seconds);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    return buffer;
+  }
+
+  // "Wastegate" : court souffle de bruit filtré (façon relâchement de turbo) déclenché quand on
+  // lève brutalement le pied après avoir roulé vite — un clin d'œil arcade plutôt qu'un vrai
+  // phénomène mécanique, validé avec Julien via les pistes audio de comparaison.
+  function triggerEngineWastegatePuff() {
+    const ctx = audioCtx;
+    if (!ctx || !engineGain) return;
+    const t = ctx.currentTime;
+    const puff = ctx.createBufferSource();
+    puff.buffer = makeEngineNoiseBuffer(ctx, 0.12);
+    const puffFilter = ctx.createBiquadFilter();
+    puffFilter.type = 'bandpass';
+    puffFilter.frequency.value = 3500;
+    puffFilter.Q.value = 0.8;
+    const puffGain = ctx.createGain();
+    puffGain.gain.setValueAtTime(0.0001, t);
+    puffGain.gain.exponentialRampToValueAtTime(0.05, t + 0.02);
+    puffGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    puff.connect(puffFilter);
+    puffFilter.connect(puffGain);
+    puffGain.connect(engineGain);
+    puff.start(t);
+    puff.stop(t + 0.15);
+  }
+
   function startEngineSound() {
     const ctx = ensureAudioCtx();
     if (!ctx) return;
     stopEngineSound();
     engineGain = ctx.createGain();
     engineGain.gain.value = 0.0001;
+    engineGain.connect(ctx.destination);
 
-    // Corps du son (grondement grave), passé dans un filtre dont la fréquence de coupure
-    // s'ouvre avec la vitesse — c'est ce filtre balayé qui donne l'impression de moteur qui
-    // monte en régime plutôt qu'un simple buzz fixe.
+    // "Turbo arcade" (piste C validée avec Julien) : onde carrée légèrement saturée plutôt
+    // qu'un grondement de moteur réaliste — assumé stylisé/jeu vidéo.
+    engineShaper = ctx.createWaveShaper();
+    engineShaper.curve = makeEngineDistortionCurve(14);
+    engineShaper.oversample = '2x';
+    engineShaper.connect(engineGain);
+
     engineFilter = ctx.createBiquadFilter();
     engineFilter.type = 'lowpass';
-    engineFilter.frequency.value = 300;
-    engineFilter.Q.value = 1.1;
+    engineFilter.frequency.value = 240;
+    engineFilter.Q.value = 1.4;
+    engineFilter.connect(engineShaper);
+
     engineOsc = ctx.createOscillator();
-    engineOsc.type = 'sawtooth';
-    engineOsc.frequency.value = 58;
+    engineOsc.type = 'square';
+    engineOsc.frequency.value = 45;
     engineOsc2 = ctx.createOscillator();
     engineOsc2.type = 'sawtooth';
-    engineOsc2.frequency.value = 58.4;
+    engineOsc2.frequency.value = 22.5; // une octave sous engineOsc, pour le corps
     engineOsc.connect(engineFilter);
     engineOsc2.connect(engineFilter);
-    engineFilter.connect(engineGain);
 
-    // Sifflement aigu façon turbo hybride F1 (pas juste un moteur atmosphérique qui gronde) :
-    // un harmonique élevé dont le volume monte surtout à haute vitesse.
+    // Sifflet de turbo (contourne la saturation/le filtre grave, comme les autres pistes) :
+    // c'est lui qui monte le plus dans les aigus à haut régime.
     engineWhine = ctx.createOscillator();
-    engineWhine.type = 'triangle';
-    engineWhine.frequency.value = 58 * 6;
+    engineWhine.type = 'sawtooth';
+    engineWhine.frequency.value = 45 * 6;
     engineWhineGain = ctx.createGain();
     engineWhineGain.gain.value = 0.0001;
     engineWhine.connect(engineWhineGain);
     engineWhineGain.connect(engineGain);
 
     // Souffle d'air à haute vitesse (bruit filtré passe-haut), pour la texture.
-    const bufferSize = Math.round(ctx.sampleRate * 1.5);
-    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
     engineNoise = ctx.createBufferSource();
-    engineNoise.buffer = noiseBuffer;
+    engineNoise.buffer = makeEngineNoiseBuffer(ctx, 1.5);
     engineNoise.loop = true;
     const noiseFilter = ctx.createBiquadFilter();
     noiseFilter.type = 'highpass';
-    noiseFilter.frequency.value = 2200;
+    noiseFilter.frequency.value = 1800;
     engineNoiseGain = ctx.createGain();
     engineNoiseGain.gain.value = 0.0001;
     engineNoise.connect(noiseFilter);
     noiseFilter.connect(engineNoiseGain);
     engineNoiseGain.connect(engineGain);
 
-    engineGain.connect(ctx.destination);
     engineOsc.start();
     engineOsc2.start();
     engineWhine.start();
     engineNoise.start();
     engineSpeed = 0;
+    engineLevel = 0;
   }
 
   function stopEngineSound() {
@@ -3058,7 +3106,8 @@
     const nodes = [engineOsc, engineOsc2, engineWhine, engineNoise];
     setTimeout(() => { nodes.forEach(function (n) { try { if (n) n.stop(); } catch (e) {} }); }, 120);
     engineOsc = null; engineOsc2 = null; engineGain = null;
-    engineFilter = null; engineWhine = null; engineWhineGain = null; engineNoise = null; engineNoiseGain = null;
+    engineFilter = null; engineShaper = null;
+    engineWhine = null; engineWhineGain = null; engineNoise = null; engineNoiseGain = null;
   }
 
   function updateEngineSound(rawSpeed) {
@@ -3066,15 +3115,21 @@
     engineSpeed += (rawSpeed - engineSpeed) * 0.2; // lissage — évite les à-coups de fréquence
     const t = audioCtx.currentTime;
     const level = Math.min(1, engineSpeed / 900); // 900 = vitesse logique "pied au plancher"
-    const freq = 58 + level * 210;
-    const vol = 0.045 + level * 0.13;
+    const freq = 45 + level * 215;
+    const vol = 0.05 + level * 0.17;
     engineOsc.frequency.setTargetAtTime(freq, t, 0.05);
-    engineOsc2.frequency.setTargetAtTime(freq * 1.007, t, 0.05); // léger désaccord, timbre plus riche
-    engineFilter.frequency.setTargetAtTime(280 + level * 3200, t, 0.06);
-    engineWhine.frequency.setTargetAtTime(freq * (5 + level * 2.2), t, 0.05);
-    engineWhineGain.gain.setTargetAtTime(0.015 + level * 0.05, t, 0.08);
-    engineNoiseGain.gain.setTargetAtTime(level * level * 0.045, t, 0.08);
+    engineOsc2.frequency.setTargetAtTime(freq / 2, t, 0.05);
+    engineFilter.frequency.setTargetAtTime(240 + level * 2600, t, 0.06);
+    engineWhine.frequency.setTargetAtTime(freq * (6 + level * 4), t, 0.05);
+    engineWhineGain.gain.setTargetAtTime(0.015 + level * 0.075, t, 0.08);
+    engineNoiseGain.gain.setTargetAtTime(level * level * 0.05, t, 0.08);
     engineGain.gain.setTargetAtTime(vol, t, 0.08);
+    // Lever brutalement le pied après avoir roulé vite déclenche un petit "pfft" de wastegate,
+    // façon jeu d'arcade (validé avec Julien sur la piste audio de comparaison).
+    if (engineLevel > 0.6 && (engineLevel - level) > 0.18) {
+      triggerEngineWastegatePuff();
+    }
+    engineLevel = level;
   }
 
   function tickTimer() {

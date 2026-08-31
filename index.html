@@ -1481,7 +1481,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-aa';
+  const BUILD_TAG = '2026-08-31-ab';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1691,22 +1691,57 @@
   let lastTelemetryPush = 0;
   let ghostTele = null; // tracé rejoué en fantôme pendant la course (adversaire du défi en priorité, sinon meilleur temps perso)
   let ghostLabel = '';  // nom affiché pour ce fantôme ("ton record" ou le prénom de l'adversaire)
-  let ghostScale = 1;   // étire le temps du fantôme pour que son avancement reflète aussi ses pénalités
+  let ghostPenaltyTimesArr = []; // instants (temps du tracé d'origine) où arrêter le fantôme 2s, voir ghostPenaltyTimes()
   let ghostTime = 0;    // temps total du fantôme (utilisé par le rejeu solo "Voir ma course")
   let ghostOff = null;  // tableau parallèle à ghostTele (hors piste), si connu — absent pour les vieux tracés stockés
   let splits = [];      // temps intermédiaires de la course en cours : { n ou 'lap', lap, t }
   let lastSplits = [];  // copie des splits de la dernière course terminée (pour le rejeu solo)
   let splitFlashTimer = null;
 
-  // Un fantôme est enregistré sans pénalité "rejouée" dans son tracé (le tracé, c'est juste le
-  // doigt) — mais son temps officiel inclut ses pénalités. On étire donc son avancement dans le
-  // temps pour qu'il mette exactement son vrai temps total (course + pénalités) à afficher tout
-  // son tracé, au lieu de sembler plus rapide qu'il ne l'a réellement été.
-  function ghostTimeScale(tele, pen) {
-    if (!tele || !tele.length || !pen) return 1;
-    const raceDuration = tele[tele.length - 1][0];
-    if (!raceDuration) return 1;
-    return raceDuration / (raceDuration + pen * PENALTY_SECONDS);
+  // Un fantôme (ou une voiture en rejeu) est enregistré sans pénalité "rejouée" dans son
+  // tracé (le tracé, c'est juste le doigt qui n'a jamais été mis en pause pendant la vraie
+  // course) — mais son temps officiel inclut ses pénalités. Julien a fait remarquer, à raison,
+  // que l'ancienne méthode (étirer uniformément TOUT l'avancement pour que l'arrivée tombe au
+  // bon temps total) donnait juste l'impression de rejouer la position brute du doigt, un peu
+  // ralentie partout, sans jamais matérialiser où les pénalités ont vraiment eu lieu. On
+  // marque maintenant un arrêt de PENALTY_SECONDS pile à l'instant où chaque sortie de piste a
+  // été déclenchée (comme le tableau "hors piste" ajouté pour les zones rouges du rejeu), puis
+  // on repart — le fantôme met bien son vrai temps total à arriver, mais en matérialisant
+  // chaque pénalité au bon endroit plutôt qu'en étirant tout le trajet.
+
+  // Repère, dans le tracé original, l'instant de CHAQUE sortie de piste (un seul par sortie,
+  // pas un par point échantillonné hors piste — comme la vraie logique de jeu qui n'incrémente
+  // les pénalités qu'au moment où on quitte la piste, pas tant qu'on y reste).
+  function ghostPenaltyTimes(tele, off) {
+    const times = [];
+    if (!tele || !tele.length || !off || !off.length) return times;
+    let wasOff = false;
+    for (let i = 0; i < tele.length; i++) {
+      const isOff = !!off[i];
+      if (isOff && !wasOff) times.push(tele[i][0]);
+      wasOff = isOff;
+    }
+    return times;
+  }
+
+  // Convertit un temps "d'animation" (celui qui s'écoule vraiment pendant le rejeu, ou pendant
+  // qu'on regarde le fantôme en course) vers le temps correspondant dans le tracé ORIGINAL —
+  // en restant figé PENALTY_SECONDS à chaque instant de pénalité avant de reprendre. Sans
+  // pénalité connue (vieux tracé enregistré avant l'ajout du tableau "hors piste"), retombe
+  // simplement sur le temps d'animation tel quel : le fantôme termine son tracé un peu "en
+  // avance" puis reste immobile à l'arrivée jusqu'à son vrai temps total — jamais d'erreur.
+  function ghostAnimTimeToRawTime(animT, penaltyTimes) {
+    let covered = 0;
+    let remaining = animT;
+    for (let i = 0; i < penaltyTimes.length; i++) {
+      const gap = penaltyTimes[i] - covered;
+      if (remaining < gap) return covered + remaining;
+      remaining -= gap;
+      covered = penaltyTimes[i];
+      if (remaining < PENALTY_SECONDS) return covered;
+      remaining -= PENALTY_SECONDS;
+    }
+    return covered + remaining;
   }
   let posBuffer = [];
   let lastCarRenderPos = null;
@@ -2584,7 +2619,7 @@
     // parmi les autres participants) passe devant le record perso — c'est lui qu'on veut voir.
     ghostTele = null;
     ghostLabel = '';
-    ghostScale = 1;
+    ghostPenaltyTimesArr = [];
     ghostTime = 0;
     ghostOff = null;
     if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
@@ -2595,7 +2630,6 @@
         const best = pool.slice().sort((a, b) => a.time - b.time)[0];
         ghostTele = best.tele;
         ghostLabel = best.name;
-        ghostScale = ghostTimeScale(ghostTele, best.pen || 0);
         ghostTime = best.time;
         ghostOff = best.off || null;
       }
@@ -2605,11 +2639,11 @@
       if (bestTele) {
         ghostTele = bestTele.tele;
         ghostLabel = 'ton record';
-        ghostScale = ghostTimeScale(ghostTele, bestTele.pen || 0);
         ghostTime = bestTele.time;
         ghostOff = bestTele.off || null;
       }
     }
+    ghostPenaltyTimesArr = ghostPenaltyTimes(ghostTele, ghostOff);
     hudCountryChip.textContent = country.flag + ' ' + country.name + ' · ' + diff.label +
       (activeDuel ? ' · Défi' : '') + (ghostTele ? ' · 👻 ' + ghostLabel : '');
     drawMask();
@@ -3336,7 +3370,7 @@
   // le même temps écoulé que la course en cours — sampleTelemetryAt/logicalToScreen sont
   // définis plus bas (section défi), mais les déclarations de fonction sont hissées.
   function renderGhostSprite(elapsed) {
-    const pos = sampleTelemetryAt(ghostTele, elapsed * ghostScale);
+    const pos = sampleTelemetryAt(ghostTele, ghostAnimTimeToRawTime(elapsed, ghostPenaltyTimesArr));
     if (!pos) return;
     const [sx, sy] = logicalToScreen(pos.x, pos.y);
     ghostSprite.style.display = 'block';
@@ -4430,7 +4464,7 @@
     const sorted = duel.runs.slice().sort((a, b) => a.time - b.time);
     const runs = sorted.map((r, i) => Object.assign({}, r, {
       color: DUEL_COLORS[i % DUEL_COLORS.length],
-      scale: ghostTimeScale(r.tele, r.pen || 0)
+      penaltyTimes: ghostPenaltyTimes(r.tele, r.off || [])
     }));
 
     replayCarEls.forEach(el => el.remove());
@@ -4475,7 +4509,7 @@
     function tick() {
       const elapsed = (performance.now() - replayStartPerf) / 1000;
       runs.forEach((r, i) => {
-        const pos = sampleTelemetryAt(r.tele, elapsed * r.scale);
+        const pos = sampleTelemetryAt(r.tele, ghostAnimTimeToRawTime(elapsed, r.penaltyTimes));
         if (!pos) return;
         const el = replayCarEls[i];
         el.style.display = 'block';

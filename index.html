@@ -67,7 +67,10 @@
   .menu-screen {
     display: flex;
     flex-direction: column;
-    padding: 22px 0 28px;
+    /* En fullscreen, l'appli utilise tout l'écran physique : la barre de statut ne réserve
+       plus l'espace du haut, donc on rajoute nous-mêmes de la marge pour les téléphones à
+       encoche/caméra perforée (env() vaut 0px sur les appareils sans zone à éviter). */
+    padding: calc(22px + env(safe-area-inset-top, 0px)) 0 28px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -84,7 +87,7 @@
     z-index: 5;
     background: var(--accent);
     color: #1a0d05;
-    padding: 10px 16px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
     display: flex;
     align-items: center;
     gap: 8px;
@@ -855,7 +858,7 @@
 
   .race-hud {
     position: absolute;
-    top: 14px;
+    top: calc(14px + env(safe-area-inset-top, 0px));
     left: 14px;
     right: 14px;
     display: grid;

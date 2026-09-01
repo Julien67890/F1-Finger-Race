@@ -13,7 +13,7 @@
 // direct, bandeau live) : ces requêtes passent toujours en direct sur le réseau, sinon on
 // risquerait de servir des données périmées ou de casser l'authentification.
 
-const CACHE_NAME = 'f1-finger-race-v1';
+const CACHE_NAME = 'f1-finger-race-v2';
 
 self.addEventListener('install', (event) => {
   // On ne pré-charge rien de précis au moment de l'installation (on ne connaît pas ici le nom

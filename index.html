@@ -1509,6 +1509,23 @@
     <div id="replayCars"></div>
   </section>
 
+  <!-- Porte d'entrée pseudo : affichée une seule fois, au tout premier lancement (aucun pseudo
+       en localStorage et pas de session déjà connectée), pour ne plus avoir de courses
+       enregistrées sous "Joueur" par défaut. Volontairement minimale (juste un pseudo, pas de
+       compte complet) et sans bouton de fermeture : contrairement aux autres overlays, elle ne
+       se ferme que par une saisie valide (voir confirmPseudoGate()) ou si l'utilisateur s'avère
+       déjà connecté (voir le écouteur onAuthStateChanged). -->
+  <div class="overlay" id="pseudoGateOverlay">
+    <div class="result-card">
+      <h2 data-i18n="pseudo_gate_title">Choisis ton pseudo</h2>
+      <div class="sub" data-i18n="pseudo_gate_body">Il sert à te reconnaître dans les classements et les défis entre amis.</div>
+      <div class="player-name-row">
+        <input type="text" id="pseudoGateInput" placeholder="Ton prénom" maxlength="18" autocomplete="off" data-i18n-placeholder="placeholder_firstname">
+      </div>
+      <button class="cta" id="pseudoGateConfirmBtn" type="button" data-i18n="pseudo_gate_confirm_btn">C'est parti</button>
+    </div>
+  </div>
+
   <div class="overlay" id="accountOverlay">
     <div class="result-card">
       <h2 data-i18n="account_title">Mon compte</h2>
@@ -1757,6 +1774,9 @@
       "leaderboard_index_missing": "Classement pas encore activé : un index Firestore doit être créé une fois (lien dans la console du navigateur).",
       "account_intro": "Ton prénom sert au classement dans les défis entre amis. Connecte-toi pour le retrouver sur tous tes appareils.",
       "placeholder_firstname": "Ton prénom",
+      "pseudo_gate_title": "Choisis ton pseudo",
+      "pseudo_gate_body": "Il sert à te reconnaître dans les classements et les défis entre amis.",
+      "pseudo_gate_confirm_btn": "C'est parti",
       "google_signin": "🔵 Continuer avec Google",
       "or_email": "ou par e-mail",
       "placeholder_email": "E-mail",
@@ -1947,6 +1967,9 @@
       "leaderboard_index_missing": "Leaderboard not yet enabled: a Firestore index must be created once (link in the browser console).",
       "account_intro": "Your first name is used for ranking in challenges between friends. Sign in to keep it across all your devices.",
       "placeholder_firstname": "Your first name",
+      "pseudo_gate_title": "Choose your nickname",
+      "pseudo_gate_body": "It's how other players recognize you on leaderboards and in duels.",
+      "pseudo_gate_confirm_btn": "Let's go",
       "google_signin": "🔵 Continue with Google",
       "or_email": "or by email",
       "placeholder_email": "Email",
@@ -2137,6 +2160,9 @@
       "leaderboard_index_missing": "Clasificación aún no activada: hay que crear un índice de Firestore una vez (enlace en la consola del navegador).",
       "account_intro": "Tu nombre se usa para la clasificación en los desafíos entre amigos. Conéctate para conservarlo en todos tus dispositivos.",
       "placeholder_firstname": "Tu nombre",
+      "pseudo_gate_title": "Elige tu apodo",
+      "pseudo_gate_body": "Sirve para que te reconozcan en las clasificaciones y los duelos entre amigos.",
+      "pseudo_gate_confirm_btn": "¡Vamos!",
       "google_signin": "🔵 Continuar con Google",
       "or_email": "o por correo electrónico",
       "placeholder_email": "Correo electrónico",
@@ -2327,6 +2353,9 @@
       "leaderboard_index_missing": "Classificação ainda não ativada: é preciso criar um índice do Firestore uma vez (link no console do navegador).",
       "account_intro": "Seu primeiro nome é usado na classificação dos desafios entre amigos. Entre na conta para tê-lo em todos os seus dispositivos.",
       "placeholder_firstname": "Seu primeiro nome",
+      "pseudo_gate_title": "Escolha seu apelido",
+      "pseudo_gate_body": "Serve para te reconhecerem nos rankings e nos desafios entre amigos.",
+      "pseudo_gate_confirm_btn": "Vamos lá",
       "google_signin": "🔵 Continuar com o Google",
       "or_email": "ou por e-mail",
       "placeholder_email": "E-mail",
@@ -2517,6 +2546,9 @@
       "leaderboard_index_missing": "Bestenliste noch nicht aktiviert: ein Firestore-Index muss einmalig erstellt werden (Link in der Browser-Konsole).",
       "account_intro": "Dein Vorname wird für die Rangliste bei Duellen mit Freunden verwendet. Melde dich an, um ihn auf allen deinen Geräten zu behalten.",
       "placeholder_firstname": "Dein Vorname",
+      "pseudo_gate_title": "Wähle deinen Spitznamen",
+      "pseudo_gate_body": "So erkennen dich andere in Bestenlisten und Duellen mit Freunden.",
+      "pseudo_gate_confirm_btn": "Los geht's",
       "google_signin": "🔵 Weiter mit Google",
       "or_email": "oder per E-Mail",
       "placeholder_email": "E-Mail",
@@ -2707,6 +2739,9 @@
       "leaderboard_index_missing": "Classifica non ancora attiva: bisogna creare un indice Firestore una volta (link nella console del browser).",
       "account_intro": "Il tuo nome viene usato per la classifica nelle sfide tra amici. Accedi per ritrovarlo su tutti i tuoi dispositivi.",
       "placeholder_firstname": "Il tuo nome",
+      "pseudo_gate_title": "Scegli il tuo soprannome",
+      "pseudo_gate_body": "Serve per farti riconoscere nelle classifiche e nelle sfide con gli amici.",
+      "pseudo_gate_confirm_btn": "Si parte",
       "google_signin": "🔵 Continua con Google",
       "or_email": "oppure via e-mail",
       "placeholder_email": "E-mail",
@@ -2897,6 +2932,9 @@
       "leaderboard_index_missing": "Ranglijst nog niet actief: er moet eenmalig een Firestore-index worden aangemaakt (link in de browserconsole).",
       "account_intro": "Je voornaam wordt gebruikt voor de ranglijst bij uitdagingen tussen vrienden. Log in om hem op al je apparaten terug te vinden.",
       "placeholder_firstname": "Je voornaam",
+      "pseudo_gate_title": "Kies je bijnaam",
+      "pseudo_gate_body": "Zo herken je jezelf terug in de ranglijsten en de uitdagingen met vrienden.",
+      "pseudo_gate_confirm_btn": "Laten we gaan",
       "google_signin": "🔵 Doorgaan met Google",
       "or_email": "of via e-mail",
       "placeholder_email": "E-mail",
@@ -3087,6 +3125,9 @@
       "leaderboard_index_missing": "الترتيب غير مفعّل بعد: يجب إنشاء فهرس Firestore مرة واحدة (الرابط في وحدة تحكم المتصفح).",
       "account_intro": "يُستخدم اسمك الأول في الترتيب ضمن التحديات بين الأصدقاء. سجّل الدخول للاحتفاظ به على جميع أجهزتك.",
       "placeholder_firstname": "اسمك الأول",
+      "pseudo_gate_title": "اختر اسمك المستعار",
+      "pseudo_gate_body": "يُستخدم للتعرف عليك في لوحات المتصدرين والتحديات مع الأصدقاء.",
+      "pseudo_gate_confirm_btn": "لنبدأ",
       "google_signin": "🔵 المتابعة عبر Google",
       "or_email": "أو عبر البريد الإلكتروني",
       "placeholder_email": "البريد الإلكتروني",
@@ -3277,6 +3318,9 @@
       "leaderboard_index_missing": "ランキングはまだ有効ではありません：Firestoreのインデックスを一度作成する必要があります（ブラウザのコンソールにリンクがあります）。",
       "account_intro": "名前は友達との対戦のランキングに使われます。すべての端末で使うにはログインしてください。",
       "placeholder_firstname": "お名前",
+      "pseudo_gate_title": "ニックネームを選んでね",
+      "pseudo_gate_body": "ランキングやフレンドとの対戦であなたを表示するために使います。",
+      "pseudo_gate_confirm_btn": "はじめる",
       "google_signin": "🔵 Googleで続ける",
       "or_email": "またはメールアドレスで",
       "placeholder_email": "メールアドレス",
@@ -3467,6 +3511,9 @@
       "leaderboard_index_missing": "排行榜功能尚未启用：需要创建一次 Firestore 索引（链接见浏览器控制台）。",
       "account_intro": "你的名字用于好友挑战的排名。登录后可在所有设备上同步。",
       "placeholder_firstname": "你的名字",
+      "pseudo_gate_title": "选择你的昵称",
+      "pseudo_gate_body": "用于在排行榜和好友对战中显示你的身份。",
+      "pseudo_gate_confirm_btn": "开始",
       "google_signin": "🔵 使用 Google 继续",
       "or_email": "或通过邮箱",
       "placeholder_email": "邮箱",
@@ -3657,6 +3704,9 @@
       "leaderboard_index_missing": "Papan peringkat belum diaktifkan: indeks Firestore perlu dibuat sekali (tautan ada di konsol browser).",
       "account_intro": "Nama depanmu digunakan untuk peringkat dalam tantangan antar teman. Masuk akun untuk menyimpannya di semua perangkatmu.",
       "placeholder_firstname": "Nama depanmu",
+      "pseudo_gate_title": "Pilih nama panggilanmu",
+      "pseudo_gate_body": "Ini dipakai supaya kamu dikenali di papan peringkat dan tantangan bersama teman.",
+      "pseudo_gate_confirm_btn": "Ayo mulai",
       "google_signin": "🔵 Lanjutkan dengan Google",
       "or_email": "atau lewat email",
       "placeholder_email": "Email",
@@ -3865,6 +3915,9 @@
   const leaderboardList = document.getElementById('leaderboardList');
   const closeHistoryBtn = document.getElementById('closeHistoryBtn');
   const playerNameInput = document.getElementById('playerNameInput');
+  const pseudoGateOverlay = document.getElementById('pseudoGateOverlay');
+  const pseudoGateInput = document.getElementById('pseudoGateInput');
+  const pseudoGateConfirmBtn = document.getElementById('pseudoGateConfirmBtn');
   const accountChip = document.getElementById('accountChip');
   const accountAvatar = document.getElementById('accountAvatar');
   const accountChipName = document.getElementById('accountChipName');
@@ -6027,6 +6080,24 @@
     return name;
   }
 
+  // Valide la saisie de la porte d'entrée pseudo (voir le commentaire sur #pseudoGateOverlay) :
+  // un pseudo vide ne fait rien (l'overlay reste affiché, pas de saisie = pas de fermeture),
+  // sinon on l'enregistre partout où playerName est utilisé et on referme l'overlay.
+  function confirmPseudoGate() {
+    const name = (pseudoGateInput.value || '').trim();
+    if (!name) {
+      pseudoGateInput.focus();
+      pseudoGateInput.style.borderColor = 'var(--danger)';
+      setTimeout(() => { pseudoGateInput.style.borderColor = ''; }, 1500);
+      return;
+    }
+    playerName = name;
+    playerNameInput.value = name;
+    try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
+    updateAccountChip();
+    pseudoGateOverlay.classList.remove('show');
+  }
+
   function updateAccountChip() {
     const user = auth && auth.currentUser;
     if (user) {
@@ -7116,12 +7187,18 @@
   });
   closeLangBtn.addEventListener('click', closeLangOverlay);
 
+  pseudoGateConfirmBtn.addEventListener('click', confirmPseudoGate);
+  pseudoGateInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') confirmPseudoGate(); });
+
   if (auth) {
     auth.onAuthStateChanged(function (user) {
       if (user && user.displayName) {
         playerName = user.displayName;
         playerNameInput.value = playerName;
         try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
+        // Un compte déjà connecté a forcément un pseudo (le sien) : inutile de lui demander à
+        // nouveau, même si la porte s'était affichée avant que Firebase ait confirmé la session.
+        pseudoGateOverlay.classList.remove('show');
       }
       updateAccountChip();
       renderAccountOverlay();
@@ -7178,6 +7255,13 @@
     playerName = localStorage.getItem('sur-la-corde:playerName') || '';
     playerNameInput.value = playerName;
   } catch (e) {}
+  // Pas de pseudo connu sur cet appareil : on le demande avant de laisser jouer, plutôt que de
+  // laisser les courses s'enregistrer silencieusement sous "Joueur" (voir recordRaceCloud()).
+  // Si un compte déjà connecté est détecté juste après (onAuthStateChanged, asynchrone), cette
+  // porte se referme automatiquement sans action du joueur.
+  if (!playerName) {
+    pseudoGateOverlay.classList.add('show');
+  }
   applyStaticTranslations();
   updateAccountChip();
 

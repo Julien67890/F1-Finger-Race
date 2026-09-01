@@ -4599,12 +4599,19 @@
   // Sans serveur, on ne peut pas "pousser" un défi vers l'écran Défis d'un ami — mais on peut
   // au moins garder, sur CET appareil, la liste des défis déjà créés ou ouverts, pour les
   // retrouver facilement sans ressaisir le lien d'origine.
-  const DUEL_HISTORY_KEY = 'sur-la-corde:duelHistory';
+  // Propre à chaque identité (currentRunKey(), pas juste à l'appareil) : sans ça, deux profils
+  // utilisés sur le même appareil pour tester (un compte invité et un compte Google, par
+  // exemple) se voyaient mutuellement proposer les défis de l'autre dans "à jouer", puisque
+  // l'historique local était partagé par l'appareil entier alors que "déjà joué ?" se décide,
+  // lui, par identité (voir playerHasRunDuel). De vrais amis sur deux appareils séparés
+  // n'étaient pas concernés (chacun a son propre localStorage), mais tester plusieurs profils
+  // sur un seul appareil comme Julien l'a fait faisait apparaître les défis de l'un chez l'autre.
+  function duelHistoryStorageKey() { return 'sur-la-corde:duelHistory:' + currentRunKey(); }
   const DUEL_HISTORY_MAX = 12;
 
   function loadDuelHistory() {
     try {
-      const raw = localStorage.getItem(DUEL_HISTORY_KEY);
+      const raw = localStorage.getItem(duelHistoryStorageKey());
       const list = raw ? JSON.parse(raw) : [];
       return Array.isArray(list) ? list : [];
     } catch (e) {
@@ -4617,14 +4624,14 @@
     let list = loadDuelHistory().filter(d => d.id !== duel.id);
     list.unshift(duel);
     if (list.length > DUEL_HISTORY_MAX) list = list.slice(0, DUEL_HISTORY_MAX);
-    try { localStorage.setItem(DUEL_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+    try { localStorage.setItem(duelHistoryStorageKey(), JSON.stringify(list)); } catch (e) {}
   }
 
   function removeDuelFromHistory(id) {
     // Retire juste ce défi de la liste sur CET appareil — le défi lui-même (et les temps posés)
     // reste consultable par les autres joueurs qui ont le lien, seul cet appareil ne l'affiche plus.
     const list = loadDuelHistory().filter(d => d.id !== id);
-    try { localStorage.setItem(DUEL_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+    try { localStorage.setItem(duelHistoryStorageKey(), JSON.stringify(list)); } catch (e) {}
   }
 
   function mid(a, b) { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
@@ -7249,6 +7256,12 @@
       }
       updateAccountChip();
       renderAccountOverlay();
+      // La confirmation de connexion arrive de façon asynchrone, un peu après le premier
+      // affichage de l'appli. Si l'écran Défis était déjà ouvert à ce moment précis, sa liste a
+      // pu se construire avec la mauvaise identité (currentRunKey() reposait encore sur
+      // l'invité) — on la reconstruit ici pour être sûr qu'elle reflète la bonne, comme le fait
+      // déjà renderDuelScreen() ci-dessus pour l'écran d'un défi ouvert individuellement.
+      if (!screenDuel.hidden) renderDuelHistoryList();
     });
   }
 

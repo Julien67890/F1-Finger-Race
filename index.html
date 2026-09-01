@@ -5778,6 +5778,10 @@
     historyList.innerHTML = '';
     const isDuelAttempt = shouldAttachRunToActiveDuel(current.id);
     applyResultActionButtons(isDuelAttempt);
+    // Contrairement à une arrivée réussie, un abandon (faux départ, relâché trop tôt) n'a
+    // jamais de temps valide à proposer en défi — même en course solo, où
+    // applyResultActionButtons() réaffiche ce bouton par défaut.
+    challengeResultBtn.hidden = true;
     if (isDuelAttempt) duelResultPanel.hidden = true;
     overlay.classList.add('show');
   }
@@ -5956,6 +5960,11 @@
     }
 
     const elapsed = (performance.now() - startTime) / 1000;
+    // Les temps par tour doivent inclure les pénalités accumulées jusqu'à cet instant (comme le
+    // temps total à l'arrivée, qui est déjà rawTime + pénalités) — sinon un tour où le joueur
+    // est sorti de la piste apparaîtrait plus court qu'il ne l'a vraiment été, et la somme des
+    // tours ne correspondrait plus au temps total affiché.
+    const elapsedWithPenalty = elapsed + penalties * PENALTY_SECONDS;
     if (elapsed > 2 && distToStart < FINISH_RADIUS && !lapJustCrossed) {
       if (nextCpPtr >= checkpoints.length) {
         lapJustCrossed = true;
@@ -5963,12 +5972,12 @@
           // Le dernier tour aussi doit apparaître dans les temps par tour (avant, seul le
           // temps total à l'arrivée existait pour ce tour — Julien voulait voir tous les tours,
           // pas juste les N-1 premiers).
-          if (selectedLaps > 1) splits.push({ n: 'lap', lap: currentLap, t: elapsed });
+          if (selectedLaps > 1) splits.push({ n: 'lap', lap: currentLap, t: elapsedWithPenalty });
           finishRun();
         } else {
           // Temps du tour lui-même (pas le cumul) pour le chip flash — voir lapSplitRows.
-          const lapDelta = elapsed - (splits.length ? splits[splits.length - 1].t : 0);
-          splits.push({ n: 'lap', lap: currentLap, t: elapsed });
+          const lapDelta = elapsedWithPenalty - (splits.length ? splits[splits.length - 1].t : 0);
+          splits.push({ n: 'lap', lap: currentLap, t: elapsedWithPenalty });
           showSplitFlash(t('lap_done', { lap: currentLap }), lapDelta);
           currentLap += 1;
           nextCpPtr = 0;

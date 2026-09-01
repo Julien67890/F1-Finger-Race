@@ -359,6 +359,15 @@
     transform: translateY(-0.05em);
   }
 
+  .account-privacy-link {
+    display: block;
+    margin-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: underline;
+  }
+
   .player-name-row { margin-top: 14px; }
 
   .player-name-row input {
@@ -1566,6 +1575,11 @@
         <button class="cta ghost" id="signOutBtn" type="button" data-i18n="signout_btn">Se déconnecter</button>
       </div>
 
+      <!-- Exigence du Play Store (et du RGPD) : la politique de confidentialité doit être
+           atteignable depuis l'appli elle-même, pas seulement via une URL connue de Julien.
+           privacy.html est déployé à côté de index.html, d'où le lien relatif. -->
+      <a class="account-privacy-link" id="privacyPolicyLink" href="privacy.html" target="_blank" rel="noopener" data-i18n="privacy_policy_link">Politique de confidentialité</a>
+
       <button class="cta" id="closeAccountBtn" data-i18n="close">Fermer</button>
     </div>
   </div>
@@ -1628,7 +1642,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-08-31-ah';
+  const BUILD_TAG = '2026-09-01-audit';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;
@@ -1663,6 +1677,7 @@
     fr: {
       "slogan": "Un doigt. Une piste. Un champion. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mon compte",
+      "privacy_policy_link": "Politique de confidentialité",
       "account_default_name": "Compte",
       "label_sens": "Sens",
       "dir_normal": "Normal",
@@ -1856,6 +1871,7 @@
     en: {
       "slogan": "One finger. One track. One champion. <span class=\"lede-icon\">🏆</span>",
       "account_title": "My account",
+      "privacy_policy_link": "Privacy policy",
       "account_default_name": "Account",
       "label_sens": "Direction",
       "dir_normal": "Normal",
@@ -2049,6 +2065,7 @@
     es: {
       "slogan": "Un dedo. Un circuito. Un campeón. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mi cuenta",
+      "privacy_policy_link": "Política de privacidad",
       "account_default_name": "Cuenta",
       "label_sens": "Sentido",
       "dir_normal": "Normal",
@@ -2242,6 +2259,7 @@
     pt: {
       "slogan": "Um dedo. Um circuito. Um campeão. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Minha conta",
+      "privacy_policy_link": "Política de privacidade",
       "account_default_name": "Conta",
       "label_sens": "Sentido",
       "dir_normal": "Normal",
@@ -2435,6 +2453,7 @@
     de: {
       "slogan": "Ein Finger. Eine Strecke. Ein Champion. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mein Konto",
+      "privacy_policy_link": "Datenschutzerklärung",
       "account_default_name": "Konto",
       "label_sens": "Richtung",
       "dir_normal": "Normal",
@@ -2628,6 +2647,7 @@
     it: {
       "slogan": "Un dito. Un circuito. Un campione. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Il mio account",
+      "privacy_policy_link": "Informativa sulla privacy",
       "account_default_name": "Account",
       "label_sens": "Senso",
       "dir_normal": "Normale",
@@ -2821,6 +2841,7 @@
     nl: {
       "slogan": "Eén vinger. Eén circuit. Eén kampioen. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Mijn account",
+      "privacy_policy_link": "Privacybeleid",
       "account_default_name": "Account",
       "label_sens": "Richting",
       "dir_normal": "Normaal",
@@ -3014,6 +3035,7 @@
     ar: {
       "slogan": "إصبع واحد. حلبة واحدة. بطل واحد. <span class=\"lede-icon\">🏆</span>",
       "account_title": "حسابي",
+      "privacy_policy_link": "سياسة الخصوصية",
       "account_default_name": "الحساب",
       "label_sens": "الاتجاه",
       "dir_normal": "عادي",
@@ -3207,6 +3229,7 @@
     ja: {
       "slogan": "指一本。サーキット一つ。チャンピオン一人。 <span class=\"lede-icon\">🏆</span>",
       "account_title": "マイアカウント",
+      "privacy_policy_link": "プライバシーポリシー",
       "account_default_name": "アカウント",
       "label_sens": "方向",
       "dir_normal": "通常",
@@ -3400,6 +3423,7 @@
     zh: {
       "slogan": "一根手指，一条赛道，一位冠军。 <span class=\"lede-icon\">🏆</span>",
       "account_title": "我的账户",
+      "privacy_policy_link": "隐私政策",
       "account_default_name": "账户",
       "label_sens": "方向",
       "dir_normal": "正向",
@@ -3593,6 +3617,7 @@
     id: {
       "slogan": "Satu jari. Satu sirkuit. Satu juara. <span class=\"lede-icon\">🏆</span>",
       "account_title": "Akun saya",
+      "privacy_policy_link": "Kebijakan privasi",
       "account_default_name": "Akun",
       "label_sens": "Arah",
       "dir_normal": "Normal",
@@ -4125,6 +4150,23 @@
     return (user && user.uid) || getGuestId();
   }
 
+  // Toutes les identités qui sont "moi" sur CET appareil. currentRunKey() sert à ÉCRIRE (une
+  // seule clé, celle du moment), mais pour LIRE il faut aussi reconnaître les temps posés avant
+  // de se connecter : quand un joueur passe d'invité à un compte Google, currentRunKey() change
+  // (guestId -> uid) et tous ses temps déjà posés devenaient orphelins — un défi qu'il venait
+  // de courir réaffichait "Défi à relever" avec le bouton "Relever le défi", alors que son nom
+  // et son temps s'affichaient juste au-dessus. Le guestId reste propre à l'appareil, donc
+  // l'inclure ne risque jamais de confondre deux joueurs différents.
+  function playerRunKeys() {
+    const user = auth && auth.currentUser;
+    const guest = getGuestId();
+    return (user && user.uid && user.uid !== guest) ? [user.uid, guest] : [guest];
+  }
+
+  function isMyRun(run) {
+    return !!run && playerRunKeys().indexOf(run.key) !== -1;
+  }
+
   // ---------------- Classement hebdomadaire (toutes les courses) ----------------
   // Chaque course terminée (solo ou défi) est enregistrée dans Firestore (collection
   // "races"), pour un classement partagé entre tous les joueurs. Comme le projet reste sur
@@ -4156,7 +4198,8 @@
   function recordRaceCloud(cid, diff, dir, laps, time, pen) {
     if (!db) return;
     const user = auth && auth.currentUser;
-    const name = (playerName || (user && user.displayName) || 'Joueur').trim() || 'Joueur';
+    const fallbackName = t('default_player_name');
+    const name = (playerName || (user && user.displayName) || fallbackName).trim() || fallbackName;
     const rk = raceKeyFor(cid, diff, dir, laps);
     db.collection('races').add({
       uid: (user && user.uid) || null,
@@ -4218,9 +4261,11 @@
         snap.forEach(function (d) { rows.push(d.data()); });
         if (rows.length < 2) return; // rien à battre : première course sur ce circuit/réglages cette semaine
         const top = rows[0], prev = rows[1];
-        // Le tout meilleur temps de la semaine est-il justement CETTE course ? (comparaison par
-        // temps + nom, faute d'un id de document fiable à comparer après un .add() séparé.)
-        if (Math.abs(top.time - time) < 0.001 && top.name === name && prev.time > time) {
+        // Le tout meilleur temps de la semaine est-il justement CETTE course ? On compare la
+        // clé joueur (currentRunKey(), écrite dans chaque course) et non le pseudo : deux
+        // joueurs homonymes — cas très possible avec des prénoms courants — pouvaient sinon se
+        // déclencher mutuellement la fanfare et l'annonce "record battu" de l'autre.
+        if (Math.abs(top.time - time) < 0.001 && top.key === currentRunKey() && prev.time > time) {
           playVictoryFanfare();
           db.collection('record_events').add({
             cid: cid, diff: diff, dir: dir, laps: laps, name: name, time: time,
@@ -4384,7 +4429,7 @@
     if (!country) { leaderGapMsg = null; return; }
     const rk = raceKeyFor(country.id, selectedDifficulty, selectedDirection, selectedLaps);
     const wk = currentWeekId();
-    const myKey = currentRunKey();
+
     const requestToken = (refreshLeaderGapMessage._token = (refreshLeaderGapMessage._token || 0) + 1);
     db.collection('races').where('weekId', '==', wk).where('raceKey', '==', rk)
       .orderBy('time', 'asc').limit(20).get().then(function (snap) {
@@ -4393,7 +4438,12 @@
         snap.forEach(function (d) { rows.push(d.data()); });
         if (!rows.length) { leaderGapMsg = null; rebuildTickerMessages(); return; }
         const top = rows[0];
-        const mine = rows.find(function (r) { return r.key === myKey; });
+        // isMyRun (et pas une comparaison à la seule clé du moment) : sinon, après une
+        // connexion, ses propres courses passées en invité n'étaient plus reconnues et le
+        // bandeau annonçait "record actuel détenu par <soi-même>" au lieu de "tu détiens le
+        // record". Les lignes sont triées par temps croissant : la première trouvée est bien
+        // mon meilleur temps.
+        const mine = rows.find(isMyRun);
         if (mine && Math.abs(mine.time - top.time) < 0.001) {
           leaderGapMsg = t('ticker_you_hold_record', { flag: country.flag, circuit: countryName(country) });
         } else if (mine) {
@@ -4452,7 +4502,7 @@
   function leaderboardRowHtml(entry, rank, isMine) {
     return '<div class="leaderboard-row' + (rank === 1 ? ' rank-1' : '') + (isMine ? ' mine' : '') + '">' +
       '<span class="rank">' + rank + '</span>' +
-      '<span class="name">' + escapeHtml(entry.name || 'Joueur') + '</span>' +
+      '<span class="name">' + escapeHtml(entry.name || t('default_player_name')) + '</span>' +
       '<span class="val">' + fmt(entry.time) + '</span></div>';
   }
 
@@ -5055,8 +5105,7 @@
     ghostTime = 0;
     ghostOff = null;
     if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
-      const myKey = currentRunKey();
-      const others = activeDuel.runs.filter(r => r.key !== myKey && r.tele && r.tele.length);
+      const others = activeDuel.runs.filter(r => !isMyRun(r) && r.tele && r.tele.length);
       const pool = others.length ? others : activeDuel.runs.filter(r => r.tele && r.tele.length);
       if (pool.length) {
         const best = pool.slice().sort((a, b) => a.time - b.time)[0];
@@ -6119,7 +6168,10 @@
   function ensureChallengeName() {
     let name = (playerNameInput.value || playerName || '').trim();
     if (!name) {
-      name = ((typeof window.prompt === 'function' && window.prompt(t('name_prompt'))) || '').trim();
+      // .slice(0, 18) : les trois champs de saisie du pseudo ont un maxlength="18", mais cette
+      // boîte de dialogue native ne le respecte pas — un pseudo à rallonge saisi ici partait tel
+      // quel dans Firestore et cassait la mise en page des classements et des lignes de défi.
+      name = ((typeof window.prompt === 'function' && window.prompt(t('name_prompt'))) || '').trim().slice(0, 18);
     }
     if (name) {
       playerName = name;
@@ -6198,7 +6250,7 @@
     if (user) {
       accountSignedOut.hidden = true;
       accountSignedIn.hidden = false;
-      const label = playerName || user.displayName || (user.email ? user.email.split('@')[0] : 'Joueur');
+      const label = playerName || user.displayName || (user.email ? user.email.split('@')[0] : t('default_player_name'));
       accountSignedInName.textContent = label;
       accountSignedInEmail.textContent = user.email || '';
       // Toujours une initiale, jamais la photo du compte Google (voir updateAccountChip).
@@ -6254,8 +6306,15 @@
   }
 
   function playerHasRunDuel(duel) {
-    const key = currentRunKey();
-    return (duel.runs || []).some(r => r.key === key);
+    return (duel.runs || []).some(isMyRun);
+  }
+
+  // Un défi 1v1 déjà complet (deux temps posés) n'est plus "ouvert" pour personne d'autre : le
+  // reste du code considère déjà 2 temps comme un défi terminé (voir isStaleIncompleteDuel),
+  // mais la liste des défis publics, elle, ne regardait que "est-ce que MOI j'ai couru ?" — un
+  // défi où deux joueurs avaient déjà fait leur temps restait donc listé dans "Ouverts".
+  function isDuelComplete(duel) {
+    return (duel.runs || []).length >= 2;
   }
 
   // Un défi actif reste en mémoire (activeDuel) tant qu'on ne le quitte pas explicitement.
@@ -6312,7 +6371,7 @@
         duelRematchBtn.hidden = true;
       } else {
         const sorted = duel.runs.slice().sort((a, b) => a.time - b.time);
-        const isWinner = sorted[0].key === currentRunKey();
+        const isWinner = isMyRun(sorted[0]);
         duelRematchBtn.hidden = false;
         duelRematchBtn.textContent = isWinner ? t('duel_rematch_again') : t('duel_rematch_revenge');
         if (isWinner && !victoryDuelIdsPlayed.has(duel.id)) {
@@ -6421,7 +6480,9 @@
           }
           return false;
         });
-        if (publicDuelStatus === 'open') entries = entries.filter(function (e) { return !playerHasRunDuel(e); });
+        // "Ouverts" = ceux que je peux encore relever : ni déjà courus par moi, ni déjà complets
+        // (deux temps posés = duel 1v1 terminé, plus personne ne peut s'y ajouter utilement).
+        if (publicDuelStatus === 'open') entries = entries.filter(function (e) { return !playerHasRunDuel(e) && !isDuelComplete(e); });
         else if (publicDuelStatus === 'done') entries = entries.filter(function (e) { return playerHasRunDuel(e); });
         if (!entries.length) {
           const statusText = publicDuelStatus === 'done' ? t('duel_public_none_done') :
@@ -6504,13 +6565,12 @@
     const flag = (country && country.flag) || '🏁';
     const name = country ? countryName(country) : entry.cid;
     const runs = entry.runs || [];
-    const key = currentRunKey();
     const mineDone = playerHasRunDuel(entry);
-    const opponentDone = runs.some(r => r.key !== key);
+    const opponentDone = runs.some(r => !isMyRun(r));
     let sub = '';
     if (mineDone) {
       const sorted = runs.slice().sort((a, b) => a.time - b.time);
-      const rank = sorted.findIndex(r => r.key === key);
+      const rank = sorted.findIndex(isMyRun);
       const mine = rank >= 0 ? sorted[rank] : runs[0];
       sub = t('your_time', {time: fmt(mine.time)}) + (sorted.length > 1 ? (rank === 0 ? ' 🏆' : t('duel_second_place')) : '');
     } else if (opponentDone) {
@@ -6567,7 +6627,7 @@
         armedDuelDeleteBtn = btn;
         btn.classList.add('confirm-delete');
         btn.textContent = '✓';
-        btn.title = 'Retape pour confirmer la suppression';
+        btn.title = t('duel_delete_tooltip_confirm');
         armedDuelDeleteTimer = setTimeout(disarmDuelDelete, 3000);
       });
     });
@@ -6618,7 +6678,7 @@
     // On distingue ce qu'il reste à jouer (le joueur de cet appareil n'a pas encore posé de
     // temps) de ce qui est déjà réalisé, pour retrouver facilement les résultats des défis
     // qu'on a déjà courus.
-    const toPlay = list.filter(d => !playerHasRunDuel(d) && !isStaleIncompleteDuel(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
+    const toPlay = list.filter(d => !playerHasRunDuel(d) && !isStaleIncompleteDuel(d) && !isDuelComplete(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
     const done = list.filter(d => playerHasRunDuel(d)).sort((a, b) => duelSortKey(b) - duelSortKey(a));
 
     duelToPlaySection.hidden = toPlay.length === 0;

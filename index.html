@@ -222,16 +222,11 @@
     <canvas id="mask" style="display:none;"></canvas>
 
     <div class="race-hud" id="raceHud">
-      <div class="race-hud-side race-hud-left">
-        <button class="hud-btn" id="backBtn" title="Retour au menu" data-i18n-title="back_to_menu_title">&larr;</button>
-        <div class="hud-chip" id="hudCountryChip"></div>
-      </div>
-      <div class="race-hud-center">
-        <div class="hud-chip" id="hudTime">0.00 s</div>
-        <div class="hud-chip" id="hudPenChip">+0.00 s</div>
-        <div class="hud-chip" id="hudLapChip" hidden></div>
-      </div>
-      <div class="race-hud-side race-hud-right"></div>
+      <button class="hud-btn" id="backBtn" title="Retour au menu" data-i18n-title="back_to_menu_title">&larr;</button>
+      <div class="hud-chip" id="hudCountryChip"></div>
+      <div class="hud-chip" id="hudTime">0.00 s</div>
+      <div class="hud-chip" id="hudPenChip">+0.00 s</div>
+      <div class="hud-chip" id="hudLapChip" hidden></div>
     </div>
 
     <div class="start-hint" id="startHint" data-i18n-html="start_hint_html">👆 Pose le doigt sur le point <strong>DÉPART / ARRIVÉE</strong> et reste immobile</div>
@@ -340,9 +335,9 @@
       <!-- Exigence du Play Store (et du RGPD) : la politique de confidentialité doit être
            atteignable depuis l'appli elle-même, pas seulement via une URL connue de Julien.
            privacy.html est déployé à côté de index.html, d'où le lien relatif. -->
-      <a class="account-privacy-link" id="privacyPolicyLink" href="privacy.html" target="_blank" rel="noopener" data-i18n="privacy_policy_link">Politique de confidentialité</a>
-
       <button class="cta" id="closeAccountBtn" data-i18n="close">Fermer</button>
+
+      <a class="account-privacy-link" id="privacyPolicyLink" href="privacy.html" target="_blank" rel="noopener" data-i18n="privacy_policy_link">Politique de confidentialité</a>
     </div>
   </div>
 
@@ -2163,6 +2158,10 @@
     countdownAbort = true;
     hideCarSprite();
     screenRace.hidden = true;
+    // Le halo du prochain virage est un élément flottant à part (position fixe, hors du
+    // <canvas>) : sans cet appel, il restait affiché par-dessus le menu principal après un
+    // retour à l'accueil, à son dernier point calculé sur le circuit.
+    updateNextCpPulse();
     screenDuel.hidden = true;
     screenMenu.hidden = false;
     renderCarousel();
@@ -3215,7 +3214,13 @@
     // Pendant un rejeu (fantôme solo ou défi), toucher le point de départ ne doit RIEN faire —
     // seuls "Fermer le rejeu" et "Rejouer la lecture" doivent pouvoir en sortir.
     if (state === 'racing' || state === 'countdown' || state === 'replay') return;
-    if (dist(lx, ly, startGate.pos) > START_RADIUS) {
+    // En mode "voiture au-dessus du doigt", le point testé (toLogical) est déjà décalé de
+    // CONTROL_OFFSET_PX vers le haut : ce décalage, converti en unités logiques (donc divisé
+    // par l'échelle du circuit affiché), peut largement dépasser START_RADIUS et rendre la
+    // ligne de départ quasi impossible à toucher précisément. On élargit la tolérance d'autant
+    // pour que "poser le doigt sous la ligne" reste un geste réaliste, pas un pixel à deviner.
+    const startTolerance = START_RADIUS + (settings.offset ? CONTROL_OFFSET_PX / scale : 0);
+    if (dist(lx, ly, startGate.pos) > startTolerance) {
       setBanner(t('banner_touch_start'));
       return;
     }

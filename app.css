@@ -1,4 +1,4 @@
-  :root {
+:root {
     --bg: #0e131a;
     --bg-soft: #141b25;
     --surface: #1b2330;
@@ -1308,6 +1308,7 @@
 .cta.daily {
   background: linear-gradient(135deg, #ffd166, #ff9a3d);
   color: #1a0d05;
+  margin-top: 8px; /* même espacement que les boutons .ghost qui le précèdent */
 }
 
 .card-stars { display: block; text-align: center; margin-top: 2px; }

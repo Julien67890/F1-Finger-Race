@@ -610,10 +610,10 @@
     "auth_err_invalid_credential": "E-mail ou mot de passe incorrect.",
     "auth_err_network": "Connexion impossible — vérifie ta connexion internet.",
     "auth_err_generic": "Une erreur est survenue.",
-    "ticker_record_beaten": "🏆 {name} vient de battre le record sur {flag} {circuit} en {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart} !",
-    "ticker_you_hold_record": "👑 Tu détiens le record de {flag} {circuit} cette semaine !",
-    "ticker_gap_to_record": "🎯 Tu es à {gap} du record de {flag} {circuit} — file le battre !",
-    "ticker_current_record": "🏁 Record actuel sur {flag} {circuit} : {time} ({name})",
+    "ticker_record_beaten": "🏆 {name} vient de battre le record sur {circuit} en {diffIcon} {diffLabel} · {dirIcon} {dirLabel} · 🔁 {laps}{marginPart}{whenPart} !",
+    "ticker_you_hold_record": "👑 Tu détiens le record de {circuit} cette semaine !",
+    "ticker_gap_to_record": "🎯 Tu es à {gap} du record de {circuit} — file le battre !",
+    "ticker_current_record": "🏁 Record actuel sur {circuit} : {time} ({name})",
     "weekly_reset_countdown": "⏳ Classement hebdomadaire remis à zéro dans {countdown}",
     "today_at": "aujourd’hui à {time}",
     "yesterday_at": "hier à {time}",
@@ -1309,7 +1309,6 @@
     const msgs = [];
     recentRecordEvents.forEach(function (ev) {
       const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
-      const flag = country ? country.flag : '🏁';
       const label = country ? countryName(country) : ev.cid;
       const diff = DIFFICULTIES.find(function (d) { return d.id === ev.diff; });
       const diffIcon = diff ? diff.icon : '⚙️';
@@ -1319,7 +1318,7 @@
       const laps = ev.laps || 1;
       const when = formatEventDateTime(recordEventMillis(ev));
       msgs.push(t('ticker_record_beaten', {
-        name: ev.name, flag: flag, circuit: label, diffIcon: diffIcon, diffLabel: diffLbl,
+        name: ev.name, circuit: label, diffIcon: diffIcon, diffLabel: diffLbl,
         dirIcon: dirIcon, dirLabel: dirLbl, laps: lapsText(laps),
         marginPart: (ev.margin > 0 ? ' (−' + fmt(ev.margin) + ')' : ''),
         whenPart: (when ? ' · 🕒 ' + when : '')
@@ -1390,13 +1389,13 @@
         // mon meilleur temps.
         const mine = rows.find(isMyRun);
         if (mine && Math.abs(mine.time - top.time) < 0.001) {
-          leaderGapMsg = t('ticker_you_hold_record', { flag: country.flag, circuit: countryName(country) });
+          leaderGapMsg = t('ticker_you_hold_record', { circuit: countryName(country) });
         } else if (mine) {
-          leaderGapMsg = t('ticker_gap_to_record', { gap: fmt(mine.time - top.time), flag: country.flag, circuit: countryName(country) });
+          leaderGapMsg = t('ticker_gap_to_record', { gap: fmt(mine.time - top.time), circuit: countryName(country) });
         } else {
           // tickerTextEl est mis à jour via .textContent (pas innerHTML) : pas besoin
           // d'échapper le nom ici, contrairement aux listes construites en HTML ailleurs.
-          leaderGapMsg = t('ticker_current_record', { flag: country.flag, circuit: countryName(country), time: fmt(top.time), name: top.name });
+          leaderGapMsg = t('ticker_current_record', { circuit: countryName(country), time: fmt(top.time), name: top.name });
         }
         rebuildTickerMessages();
       }).catch(function () { leaderGapMsg = null; });
@@ -1409,7 +1408,7 @@
       snap.forEach(function (d) { entry = d.data(); });
       if (!entry) { latestPublicDuelMsg = null; return; }
       const country = COUNTRIES.find(function (c) { return c.id === entry.cid; });
-      const label = country ? (country.flag + ' ' + countryName(country)) : entry.cid;
+      const label = country ? countryName(country) : entry.cid;
       const n = Object.keys(entry.runs || {}).length;
       latestPublicDuelMsg = n === 0 ?
         t('duel_public_new', { circuit: label }) :
@@ -1431,7 +1430,7 @@
         const top = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })[0];
         if (!top || counts[top] < 2) { trendingCircuitMsg = null; return; }
         const country = COUNTRIES.find(function (c) { return c.id === top; });
-        const label = country ? (country.flag + ' ' + countryName(country)) : top;
+        const label = country ? countryName(country) : top;
         trendingCircuitMsg = t('ticker_trending_circuit', { label: label, n: counts[top] });
         rebuildTickerMessages();
       }).catch(function () { trendingCircuitMsg = null; });
@@ -1875,7 +1874,7 @@
     const done = dailyResult(info.dayId);
     const diffObj = DIFFICULTIES.find(function (d) { return d.id === info.diff; });
     const ov = document.getElementById('dailyOverlay');
-    document.getElementById('dailySub').textContent = t('daily_sub', { flag: info.country.flag, circuit: countryName(info.country), diff: diffLabel(diffObj), dir: dirLabelFull(info.dir) });
+    document.getElementById('dailySub').innerHTML = t('daily_sub', { flag: flagImg(info.country.flag), circuit: escapeHtml(countryName(info.country)), diff: escapeHtml(diffLabel(diffObj)), dir: escapeHtml(dirLabelFull(info.dir)) });
     const playBtn = document.getElementById('dailyPlayBtn');
     const doneEl = document.getElementById('dailyDone');
     playBtn.hidden = !!done;
@@ -2042,7 +2041,7 @@
       const chip = document.createElement('button');
       chip.className = 'flag-chip';
       chip.type = 'button';
-      chip.textContent = c.flag;
+      chip.innerHTML = flagImg(c.flag);
       chip.title = countryName(c);
       chip.addEventListener('click', () => goTo(i));
       flagRail.appendChild(chip);
@@ -2313,8 +2312,8 @@
       }
     }
     ghostPenaltyTimesArr = ghostPenaltyEvents(ghostTele, ghostOff);
-    hudCountryChip.textContent = country.flag + ' ' + countryName(country) + ' · ' + diffLabel(diff) +
-      (activeDuel ? t('hud_duel_suffix') : '') + (ghostTele ? t('hud_ghost_prefix', { label: ghostLabel }) : '');
+    hudCountryChip.innerHTML = flagImg(country.flag) + ' ' + escapeHtml(countryName(country)) + ' · ' + escapeHtml(diffLabel(diff)) +
+      (activeDuel ? escapeHtml(t('hud_duel_suffix')) : '') + (ghostTele ? escapeHtml(t('hud_ghost_prefix', { label: ghostLabel })) : '');
     drawMask();
     resizeCanvas();
     resetRun();
@@ -3001,7 +3000,7 @@
     }
 
     resultTitle.textContent = t('result_title_finish');
-    resultSub.textContent = current.flag + ' ' + countryName(current);
+    resultSub.innerHTML = flagImg(current.flag) + ' ' + escapeHtml(countryName(current));
     resultBody.innerHTML =
       '<div class="result-row"><span>' + t('result_raw_time') + '</span><span class="val">' + fmt(rawTime) + '</span></div>' +
       '<div class="result-row"><span>' + t('result_offtrack_count') + '</span><span class="val">' + penalties + '</span></div>' +
@@ -3063,7 +3062,7 @@
   function openHistoryModal() {
     if (!COUNTRIES[menuIndex]) return;
     const c = COUNTRIES[menuIndex];
-    historyTitle.textContent = c.flag + ' ' + countryName(c);
+    historyTitle.innerHTML = flagImg(c.flag) + ' ' + escapeHtml(countryName(c));
     historySub.textContent = settingsLabel();
     const history = getHistory(c.id, selectedDifficulty, selectedDirection, selectedLaps);
     menuHistoryList.innerHTML = '<div class="history-title">' + t('my_records_title') + '</div>' + (history.length
@@ -3085,7 +3084,7 @@
     setBanner('');
     updateNextCpPulse();
     resultTitle.textContent = t('result_title_fail');
-    resultSub.textContent = current.flag + ' ' + countryName(current);
+    resultSub.innerHTML = flagImg(current.flag) + ' ' + escapeHtml(countryName(current));
     resultBody.innerHTML = '<div class="result-row"><span>' + message + '</span><span class="val"></span></div>';
     bestNote.textContent = '';
     viewRunBtn.hidden = telemetry.length < 2;
@@ -3358,6 +3357,17 @@
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  // Windows (contrairement à macOS/Android/iOS) ne sait pas dessiner les emojis drapeaux : il
+  // retombe sur les deux lettres du code pays ("HU", "BE"...). On affiche donc une vraie petite
+  // image (Twemoji, CDN jsDelivr, version figée pour un rendu stable) partout où un drapeau de
+  // circuit ou de langue est affiché — sauf dans les <select> natifs, qui ne peuvent afficher
+  // que du texte brut (voir populatePublicDuelFilter) : ceux-là gardent l'emoji, sans solution.
+  const TWEMOJI_BASE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/';
+  function flagImg(flagEmoji, extraClass) {
+    const cps = Array.from(flagEmoji).map(function (c) { return c.codePointAt(0).toString(16); }).join('-');
+    return '<img class="flag-img' + (extraClass ? ' ' + extraClass : '') + '" src="' + TWEMOJI_BASE + cps + '.png" alt="" loading="lazy">';
+  }
+
   function resampleTelemetry(tele, maxPoints) {
     if (!tele || !tele.length) return [];
     if (tele.length <= maxPoints) return tele.map(p => [p[0], p[1], p[2]]);
@@ -3615,7 +3625,7 @@
     }
     saveDuelToHistory(duel);
     const country = COUNTRIES.find(c => c.id === duel.cid);
-    duelFlag.textContent = (country && country.flag) || '🏁';
+    duelFlag.innerHTML = flagImg((country && country.flag) || '🏁');
     duelTitle.textContent = t('duel_title_prefix', { circuit: country ? countryName(country) : duel.cid });
     const diff = DIFFICULTIES.find(d => d.id === duel.diff) || DIFFICULTIES[1];
     duelSub.textContent = diffLabel(diff) + ' · ' + dirLabelFull(duel.dir) + ' · ' + lapsText(duel.laps);
@@ -3667,7 +3677,7 @@
     // vrais défis ouverts, une fois qu'on affiche aussi les défis publics déjà réalisés.
     const statusHtml = mineDone ? '<span class="duel-status-badge done">' + t('duel_public_done_badge') + '</span>' : '';
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
-      '<span class="duel-history-flag">' + flag + '</span>' +
+      '<span class="duel-history-flag">' + flagImg(flag) + '</span>' +
       '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(label) + '</span>' +
       statusHtml +
       '<span class="duel-history-sub">' + escapeHtml(sub) + '</span></span>' +
@@ -3782,7 +3792,7 @@
     duelEmpty.hidden = hasActive;
     const country = COUNTRIES[menuIndex] || COUNTRIES[0];
     if (!hasActive) {
-      const circuitHtml = country ? '<strong>' + escapeHtml(country.flag + ' ' + countryName(country)) + '</strong>' : '';
+      const circuitHtml = country ? '<strong>' + flagImg(country.flag) + ' ' + escapeHtml(countryName(country)) + '</strong>' : '';
       duelEmptyText.innerHTML = t('duel_empty_p', {circuit: circuitHtml});
     }
     // Tant que le joueur n'a jamais touché le filtre, le tableau des défis publics suit le
@@ -3849,7 +3859,7 @@
       '<span class="duel-status-badge' + (opponentDone ? ' done' : '') + '">' + (opponentDone ? '✅' : '⏳') + ' ' + t('label_opponent') + '</span>' +
       '</span>';
     return '<div class="duel-history-row" data-id="' + entry.id + '">' +
-      '<span class="duel-history-flag">' + flag + '</span>' +
+      '<span class="duel-history-flag">' + flagImg(flag) + '</span>' +
       '<span class="duel-history-info"><span class="duel-history-name">' + escapeHtml(name) + '</span>' +
       statusHtml +
       (sub ? '<span class="duel-history-sub">' + escapeHtml(sub) + '</span>' : '') + '</span>' +
@@ -4286,7 +4296,7 @@
     hudLapChip.hidden = true;
     screenMenu.hidden = true;
     screenRace.hidden = false;
-    hudCountryChip.textContent = country.flag + ' ' + countryName(country) + t('hud_replay_suffix');
+    hudCountryChip.innerHTML = flagImg(country.flag) + ' ' + escapeHtml(countryName(country)) + escapeHtml(t('hud_replay_suffix'));
     if (startHintEl) startHintEl.hidden = true;
     if (replayTitle) replayTitle.textContent = duel.__solo ? t('replay_title_solo') : t('replay_title_duel');
     drawMask();
@@ -4511,7 +4521,7 @@
       const m = LANG_META[lg];
       const active = lg === currentLang;
       return '<button type="button" class="lang-row' + (active ? ' active' : '') + '" data-lang="' + lg + '">' +
-        '<span class="lang-flag">' + m.flag + '</span>' +
+        '<span class="lang-flag">' + flagImg(m.flag) + '</span>' +
         '<span class="lang-label">' + escapeHtml(m.label) + '</span>' +
         '<span class="lang-check">✓</span></button>';
     }).join('');

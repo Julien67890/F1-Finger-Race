@@ -1,4 +1,4 @@
-:root {
+  :root {
     --bg: #0e131a;
     --bg-soft: #141b25;
     --surface: #1b2330;
@@ -1435,3 +1435,18 @@ body.lefty .review-back { left: auto; right: 12px; }
 
 /* Bouton "Supprimer" armé (premier tap) : rouge plein, second tap = confirmation. */
 .cta.armed { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* Vrais drapeaux (Twemoji) à la place des emojis drapeaux : Windows ne sait pas dessiner ces
+   derniers (il retombe sur les deux lettres du code pays, ex. "HU"), contrairement à
+   macOS/Android/iOS. Taille relative au texte environnant (comme le faisait l'emoji), sauf
+   dans les .flag-chip du rail de circuits qui n'ont pas de texte de référence à côté. */
+.flag-img {
+  width: 1.25em;
+  height: auto;
+  vertical-align: -0.22em;
+  border-radius: 2px;
+  margin-right: 1px;
+}
+.flag-chip .flag-img { width: 30px; margin-right: 0; }
+.duel-history-flag .flag-img { margin-right: 0; }
+.lang-flag .flag-img { margin-right: 0; }

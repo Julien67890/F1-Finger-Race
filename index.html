@@ -2586,7 +2586,7 @@
     countdownAbort = true;
     drawScene();
     setBanner('');
-    if (startHintEl) startHintEl.hidden = false;
+    if (startHintEl) { startHintEl.hidden = false; positionStartHint(); }
     updateNextCpPulse();
   }
 
@@ -4244,6 +4244,17 @@
     return [rect.left + (lx - viewOffsetX) * scale, rect.top + (ly - viewOffsetY) * scale];
   }
 
+  // Le message pré-course est fixé près du haut ou du bas de l'écran (jamais au centre, pour
+  // ne jamais tomber sur le tracé) — mais SUR QUEL bord dépend du circuit : si la ligne de
+  // départ/arrivée elle-même se trouve rendue en haut de l'écran (comme certains circuits une
+  // fois centrés/tournés), c'est le bord du BAS qu'il faut utiliser, et inversement. On calcule
+  // donc sa position à chaque affichage du message, pas seulement une fois pour toutes.
+  function positionStartHint() {
+    if (!startHintEl || !current) return;
+    const sy = logicalToScreen(startGate.pos[0], startGate.pos[1])[1];
+    startHintEl.classList.toggle('at-bottom', sy < window.innerHeight / 2);
+  }
+
   function sampleTelemetryAt(tele, t) {
     if (!tele || !tele.length) return null;
     if (t <= tele[0][0]) return { x: tele[0][1], y: tele[0][2] };
@@ -4693,7 +4704,7 @@
   view.addEventListener('pointermove', onPointerMove);
   view.addEventListener('pointerup', onPointerUp);
   view.addEventListener('pointercancel', onPointerUp);
-  window.addEventListener('resize', () => { if (!screenRace.hidden) resizeCanvas(); });
+  window.addEventListener('resize', () => { if (!screenRace.hidden) { resizeCanvas(); positionStartHint(); } });
 
   // Réglages
   const settingsOverlay = document.getElementById('settingsOverlay');

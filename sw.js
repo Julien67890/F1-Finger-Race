@@ -13,13 +13,19 @@
 // direct, bandeau live) : ces requêtes passent toujours en direct sur le réseau, sinon on
 // risquerait de servir des données périmées ou de casser l'authentification.
 
-const CACHE_NAME = 'f1-finger-race-v5';
+const CACHE_NAME = 'f1-finger-race-v6';
+
+// Coquille pré-chargée dès l'installation : l'appli s'ouvre hors-ligne dès la 2e visite, sans
+// dépendre de ce que le joueur a déjà consulté.
+const PRECACHE = ['./', 'index.html', 'app.css', 'manifest.json', 'icon-192.png', 'icon-512.png',
+  'lang/en.json', 'lang/es.json', 'lang/pt.json', 'lang/de.json', 'lang/it.json', 'lang/nl.json',
+  'lang/ar.json', 'lang/ja.json', 'lang/zh.json', 'lang/id.json'];
 
 self.addEventListener('install', (event) => {
-  // On ne pré-charge rien de précis au moment de l'installation (on ne connaît pas ici le nom
-  // exact du fichier HTML tel qu'il est déployé) : le cache se remplit tout seul au fil des
-  // visites via la logique du gestionnaire "fetch" ci-dessous.
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)).catch(() => {})
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -60,7 +66,7 @@ self.addEventListener('fetch', (event) => {
   if (NEVER_CACHE_HOSTS.indexOf(url.hostname) !== -1) return;
   if (isAnalyticsCollectHost(url.hostname)) return;
 
-  if (req.mode === 'navigate') {
+  if (req.mode === 'navigate' || /\/lang\/[a-z]{2}\.json$/.test(url.pathname) || /\/app\.css$/.test(url.pathname)) {
     // La page principale : toujours la dernière version en ligne en priorité : le cache ne
     // sert que si le réseau est indisponible (mode hors-ligne).
     event.respondWith(

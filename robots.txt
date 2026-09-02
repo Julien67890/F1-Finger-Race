@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /lang/
+Sitemap: https://julien67890.github.io/F1-Finger-Race/sitemap.xml

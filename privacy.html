@@ -135,13 +135,10 @@ Firebase): pages and screens viewed, general usage events (races started or
 completed, duels created), device type, operating system, language, and
 approximate location derived from the IP address.</p>
 
-<div class="note">
-  <p><strong>Note for the publisher:</strong> unlike SwingUp, F1 Finger Race
-  does not currently show a consent banner before Analytics starts collecting
-  data. To match what this policy describes and to comply with French/EU
-  rules on non-essential trackers, a consent banner should be added before
-  publishing this policy live — happy to build one if useful.</p>
-</div>
+<p>Analytics is <strong>only started after you accept it</strong> in the banner
+shown at first launch. If you decline, or make no choice, nothing is sent to
+Google Analytics. Your choice is stored on your device and can be changed by
+clearing the site data in your browser, which shows the banner again.</p>
 
 <h2>3. Why, and on what legal basis</h2>
 
@@ -222,11 +219,17 @@ keeping your session and remembering your language and settings between
 visits. These are <strong>strictly necessary</strong> for the service you
 request and do not require your consent.</p>
 
-<p>Analytics through Firebase Analytics does place trackers subject to consent.
-See the note in section 2.3 above about the consent banner still to be added.
-<strong>Declining does not limit the Application in any way.</strong> To
-change your choice once a banner is in place, clear the site data in your
-browser settings.</p>
+<p>Analytics through Firebase Analytics does place trackers subject to consent:
+they are only activated after you accept them in the banner shown at first
+launch. <strong>Declining does not limit the Application in any way.</strong>
+To change your choice, clear the site data in your browser settings; the
+banner will be shown again.</p>
+
+<p>The Application also uses Firebase App Check (reCAPTCHA v3 by Google) to
+verify that requests to the leaderboard and duel service come from the
+Application itself. This protection is strictly necessary to prevent
+fraudulent scores and abuse and does not require consent; it does not build
+an advertising profile.</p>
 
 <h2>8. Security</h2>
 

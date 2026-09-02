@@ -1,0 +1,1432 @@
+  :root {
+    --bg: #0e131a;
+    --bg-soft: #141b25;
+    --surface: #1b2330;
+    --surface-2: #232c3b;
+    --border: #2d374a;
+    --text: #eef1f6;
+    --text-dim: #8b93a6;
+    --grass: #10151d;
+    --accent: #ff7a3d;
+    --accent-strong: #ff5a1f;
+    --good: #33d38a;
+    --danger: #f0483f;
+    --info: #4fa8ff;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', system-ui, sans-serif;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .screen {
+    position: fixed;
+    inset: 0;
+  }
+
+  .screen[hidden] { display: none; }
+
+  /* ---------- Menu screen ---------- */
+
+  .menu-screen {
+    display: flex;
+    flex-direction: column;
+    /* En fullscreen, l'appli utilise tout l'écran physique : la barre de statut ne réserve
+       plus l'espace du haut, donc on rajoute nous-mêmes de la marge pour les téléphones à
+       encoche/caméra perforée (env() vaut 0px sur les appareils sans zone à éviter). */
+    padding: calc(22px + env(safe-area-inset-top, 0px)) 0 28px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Le bandeau live est fixe en bas de l'écran (voir .live-ticker) : cette marge évite qu'il
+     ne recouvre les boutons "Lancer la course"/"Records"/"Défis" du bas de l'accueil. */
+  .menu-screen .menu-foot { margin-bottom: 44px; }
+
+  .live-ticker {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    background: var(--accent);
+    color: #1a0d05;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 12.5px;
+  }
+
+  .live-ticker .ticker-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #1a0d05;
+    flex: none;
+    animation: tickerPulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes tickerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .live-ticker .ticker-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  .live-ticker .ticker-text.fade { opacity: 0; }
+
+  /* Le message lui-même vit dans ce span interne, qu'on fait glisser horizontalement (voir
+     renderTickerNow()) quand il est trop long pour tenir entier dans le bandeau — pour pouvoir
+     lire un message complet ("Julien vient de battre le record sur...") au lieu de le voir
+     coupé par des points de suspension. */
+  .live-ticker .ticker-text-inner {
+    display: inline-block;
+    white-space: nowrap;
+    transform: translateX(0);
+  }
+
+  .menu-head {
+    padding: 0 20px;
+    flex: none;
+  }
+
+  .menu-head-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .menu-head-titles { min-width: 0; display: flex; align-items: center; gap: 10px; }
+
+  .app-logo {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: block;
+  }
+
+  .account-chip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px 5px 5px;
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: 'Manrope', sans-serif;
+    cursor: pointer;
+    max-width: 128px;
+    margin-top: 2px;
+  }
+
+  .account-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1a0d05;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    flex: none;
+  }
+
+  .account-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lang-chip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 2px;
+    padding: 0;
+  }
+
+  .lang-list {
+    margin-top: 14px;
+    text-align: left;
+    max-height: 55vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .lang-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 14.5px;
+    font-weight: 600;
+    font-family: 'Manrope', sans-serif;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .lang-row .lang-flag { font-size: 18px; flex: none; }
+  .lang-row .lang-label { flex: 1; }
+  .lang-row .lang-check { flex: none; opacity: 0; font-weight: 800; color: var(--accent); }
+  .lang-row.active { border-color: var(--accent); }
+  .lang-row.active .lang-check { opacity: 1; }
+
+  .account-auth { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+  .account-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+    color: var(--text-dim);
+    font-size: 11.5px;
+  }
+  .account-divider::before, .account-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .account-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+  }
+  .account-input::placeholder { color: var(--text-dim); }
+
+  .account-auth-buttons { display: flex; gap: 8px; margin-top: 2px; }
+  .account-auth-buttons .cta.small { margin-top: 0; padding: 9px 10px; font-size: 12.5px; flex: 1; }
+
+  .account-auth-error {
+    background: rgba(255,90,90,0.12);
+    border: 1px solid rgba(255,90,90,0.4);
+    color: #ffb3b3;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    text-align: left;
+  }
+
+  .account-signed-in-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 14px 0;
+    text-align: left;
+  }
+
+  .account-avatar-lg {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1a0d05;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    flex: none;
+    overflow: hidden;
+  }
+  .account-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+
+  .account-signed-in-text { min-width: 0; }
+  .account-signed-in-name { font-weight: 700; font-size: 15px; }
+  .account-signed-in-email {
+    color: var(--text-dim);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .account-pseudo-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 0 14px;
+    text-align: left;
+  }
+  .account-pseudo-row .cta.small { margin-top: 0; padding: 9px 10px; font-size: 12.5px; }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .menu-head h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(24px, 6vw, 34px);
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .menu-head p.lede {
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+    max-width: 60ch;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Sans ça, l'emoji trophée "pend" plus bas que le texte : les emoji ont des métriques de
+     police différentes du texte latin, et s'alignent par défaut sur la ligne de base du texte
+     au lieu d'être centrés dessus. */
+  .menu-head p.lede .lede-icon {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1;
+    transform: translateY(-0.05em);
+  }
+
+  .account-privacy-link {
+    display: block;
+    margin-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: underline;
+  }
+
+  .player-name-row { margin-top: 14px; }
+
+  .player-name-row input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+  }
+
+  .player-name-row input::placeholder { color: var(--text-dim); }
+
+  .difficulty-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .difficulty-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .seg {
+    display: flex;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+  }
+
+  .seg-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 8px;
+    border-radius: 9px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .seg-btn.active {
+    background: var(--surface-2);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--border) inset;
+  }
+
+  .seg-btn.active[data-diff="debutant"] { color: var(--good); }
+  .seg-btn.active[data-diff="difficile"] { color: var(--danger); }
+  .seg-btn.active[data-diff="intermediaire"] { color: var(--accent); }
+
+  .duel-panel {
+    margin: 16px 20px 0;
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    padding: 14px 16px;
+  }
+
+  .duel-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .duel-flag { font-size: 26px; line-height: 1; }
+
+  .duel-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 4px 6px;
+    align-self: flex-start;
+  }
+
+  .duel-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .duel-sub { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+
+  .duel-tag {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .duel-tag.to-play { background: rgba(255,122,61,0.18); color: var(--accent); }
+  .duel-tag.done { background: rgba(120,220,150,0.16); color: var(--good); }
+
+  .duel-participants { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+
+  .duel-play-btn { margin-top: 12px; }
+
+  .duel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    background: rgba(0,0,0,0.18);
+    border-radius: 9px;
+    padding: 7px 10px;
+  }
+
+  .duel-row .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; flex: none; }
+  .duel-row .name { flex: 1; font-weight: 600; }
+  .duel-row .val { font-variant-numeric: tabular-nums; font-weight: 700; font-family: 'Rajdhani', sans-serif; }
+  .duel-row.waiting { color: var(--text-dim); font-style: italic; }
+
+  .duel-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .duel-actions .cta.small { margin-top: 0; padding: 9px 10px; font-size: 12.5px; flex: 1; }
+
+  .duel-result-panel { margin: 14px 0 0; padding: 12px 14px; text-align: left; }
+
+  .duel-link-fallback { margin-top: 8px; }
+
+  .duel-link-fallback input {
+    width: 100%;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+  }
+
+  /* ---------- Duel (défis) screen ---------- */
+
+  .duel-screen {
+    display: flex;
+    flex-direction: column;
+    padding: 22px 0 28px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .duel-screen-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    flex: none;
+  }
+
+  .duel-screen-head h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .duel-screen-body { padding: 16px 20px 0; flex: 1; }
+
+  .duel-screen .duel-panel { margin: 0 0 18px; }
+
+  .duel-empty {
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+
+  .duel-empty-text { margin: 0 0 14px; color: var(--text-dim); font-size: 13.5px; }
+
+  .duel-empty-sub { margin: 12px 0 0; color: var(--text-dim); font-size: 11.5px; line-height: 1.4; }
+
+  .duel-history { margin-top: 22px; }
+
+  .duel-history-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .duel-history-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .duel-history-title-row .duel-history-title { margin-bottom: 0; }
+
+  .duel-history-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .public-duel-filter {
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    max-width: 46vw;
+  }
+
+  .duel-history-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .duel-history-flag { font-size: 24px; line-height: 1; flex: none; }
+
+  .duel-history-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
+  .duel-history-name { font-weight: 700; font-size: 13.5px; }
+
+  .duel-history-status { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .duel-status-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  .duel-status-badge.done { color: #8fe3a8; border-color: rgba(143,227,168,0.4); background: rgba(143,227,168,0.12); }
+
+  .duel-visibility-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .duel-visibility-badge.is-public { background: rgba(79,168,255,0.16); color: var(--info); }
+  .duel-visibility-badge.is-private { background: rgba(255,122,61,0.14); color: var(--accent); }
+
+  /* Un accent de couleur par section (public / à relever / réalisés) pour s'y retrouver
+     d'un coup d'œil même avec beaucoup de défis dans la liste. */
+  #publicDuelSection .duel-history-row { border-left: 3px solid var(--info); }
+  #duelToPlaySection .duel-history-row { border-left: 3px solid var(--accent); }
+  #duelHistorySection .duel-history-row { border-left: 3px solid var(--good); }
+
+  .duel-history-title.section-public { color: var(--info); }
+  .duel-history-title.section-toplay { color: var(--accent); }
+  .duel-history-title.section-done { color: var(--good); }
+
+  .duel-history-sub {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .duel-history-delete {
+    flex: none;
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .duel-history-delete:active { background: rgba(255,90,90,0.18); color: #ffb3b3; border-color: rgba(255,90,90,0.4); }
+
+  /* Un premier tap "arme" la croix (au lieu d'une popup de confirmation native) : elle devient
+     rouge pleine avec une coche, et un second tap dans les quelques secondes qui suivent supprime
+     réellement le défi. Sans second tap, elle revient toute seule à son état normal. */
+  .duel-history-delete.confirm-delete {
+    background: #ff5a5a;
+    color: #1a0d05;
+    border-color: #ff5a5a;
+  }
+
+  .duel-history-arrow { flex: none; margin-left: auto; color: var(--accent); font-size: 18px; font-weight: 700; }
+
+  .flag-rail {
+    display: flex;
+    flex: none;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 2px 4px;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    /* Toujours en LTR, même si la page est en arabe (RTL) : ce rail suit le même ordre et les
+       mêmes index que le carrousel juste en dessous, dont le calcul de position (voir
+       .carousel-track) suppose un défilement gauche→droite. Les mélanger casserait la
+       correspondance entre "drapeau tapé" et "carte mise en avant". */
+    direction: ltr;
+  }
+
+  .flag-rail::-webkit-scrollbar { display: none; }
+
+  .flag-chip {
+    flex: none;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    font-size: 27px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .flag-chip.active {
+    border-color: var(--accent);
+    background: var(--surface-2);
+    box-shadow: 0 0 0 2px rgba(255,122,61,0.25);
+  }
+
+  /* Pas de scroll-snap ici : ça freinait le défilement rapide au doigt (le navigateur
+     ralentit systématiquement pour se caler sur le drapeau le plus proche pendant le geste,
+     ce qui rend un flick rapide beaucoup moins réactif qu'un simple défilement libre). */
+
+  .carousel-wrap {
+    position: relative;
+    flex: none;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+  }
+
+  .carousel-viewport {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: pan-y;
+    direction: ltr;
+  }
+
+  .carousel-track {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    will-change: transform;
+    /* Forcé en LTR : renderCarousel() positionne les cartes avec un calcul de pixels
+       (translateX = moitié de la largeur de la vitrine moins la position de la carte active)
+       qui suppose un ordre de gauche à droite. En RTL (arabe), le flex "row" par défaut
+       inverserait l'ordre ET le sens de départ des cartes, ce qui désaligne complètement ce
+       calcul et pousse la carte active hors de la zone visible — d'où les circuits invisibles
+       signalés par Julien. Garder ce carrousel en LTR (comme le fait YouTube/Netflix pour
+       leurs rangées de vignettes même en interface RTL) est plus simple et plus sûr que de
+       réécrire toutes les formules de position pour les deux sens.
+       Le texte à l'intérieur (nom du circuit) reste, lui, écrit dans son alphabet normal. */
+    direction: ltr;
+  }
+
+  .country-card {
+    flex: none;
+    width: 240px;
+    margin: 0 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    cursor: pointer;
+  }
+
+  .card-plate {
+    width: 100%;
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 18px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 18px 40px -24px rgba(0,0,0,0.9);
+  }
+
+  .card-preview {
+    width: 100%;
+    height: 140px;
+    display: block;
+  }
+
+  .card-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(27,35,48,0.9);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 20;
+  }
+
+  .carousel-nav.prev { left: 6px; }
+  .carousel-nav.next { right: 6px; }
+  .carousel-nav:disabled { opacity: 0.25; }
+
+  .menu-foot {
+    padding: 0 20px;
+    flex: none;
+  }
+
+  button.cta {
+    width: 100%;
+    background: var(--accent);
+    color: #1a0d05;
+    border: none;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  button.cta:hover { background: var(--accent-strong); }
+
+  button.cta.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    margin-top: 8px;
+  }
+
+  /* ---------- Race screen ---------- */
+
+  .race-screen {
+    background: var(--grass);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+
+  canvas#view {
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .race-hud {
+    position: absolute;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    left: 14px;
+    right: 14px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .race-hud > * { pointer-events: auto; }
+
+  .race-hud-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .race-hud-right { justify-content: flex-end; }
+
+  .race-hud-center { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+  #hudCountryChip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hud-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .review-back {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    z-index: 9;
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .replay-hud {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    margin: 0 auto;
+    z-index: 9;
+    background: rgba(14,19,26,0.92);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    max-width: 320px;
+    /* Ce panneau n'est plus une fenêtre flottante par-dessus la piste : resizeCanvas() réserve
+       sa vraie hauteur affichée et repousse tout le circuit en dessous, donc il ne peut plus
+       jamais le recouvrir, quel que soit le nombre de lignes de temps. */
+  }
+
+  .replay-scroll {
+    /* Seule la liste des temps défile si elle est longue (jusqu'à 10 tours) — le titre et les
+       boutons "Rejouer"/"Fermer" restent toujours visibles, jamais poussés hors champ. */
+    max-height: 34vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .replay-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+
+  .replay-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+  }
+
+  .replay-row .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; flex: none; }
+  .replay-row .name { flex: 1; font-weight: 600; }
+  .replay-row .val { font-variant-numeric: tabular-nums; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+
+  #replayHud .cta.ghost { margin-top: 10px; padding: 8px 10px; font-size: 12.5px; }
+
+  .replay-splits { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .replay-splits-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); font-weight: 700; margin-bottom: 4px; }
+
+  .result-splits { margin-top: 10px; }
+
+  .replay-car {
+    position: fixed;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    border: 2px solid #141b25;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    z-index: 8;
+    pointer-events: none;
+    display: none;
+  }
+
+  .hud-chip {
+    background: rgba(20,27,37,0.9);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hud-chip.danger { color: var(--danger); }
+
+  .flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at var(--fx, 50%) var(--fy, 50%), rgba(240,72,63,0.35), transparent 55%);
+    opacity: 0;
+    z-index: 3;
+  }
+
+  .flash.on { animation: pulse 0.35s ease-out; }
+
+  @keyframes pulse {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .banner {
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(14,19,26,0.9);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 4;
+    max-width: 90vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lights {
+    position: absolute;
+    top: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(10,13,18,0.55);
+    border-radius: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 5;
+  }
+
+  .lights.show { opacity: 1; }
+
+  .start-hint {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20,27,37,0.95);
+    border: 2px solid var(--accent);
+    color: var(--text);
+    padding: 14px 20px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 82vw;
+    z-index: 4;
+    pointer-events: none;
+    animation: hintPulse 1.6s ease-in-out infinite;
+  }
+
+  .start-hint strong { color: var(--accent); }
+
+  @keyframes hintPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,122,61,0.45); }
+    50% { box-shadow: 0 0 22px rgba(255,122,61,0.45); }
+  }
+
+  .split-flash {
+    position: absolute;
+    top: 84px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    background: rgba(20,27,37,0.95);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .split-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .light {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #3a1712;
+    border: 2px solid #5a241b;
+  }
+
+  .light.on {
+    background: var(--danger);
+    box-shadow: 0 0 20px 5px rgba(240,72,63,0.85);
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,13,18,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 6;
+  }
+
+  .overlay.show { display: flex; }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+    width: 100%;
+    max-width: 340px;
+    max-height: 88vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    text-align: center;
+  }
+
+  .result-card h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 24px;
+    margin: 0 0 4px;
+  }
+
+  .result-card .sub { color: var(--text-dim); font-size: 13px; margin-bottom: 16px; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    padding: 7px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .result-row:first-of-type { border-top: none; }
+
+  .result-row .val {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .result-total {
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .result-total .val {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .best-note { margin-top: 6px; font-size: 12px; color: var(--good); font-weight: 600; min-height: 16px; }
+
+  .settings-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+  }
+
+  .settings-row .difficulty-picker {
+    flex: none;
+    width: 160px;
+    min-width: 0;
+    margin-top: 0;
+  }
+
+  .settings-row .laps-picker { width: 190px; }
+
+  #lapsSeg .seg-btn { padding: 10px 3px; font-size: 12px; }
+
+  .history-list {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    text-align: left;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .history-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .history-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12.5px;
+    padding: 4px 0;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .history-row .val { color: var(--text); font-weight: 600; white-space: nowrap; }
+  .history-row.best .val { color: var(--good); }
+
+  .history-empty {
+    font-size: 13px;
+    color: var(--text-dim);
+    padding: 6px 0 2px;
+    text-align: left;
+  }
+
+  .leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    padding: 4px 0;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .leaderboard-row .rank { flex: none; width: 18px; font-weight: 700; }
+  .leaderboard-row .name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+  }
+  .leaderboard-row .val { color: var(--text); font-weight: 600; white-space: nowrap; }
+  .leaderboard-row.rank-1 .rank, .leaderboard-row.rank-1 .val { color: var(--good); }
+  .leaderboard-row.mine .name { color: var(--accent); }
+
+  .car-sprite {
+    position: fixed;
+    width: 22px;
+    height: 13px;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    z-index: 8;
+    transform: translate(-50%, -50%);
+    display: none;
+  }
+
+  .car-sprite .body {
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    border-radius: 4px 7px 7px 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+
+  .car-sprite .glass {
+    position: absolute;
+    top: 2.5px;
+    left: 10px;
+    width: 8px;
+    height: 8px;
+    background: #d7ecff;
+    border-radius: 2px;
+  }
+
+  .ghost-sprite .body {
+    background: rgba(77,217,255,0.5);
+    border: 1px solid rgba(77,217,255,0.9);
+    box-shadow: none;
+  }
+
+  .ghost-sprite .glass { background: rgba(215,236,255,0.6); }
+
+  .next-cp-pulse {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    border-radius: 50%;
+    border: 3px solid #ffb648;
+    background: rgba(255,182,72,0.3);
+    pointer-events: none;
+    z-index: 3;
+    display: none;
+    animation: nextCpPulse 0.9s ease-in-out infinite;
+  }
+
+  .next-cp-pulse.show { display: block; }
+
+  @keyframes nextCpPulse {
+    0%, 100% { transform: scale(0.85); opacity: 0.95; }
+    50% { transform: scale(1.7); opacity: 0.25; }
+  }
+
+/* ==================== v2 : progression, réglages, consentement ==================== */
+
+.progress-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 6px 0 2px;
+  flex-wrap: wrap;
+}
+
+.progress-chip {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #ffd166;
+  background: rgba(255, 209, 102, 0.1);
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  border-radius: 999px;
+  padding: 3px 11px;
+}
+
+.progress-chip.streak { color: #ff9a62; background: rgba(255, 122, 61, 0.1); border-color: rgba(255, 122, 61, 0.3); }
+
+.cta.daily {
+  background: linear-gradient(135deg, #ffd166, #ff9a3d);
+  color: #1a0d05;
+}
+
+.card-stars { display: block; text-align: center; margin-top: 2px; }
+
+.stars { display: inline-flex; gap: 2px; font-size: 14px; line-height: 1; }
+.stars span { color: rgba(255, 255, 255, 0.18); }
+.stars span.on { color: #ffd166; text-shadow: 0 0 8px rgba(255, 209, 102, 0.55); }
+
+.result-stars {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 0 4px;
+}
+.result-stars .stars { font-size: 26px; gap: 6px; }
+.result-stars-hint { font-size: 12.5px; color: var(--text-dim); text-align: center; }
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  cursor: pointer;
+}
+.setting-hint { margin: 6px 0 0; font-size: 12.5px; color: var(--text-dim); }
+
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  position: relative;
+  flex: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.2s, background 0.2s;
+}
+.switch:checked { background: var(--accent); border-color: var(--accent-strong); }
+.switch:checked::after { transform: translateX(20px); background: #fff; }
+
+.consent-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.8);
+}
+.consent-banner[hidden] { display: none; }
+.consent-text { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--text-dim); }
+.consent-text strong { color: var(--text); font-size: 14px; }
+.consent-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.consent-actions .cta { margin: 0; width: auto; padding-left: 16px; padding-right: 16px; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 20px);
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  max-width: 88vw;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 60;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Drapeau à damier : un voile qui traverse l'écran à l'arrivée. */
+.finish-flag {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  opacity: 0;
+  background:
+    repeating-conic-gradient(#fff 0 25%, #111 0 50%) 0 0 / 56px 56px;
+  mix-blend-mode: screen;
+}
+.finish-flag.show { animation: finishFlag 0.9s ease-out forwards; }
+@keyframes finishFlag {
+  0% { opacity: 0; transform: translateY(-100%); }
+  25% { opacity: 0.55; }
+  100% { opacity: 0; transform: translateY(100%); }
+}
+
+/* Mode gaucher : bouton retour et nom du circuit passent à droite. */
+body.lefty .race-hud { flex-direction: row-reverse; }
+body.lefty .review-back { left: auto; right: 12px; }
+
+/* Bouton "Supprimer" armé (premier tap) : rouge plein, second tap = confirmation. */
+.cta.armed { background: var(--danger); color: #fff; border-color: var(--danger); }

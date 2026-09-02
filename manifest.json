@@ -1,17 +1,62 @@
 {
   "name": "F1 Finger Race",
   "short_name": "F1 Finger Race",
-  "description": "Trace les circuits F1 au doigt sans sortir de la piste.",
+  "description": "Trace 20 circuits de Grand Prix au doigt sans sortir de la piste. Défis entre amis, fantôme, classement de la semaine.",
   "start_url": ".",
   "scope": ".",
-  "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
   "background_color": "#0e131a",
   "theme_color": "#0e131a",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/F1-Finger-Race/",
+  "lang": "fr",
+  "categories": [
+    "games",
+    "sports"
+  ],
+  "screenshots": [
+    {
+      "src": "store/screenshot-fr-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Trace le circuit au doigt"
+    },
+    {
+      "src": "store/screenshot-fr-2.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Défie tes amis avec un fantôme"
+    },
+    {
+      "src": "store/screenshot-fr-3.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Classement de la semaine"
+    }
   ]
 }

@@ -794,6 +794,7 @@
 
   .menu-foot {
     padding: 0 20px;
+    margin-top: 18px;
     flex: none;
   }
 
@@ -840,8 +841,7 @@
     top: calc(14px + env(safe-area-inset-top, 0px));
     left: 14px;
     right: 14px;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
     align-items: center;
     gap: 8px;
     z-index: 4;
@@ -850,12 +850,12 @@
 
   .race-hud > * { pointer-events: auto; }
 
-  .race-hud-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .race-hud-right { justify-content: flex-end; }
-
-  .race-hud-center { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
-
-  #hudCountryChip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Avant : trois colonnes de largeur égale (grille), dont celle de droite ne contient jamais
+     rien — elle volait pour rien la moitié de la place disponible au nom du circuit, qui
+     finissait tronqué juste après le drapeau. Une seule rangée : le nom du circuit prend tout
+     ce que les autres chips ne consomment pas. */
+  #hudCountryChip { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #hudTime, #hudPenChip, #hudLapChip { flex: none; }
 
   .hud-btn {
     background: var(--surface);

@@ -13,7 +13,7 @@
 // direct, bandeau live) : ces requêtes passent toujours en direct sur le réseau, sinon on
 // risquerait de servir des données périmées ou de casser l'authentification.
 
-const CACHE_NAME = 'f1-finger-race-v6';
+const CACHE_NAME = 'f1-finger-race-v7';
 
 // Coquille pré-chargée dès l'installation : l'appli s'ouvre hors-ligne dès la 2e visite, sans
 // dépendre de ce que le joueur a déjà consulté.
@@ -90,8 +90,14 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
         }
         return res;
-      }).catch(() => cached);
-      return cached || network;
+      }).catch(() => null);
+      if (cached) return cached;
+      // Rien en cache ET le réseau échoue (bloqué par un pare-feu/bloqueur de pub, hors-ligne,
+      // domaine externe indisponible) : on ne peut pas renvoyer "undefined" à respondWith() (ça
+      // provoque un "Failed to convert value to 'Response'" et casse le chargement de la page)
+      // — on renvoie une réponse vide (204) pour que le script appelant échoue proprement, comme
+      // si la ressource avait simplement mis du temps à répondre puis avait été annulée.
+      return network.then((res) => res || new Response(null, { status: 204, statusText: 'offline' }));
     })
   );
 });

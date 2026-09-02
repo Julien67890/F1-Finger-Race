@@ -1013,9 +1013,13 @@
 
   .start-hint {
     position: absolute;
-    top: 30%;
+    /* Avant : centré à 30% de la hauteur d'écran, ce qui tombait en plein sur la ligne de
+       départ/arrivée de plusieurs circuits (elle n'est pas toujours en bas du tracé). Fixé
+       juste sous le HUD à la place : cette zone est presque toujours vide, quel que soit le
+       circuit affiché en dessous. */
+    top: calc(64px + env(safe-area-inset-top, 0px));
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     background: rgba(20,27,37,0.95);
     border: 2px solid var(--accent);
     color: var(--text);

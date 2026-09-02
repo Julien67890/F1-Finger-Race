@@ -74,7 +74,7 @@
  "duel_create_public_fail": "No se puede crear el desafío público ({error}).",
  "duel_save_run_fail_conn": "No se puede guardar este tiempo en un desafío: el servicio de desafíos no está disponible (comprueba tu conexión a internet).",
  "duel_supprimer_confirm": "¿Quitar este desafío de tu lista? (seguirá accesible para el rival que tenga el enlace)",
- "start_hint_html": "👆 Pon el dedo en el punto de <strong>SALIDA / META</strong> y no te muevas",
+ "start_hint_html": "👆 Pon el dedo en la línea de <strong>SALIDA / META</strong> y no te muevas hasta que se apaguen los semáforos",
  "banner_touch_start": "Pon el dedo en el punto blanco de SALIDA / META (S/M)",
  "banner_wait_start": "No te muevas… la salida está cerca",
  "banner_in_race": "En carrera — mantente en la pista",

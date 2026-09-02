@@ -74,7 +74,7 @@
  "duel_create_public_fail": "Impossibile creare la sfida pubblica ({error}).",
  "duel_save_run_fail_conn": "Impossibile salvare questo tempo in una sfida: il servizio sfide non è disponibile (controlla la tua connessione internet).",
  "duel_supprimer_confirm": "Rimuovere questa sfida dalla tua lista? (resta accessibile all’avversario che ha il link)",
- "start_hint_html": "👆 Metti il dito sul punto <strong>PARTENZA / ARRIVO</strong> e resta fermo",
+ "start_hint_html": "👆 Metti il dito sulla linea di <strong>PARTENZA / ARRIVO</strong> e resta fermo finché i semafori non si spengono",
  "banner_touch_start": "Metti il dito sul punto bianco PARTENZA / ARRIVO (P/A)",
  "banner_wait_start": "Resta fermo... partenza imminente",
  "banner_in_race": "In gara — resta in pista",

@@ -74,7 +74,7 @@
  "duel_create_public_fail": "公開対戦を作成できません（{error}）。",
  "duel_save_run_fail_conn": "このタイムを対戦に保存できません：対戦サービスが利用できません（インターネット接続を確認してください）。",
  "duel_supprimer_confirm": "この対戦を一覧から削除しますか？（リンクを持つ相手には引き続き表示されます）",
- "start_hint_html": "👆 <strong>スタート／フィニッシュ</strong>地点に指を置いて動かないでください",
+ "start_hint_html": "👆 <strong>スタート／フィニッシュ</strong>ラインに指を置き、シグナルが消えるまで動かないでください",
  "banner_touch_start": "白いスタート／フィニッシュ地点に指を置いてください",
  "banner_wait_start": "動かないで…まもなくスタート",
  "banner_in_race": "レース中 — コースから外れないで",

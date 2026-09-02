@@ -74,7 +74,7 @@
  "duel_create_public_fail": "无法创建公开挑战（{error}）。",
  "duel_save_run_fail_conn": "无法将此成绩保存到挑战中：挑战服务当前不可用（请检查你的网络连接）。",
  "duel_supprimer_confirm": "要从你的列表中移除此挑战吗？（拥有链接的对手仍可访问）",
- "start_hint_html": "👆 将手指放在<strong>起点/终点</strong>标记上并保持不动",
+ "start_hint_html": "👆 将手指放在<strong>起点/终点</strong>线上，保持不动直到信号灯熄灭",
  "banner_touch_start": "将手指放在白色的起点/终点标记上",
  "banner_wait_start": "保持不动……即将起步",
  "banner_in_race": "比赛中——保持在赛道上",

@@ -74,7 +74,7 @@
  "duel_create_public_fail": "Tidak dapat membuat tantangan publik ({error}).",
  "duel_save_run_fail_conn": "Tidak dapat menyimpan waktu ini ke tantangan: layanan tantangan tidak tersedia (periksa koneksi internetmu).",
  "duel_supprimer_confirm": "Hapus tantangan ini dari daftarmu? (tetap bisa diakses oleh lawan yang memiliki tautannya)",
- "start_hint_html": "👆 Letakkan jarimu di titik <strong>START / FINISH</strong> dan tetap diam",
+ "start_hint_html": "👆 Letakkan jarimu di garis <strong>START / FINISH</strong> dan tetap diam sampai lampu padam",
  "banner_touch_start": "Letakkan jarimu di titik putih START / FINISH",
  "banner_wait_start": "Tetap diam… start segera dimulai",
  "banner_in_race": "Sedang balapan — tetap di lintasan",

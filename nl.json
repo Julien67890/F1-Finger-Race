@@ -74,7 +74,7 @@
  "duel_create_public_fail": "Kan de openbare uitdaging niet maken ({error}).",
  "duel_save_run_fail_conn": "Kan deze tijd niet opslaan in een uitdaging: de uitdagingsservice is niet beschikbaar (controleer je internetverbinding).",
  "duel_supprimer_confirm": "Deze uitdaging uit je lijst verwijderen? (blijft toegankelijk voor de tegenstander met de link)",
- "start_hint_html": "👆 Plaats je vinger op het <strong>START-/FINISHPUNT</strong> en blijf stilstaan",
+ "start_hint_html": "👆 Plaats je vinger op de <strong>START-/FINISHLIJN</strong> en blijf stilstaan tot de lichten doven",
  "banner_touch_start": "Plaats je vinger op het witte START-/FINISHPUNT (S/F)",
  "banner_wait_start": "Blijf stilstaan... start komt eraan",
  "banner_in_race": "In de race — blijf op het circuit",

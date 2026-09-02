@@ -74,7 +74,7 @@
  "duel_create_public_fail": "Öffentliches Duell kann nicht erstellt werden ({error}).",
  "duel_save_run_fail_conn": "Diese Zeit kann nicht in einem Duell gespeichert werden: der Duell-Dienst ist nicht verfügbar (prüfe deine Internetverbindung).",
  "duel_supprimer_confirm": "Dieses Duell aus deiner Liste entfernen? (bleibt für den Gegner mit dem Link weiterhin zugänglich)",
- "start_hint_html": "👆 Lege den Finger auf den <strong>START-/ZIELPUNKT</strong> und halte still",
+ "start_hint_html": "👆 Lege den Finger auf die <strong>START-/ZIELLINIE</strong> und halte still, bis die Ampeln erlöschen",
  "banner_touch_start": "Lege den Finger auf den weißen START-/ZIELPUNKT (S/Z)",
  "banner_wait_start": "Bleib still... Start steht bevor",
  "banner_in_race": "Im Rennen — bleib auf der Strecke",

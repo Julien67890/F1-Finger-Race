@@ -74,7 +74,7 @@
  "duel_create_public_fail": "Não foi possível criar o desafio público ({error}).",
  "duel_save_run_fail_conn": "Não foi possível salvar esse tempo em um desafio: o serviço de desafios está indisponível (verifique sua conexão com a internet).",
  "duel_supprimer_confirm": "Remover este desafio da sua lista? (ele continua acessível ao adversário que tem o link)",
- "start_hint_html": "👆 Coloque o dedo no ponto de <strong>LARGADA / CHEGADA</strong> e fique parado",
+ "start_hint_html": "👆 Coloque o dedo na linha de <strong>LARGADA / CHEGADA</strong> e fique parado até os semáforos apagarem",
  "banner_touch_start": "Coloque o dedo no ponto branco de LARGADA / CHEGADA (L/C)",
  "banner_wait_start": "Fique parado… largada iminente",
  "banner_in_race": "Em corrida — fique na pista",

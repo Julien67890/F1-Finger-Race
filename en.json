@@ -74,7 +74,7 @@
  "duel_create_public_fail": "Unable to create the public challenge ({error}).",
  "duel_save_run_fail_conn": "Unable to save this time to a challenge: the challenge service is unavailable (check your internet connection).",
  "duel_supprimer_confirm": "Remove this challenge from your list? (it stays accessible to the opponent who has the link)",
- "start_hint_html": "👆 Place your finger on the <strong>START / FINISH</strong> point and stay still",
+ "start_hint_html": "👆 Place your finger on the <strong>START / FINISH</strong> line and stay still until the lights go out",
  "banner_touch_start": "Place your finger on the white START / FINISH point (S/F)",
  "banner_wait_start": "Stay still… start imminent",
  "banner_in_race": "Racing — stay on track",

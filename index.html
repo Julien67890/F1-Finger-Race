@@ -346,8 +346,6 @@
       <h2 data-i18n="settings_title">Réglages</h2>
       <label class="setting-row"><span data-i18n="settings_sound">Sons et moteur</span><input type="checkbox" id="set_sound" class="switch"></label>
       <label class="setting-row"><span data-i18n="settings_vibration">Vibrations</span><input type="checkbox" id="set_vibration" class="switch"></label>
-      <label class="setting-row"><span data-i18n="settings_offset">Voiture au-dessus du doigt</span><input type="checkbox" id="set_offset" class="switch"></label>
-      <p class="setting-hint" data-i18n="settings_offset_hint">La voiture roule 40 px au-dessus de ton doigt : tu vois enfin la piste devant toi.</p>
       <label class="setting-row"><span data-i18n="settings_lefty">Mode gaucher (HUD inversé)</span><input type="checkbox" id="set_lefty" class="switch"></label>
       <button class="cta" id="closeSettingsBtn" data-i18n="close">Fermer</button>
     </div>
@@ -436,7 +434,6 @@
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
   const OFF_TRACK_FACTOR = 2;     // + chaque seconde passée hors piste compte double
   const SAMPLE_STEP = 3;          // unités logiques entre deux tests hors-piste sur un segment
-  const CONTROL_OFFSET_PX = 40;   // mode "voiture au-dessus du doigt" (réglage)
   const MAX_CONTENT_CSS_W = 430;  // largeur CSS max du circuit : même difficulté physique sur tablette
   const RACES_COL = 'races_v2';
   const RECORD_EVENTS_COL = 'record_events_v2';
@@ -675,8 +672,6 @@
     "settings_title": "Réglages",
     "settings_sound": "Sons et moteur",
     "settings_vibration": "Vibrations",
-    "settings_offset": "Voiture au-dessus du doigt",
-    "settings_offset_hint": "La voiture roule 40 px au-dessus de ton doigt : tu vois enfin la piste devant toi.",
     "settings_lefty": "Mode gaucher (HUD inversé)",
     "settings_btn": "Réglages",
     "install_btn": "📲 Installer l’application",
@@ -699,7 +694,6 @@
     "auth_fill_fields": "Renseigne ton e-mail et ton mot de passe.",
     "duel_save_run_fail": "Impossible d’enregistrer ton temps ({error}).",
     "duel_delete_confirm_btn": "Confirmer la suppression",
-    "start_hint_offset_html": "👆 Pose le doigt <strong>juste sous</strong> le point DÉPART / ARRIVÉE (la voiture roule au-dessus de ton doigt) et reste immobile",
     "install_thanks": "Merci ! Retrouve l’icône sur ton écran d’accueil."
 } };
 
@@ -1707,13 +1701,12 @@
 
   // ---------------- Réglages ----------------
   const SETTINGS_KEY = 'sur-la-corde:v2:settings';
-  const settings = { sound: true, vibration: true, offset: false, lefty: false };
+  const settings = { sound: true, vibration: true, lefty: false };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) {}
   function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {} }
   function applySettingsToUi() {
     document.body.classList.toggle('lefty', !!settings.lefty);
-    if (startHintEl) startHintEl.innerHTML = t(settings.offset ? 'start_hint_offset_html' : 'start_hint_html');
-    if (settings.offset) carSprite.classList.add('offset-mode'); else carSprite.classList.remove('offset-mode');
+    if (startHintEl) startHintEl.innerHTML = t('start_hint_html');
   }
   function vibe(pattern) {
     if (!settings.vibration || !navigator.vibrate) return;
@@ -3202,10 +3195,8 @@
     }
   }
 
-  // Coordonnées écran du "point de contrôle" : le doigt lui-même, ou 40 px plus haut en mode
-  // "voiture au-dessus du doigt" (réglage) — la piste devant soi reste alors visible.
   function pointerClient(evt) {
-    return { x: evt.clientX, y: evt.clientY - (settings.offset ? CONTROL_OFFSET_PX : 0) };
+    return { x: evt.clientX, y: evt.clientY };
   }
 
   function onPointerDown(evt) {
@@ -3214,13 +3205,7 @@
     // Pendant un rejeu (fantôme solo ou défi), toucher le point de départ ne doit RIEN faire —
     // seuls "Fermer le rejeu" et "Rejouer la lecture" doivent pouvoir en sortir.
     if (state === 'racing' || state === 'countdown' || state === 'replay') return;
-    // En mode "voiture au-dessus du doigt", le point testé (toLogical) est déjà décalé de
-    // CONTROL_OFFSET_PX vers le haut : ce décalage, converti en unités logiques (donc divisé
-    // par l'échelle du circuit affiché), peut largement dépasser START_RADIUS et rendre la
-    // ligne de départ quasi impossible à toucher précisément. On élargit la tolérance d'autant
-    // pour que "poser le doigt sous la ligne" reste un geste réaliste, pas un pixel à deviner.
-    const startTolerance = START_RADIUS + (settings.offset ? CONTROL_OFFSET_PX / scale : 0);
-    if (dist(lx, ly, startGate.pos) > startTolerance) {
+    if (dist(lx, ly, startGate.pos) > START_RADIUS) {
       setBanner(t('banner_touch_start'));
       return;
     }
@@ -4696,11 +4681,11 @@
   const settingsOverlay = document.getElementById('settingsOverlay');
   document.getElementById('settingsBtn').addEventListener('click', () => {
     accountOverlay.classList.remove('show');
-    ['sound', 'vibration', 'offset', 'lefty'].forEach(k => { document.getElementById('set_' + k).checked = !!settings[k]; });
+    ['sound', 'vibration', 'lefty'].forEach(k => { document.getElementById('set_' + k).checked = !!settings[k]; });
     settingsOverlay.classList.add('show');
   });
   document.getElementById('closeSettingsBtn').addEventListener('click', () => settingsOverlay.classList.remove('show'));
-  ['sound', 'vibration', 'offset', 'lefty'].forEach(k => {
+  ['sound', 'vibration', 'lefty'].forEach(k => {
     document.getElementById('set_' + k).addEventListener('change', (ev) => {
       settings[k] = !!ev.target.checked;
       saveSettings();

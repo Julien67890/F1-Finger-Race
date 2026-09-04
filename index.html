@@ -693,6 +693,7 @@
     "name_forbidden": "Ce pseudo n’est pas autorisé.",
     "auth_fill_fields": "Renseigne ton e-mail et ton mot de passe.",
     "duel_save_run_fail": "Impossible d’enregistrer ton temps ({error}).",
+    "leaderboard_time_rejected": "temps jugé trop rapide pour ce circuit — reste dans ton historique local",
     "duel_delete_confirm_btn": "Confirmer la suppression",
     "install_thanks": "Merci ! Retrouve l’icône sur ton écran d’accueil."
 } };
@@ -712,7 +713,7 @@
       const short = nav.slice(0, 2);
       if (SUPPORTED_LANGS.indexOf(short) !== -1) return short;
     } catch (e) {}
-    return 'fr';
+    return 'en';
   }
 
   let currentLang = detectInitialLang();
@@ -1141,7 +1142,15 @@
       // bandeau live en bas de l'accueil (voir maybeAnnounceRecord) — sans Cloud Functions
       // (plan Spark gratuit), c'est le client qui vient de courir qui vérifie et annonce.
       maybeAnnounceRecord(cid, diff, dir, laps, time, name);
-    }).catch(function (err) { console.error('Enregistrement de la course (classement) impossible', err); });
+    }).catch(function (err) {
+      console.error('Enregistrement de la course (classement) impossible', err);
+      // "permission-denied" ici veut spécifiquement dire : les règles Firestore ont jugé ce
+      // temps trop rapide pour être plausible (seuil anti-triche par circuit) — un temps
+      // légitime mais très rapide peut être concerné ; le joueur garde son record dans son
+      // historique local, mais il faut qu'il sache qu'il n'apparaîtra pas dans le classement
+      // partagé, plutôt que de le découvrir en silence par une incohérence entre les deux écrans.
+      if (err && err.code === 'permission-denied') showToast(t('duel_save_run_fail', { error: t('leaderboard_time_rejected') }));
+    });
 
     if (user) {
       // Records personnels liés au compte (retrouvables sur tous les appareils, contrairement

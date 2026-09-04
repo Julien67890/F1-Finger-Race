@@ -220,5 +220,6 @@
  "auth_fill_fields": "Introduce tu correo y tu contraseña.",
  "duel_save_run_fail": "No se pudo guardar tu tiempo ({error}).",
  "duel_delete_confirm_btn": "Confirmar eliminación",
- "install_thanks": "¡Gracias! Busca el icono en tu pantalla de inicio."
+ "install_thanks": "¡Gracias! Busca el icono en tu pantalla de inicio.",
+ "leaderboard_time_rejected": "tiempo marcado como demasiado rápido para este circuito — se guarda en tu historial local"
 }

@@ -220,5 +220,6 @@
  "auth_fill_fields": "Gib E-Mail und Passwort ein.",
  "duel_save_run_fail": "Deine Zeit konnte nicht gespeichert werden ({error}).",
  "duel_delete_confirm_btn": "Löschen bestätigen",
- "install_thanks": "Danke! Das Symbol findest du auf dem Startbildschirm."
+ "install_thanks": "Danke! Das Symbol findest du auf dem Startbildschirm.",
+ "leaderboard_time_rejected": "Zeit als zu schnell für diese Strecke markiert — bleibt in deinem lokalen Verlauf"
 }

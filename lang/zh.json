@@ -220,5 +220,6 @@
  "auth_fill_fields": "请输入邮箱和密码。",
  "duel_save_run_fail": "无法保存你的成绩（{error}）。",
  "duel_delete_confirm_btn": "确认删除",
- "install_thanks": "谢谢！图标已添加到主屏幕。"
+ "install_thanks": "谢谢！图标已添加到主屏幕。",
+ "leaderboard_time_rejected": "该成绩被判定为对此赛道过快 — 仍保留在你的本地记录中"
 }

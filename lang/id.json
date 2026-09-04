@@ -220,5 +220,6 @@
  "auth_fill_fields": "Masukkan e-mail dan kata sandi.",
  "duel_save_run_fail": "Tidak dapat menyimpan waktumu ({error}).",
  "duel_delete_confirm_btn": "Konfirmasi penghapusan",
- "install_thanks": "Terima kasih! Temukan ikonnya di layar utama."
+ "install_thanks": "Terima kasih! Temukan ikonnya di layar utama.",
+ "leaderboard_time_rejected": "waktu dianggap terlalu cepat untuk sirkuit ini — tetap tersimpan di riwayat lokalmu"
 }

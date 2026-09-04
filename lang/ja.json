@@ -220,5 +220,6 @@
  "auth_fill_fields": "メールアドレスとパスワードを入力してください。",
  "duel_save_run_fail": "タイムを保存できませんでした（{error}）。",
  "duel_delete_confirm_btn": "削除を確定",
- "install_thanks": "ありがとう！ホーム画面にアイコンが追加されました。"
+ "install_thanks": "ありがとう！ホーム画面にアイコンが追加されました。",
+ "leaderboard_time_rejected": "このコースには速すぎると判定されました — ローカルの記録には残ります"
 }

@@ -220,5 +220,6 @@
  "auth_fill_fields": "Vul je e-mail en wachtwoord in.",
  "duel_save_run_fail": "Je tijd kon niet worden opgeslagen ({error}).",
  "duel_delete_confirm_btn": "Verwijderen bevestigen",
- "install_thanks": "Bedankt! Je vindt het pictogram op je startscherm."
+ "install_thanks": "Bedankt! Je vindt het pictogram op je startscherm.",
+ "leaderboard_time_rejected": "tijd gemarkeerd als te snel voor dit circuit — blijft in je lokale geschiedenis"
 }

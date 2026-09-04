@@ -220,5 +220,6 @@
  "auth_fill_fields": "Inserisci e-mail e password.",
  "duel_save_run_fail": "Impossibile salvare il tuo tempo ({error}).",
  "duel_delete_confirm_btn": "Conferma eliminazione",
- "install_thanks": "Grazie! Trovi l’icona nella schermata Home."
+ "install_thanks": "Grazie! Trovi l’icona nella schermata Home.",
+ "leaderboard_time_rejected": "tempo segnalato come troppo veloce per questo circuito — resta nella cronologia locale"
 }

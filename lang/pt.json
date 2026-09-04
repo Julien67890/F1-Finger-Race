@@ -220,5 +220,6 @@
  "auth_fill_fields": "Informe seu e-mail e sua senha.",
  "duel_save_run_fail": "Não foi possível salvar seu tempo ({error}).",
  "duel_delete_confirm_btn": "Confirmar exclusão",
- "install_thanks": "Obrigado! Encontre o ícone na tela inicial."
+ "install_thanks": "Obrigado! Encontre o ícone na tela inicial.",
+ "leaderboard_time_rejected": "tempo marcado como rápido demais para este circuito — fica no seu histórico local"
 }

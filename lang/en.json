@@ -220,5 +220,6 @@
  "auth_fill_fields": "Enter your e-mail and password.",
  "duel_save_run_fail": "Could not save your time ({error}).",
  "duel_delete_confirm_btn": "Confirm deletion",
- "install_thanks": "Thanks! Find the icon on your home screen."
+ "install_thanks": "Thanks! Find the icon on your home screen.",
+ "leaderboard_time_rejected": "time flagged as too fast for this circuit — kept in your local history"
 }

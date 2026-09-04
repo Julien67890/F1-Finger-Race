@@ -69,6 +69,7 @@
         </button>
       </div>
       <p class="lede" data-i18n-html="slogan">Glisse ton doigt jusqu’à la ligne d’arrivée <span class="lede-icon">🏁</span></p>
+      <div class="notif-stack" id="notifStack" hidden></div>
       <div class="progress-row">
         <span class="progress-chip" id="completionChip">★ 0/180 · 0 %</span>
         <span class="progress-chip streak" id="streakChip" hidden></span>
@@ -146,6 +147,10 @@
         <div class="history-list" id="leaderboardSection">
           <div class="history-title" data-i18n="leaderboard_title">Classement de la semaine</div>
           <div id="leaderboardList"></div>
+        </div>
+        <div class="history-list" id="championsSection">
+          <div class="history-title" data-i18n="champions_title">Champions de la semaine</div>
+          <div id="championsList"></div>
         </div>
         <button class="cta ghost" id="closeHistoryBtn" data-i18n="close">Fermer</button>
       </div>
@@ -247,6 +252,7 @@
         <div class="best-note" id="bestNote"></div>
         <button class="cta ghost" id="viewRunBtn" hidden data-i18n="view_run_btn">Voir ma course</button>
         <div class="duel-panel duel-result-panel" id="duelResultPanel" hidden>
+          <div class="duel-verdict" id="duelResultVerdict" hidden></div>
           <div class="duel-participants" id="duelResultParticipants"></div>
           <div class="duel-actions">
             <button class="cta ghost small" id="duelResultCopyBtn" type="button" data-i18n="duel_share_result_btn">Partager le résultat</button>
@@ -438,6 +444,14 @@
   const RACES_COL = 'races_v2';
   const RECORD_EVENTS_COL = 'record_events_v2';
   const DAILY_COL = 'daily';
+  const CHAMPIONS_COL = 'weekly_champions';
+  // Réglages de consommation du quota Firestore (plan gratuit : 50 000 lectures/jour partagées
+  // par TOUS les joueurs). Aucun n'est perceptible par le joueur, mais ensemble ils divisent la
+  // consommation par ~3 : voir le détail dans A-FAIRE.txt.
+  const LEADER_GAP_CACHE_MS = 5 * 60000;
+  const TRENDING_CACHE_MS = 10 * 60000;
+  const TICKER_POLL_MS = 5 * 60000;
+  const LEADERBOARD_FETCH = 40;   // suffit largement : on n'affiche que 20 lignes après déduplication
   const CIRCUIT_LENGTH = {"bahrein":2450,"arabie_saoudite":1659,"australie":2245,"japon":2242,"monaco":2022,"canada":1677,"espagne":2889,"autriche":2355,"royaume_uni":2204,"hongrie":1801,"belgique":2353,"pays_bas":2181,"monza":1983,"azerbaidjan":1783,"singapour":2277,"etats_unis":2074,"mexique":2026,"bresil":2771,"las_vegas":2268,"emirats":2583};
   // Vitesse (unités logiques/s) à tenir pour la 3e étoile, par difficulté — à ajuster après
   // quelques semaines de données réelles (voir A-FAIRE.txt).
@@ -692,6 +706,26 @@
     "result_penalty_detail": "{n} × {s} s + hors piste × 2",
     "name_forbidden": "Ce pseudo n’est pas autorisé.",
     "auth_fill_fields": "Renseigne ton e-mail et ton mot de passe.",
+    "champions_title": "Champions de la semaine",
+    "champions_count": "{n} record(s)",
+    "champions_empty": "Aucun record posé cette semaine pour l’instant.",
+    "duel_verdict_win": "🏆 Tu remportes le défi de {gap} !",
+    "duel_verdict_lose": "{name} te devance de {gap}.",
+    "duel_verdict_pending": "Temps enregistré — en attente de ton adversaire.",
+    "notif_duel_won_title": "🏆 Défi remporté !",
+    "notif_duel_won_body": "Tu bats {name} de {gap} sur {circuit}.",
+    "notif_duel_lost_title": "Défi terminé",
+    "notif_duel_lost_body": "{name} te devance de {gap} sur {circuit}.",
+    "notif_duel_waiting_title": "⚔️ Un défi t’attend",
+    "notif_duel_waiting_body": "{name} a posé son temps sur {circuit}. À toi de jouer !",
+    "notif_record_lost_title": "Ton record est tombé",
+    "notif_record_lost_body": "{name} a repris {circuit} en {time}.",
+    "notif_see_duel": "Voir le défi",
+    "notif_play_duel": "Relever le défi",
+    "notif_take_back": "Reprendre le record",
+    "notif_champion_title": "🥇 Champion de la semaine !",
+    "notif_podium_title": "🏅 Podium de la semaine !",
+    "notif_podium_body": "Tu finis {rank}e la semaine dernière avec {n} record(s).",
     "duel_save_run_fail": "Impossible d’enregistrer ton temps ({error}).",
     "leaderboard_time_rejected": "temps jugé trop rapide pour ce circuit — reste dans ton historique local",
     "duel_delete_confirm_btn": "Confirmer la suppression",
@@ -1174,6 +1208,199 @@
     }
   }
 
+
+  // ================= Avis au joueur (accueil uniquement) =================
+  // Sans Cloud Functions (plan gratuit), aucune notification push n'est possible : on ne peut
+  // prévenir le joueur que pendant que l'appli tourne. Ces avis s'affichent donc UNIQUEMENT sur
+  // l'écran d'accueil — jamais pendant une course, un décompte ou un rejeu, où ils couperaient
+  // le geste en cours. Ce qui arrive pendant une course est mis en file et montré au retour.
+
+  const NOTIF_SEEN_KEY = 'sur-la-corde:v2:notifSeen';
+  const HELD_RECORDS_KEY = 'sur-la-corde:v2:heldRecords';
+  const CHAMP_SEEN_KEY = 'sur-la-corde:v2:champSeen';
+  let notifQueue = [];       // avis en attente d'affichage
+  let duelCheckAt = 0;       // dernier passage de checkDuelUpdates (limite les lectures)
+  const DUEL_CHECK_MS = 60000;
+
+  function loadSeenNotifs() {
+    try { return JSON.parse(localStorage.getItem(NOTIF_SEEN_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function markNotifSeen(id) {
+    // On ne garde que les 60 derniers : un avis rejeté ne doit jamais réapparaître, mais la
+    // liste ne doit pas grossir indéfiniment non plus.
+    const seen = loadSeenNotifs().filter(function (x) { return x !== id; });
+    seen.push(id);
+    try { localStorage.setItem(NOTIF_SEEN_KEY, JSON.stringify(seen.slice(-60))); } catch (e) {}
+  }
+
+  function heldRecords() {
+    try {
+      const d = JSON.parse(localStorage.getItem(HELD_RECORDS_KEY) || '{}');
+      return (d && d.weekId === currentWeekId() && d.keys) ? d.keys : {};
+    } catch (e) { return {}; }
+  }
+  function rememberHeldRecord(rk) {
+    // Remis à zéro à chaque nouvelle semaine, comme le classement lui-même.
+    const keys = heldRecords();
+    keys[rk] = Date.now();
+    try { localStorage.setItem(HELD_RECORDS_KEY, JSON.stringify({ weekId: currentWeekId(), keys: keys })); } catch (e) {}
+  }
+  function forgetHeldRecord(rk) {
+    const keys = heldRecords();
+    delete keys[rk];
+    try { localStorage.setItem(HELD_RECORDS_KEY, JSON.stringify({ weekId: currentWeekId(), keys: keys })); } catch (e) {}
+  }
+
+  function pushNotif(notif) {
+    if (!notif || !notif.id) return;
+    if (loadSeenNotifs().indexOf(notif.id) !== -1) return;          // déjà vu et rejeté
+    if (notifQueue.some(function (n) { return n.id === notif.id; })) return;
+    notifQueue.push(notif);
+    renderNotifs();
+  }
+
+  function renderNotifs() {
+    const host = document.getElementById('notifStack');
+    if (!host) return;
+    // Accueil uniquement : pendant une course/un défi/un rejeu, la file attend sagement.
+    if (screenMenu.hidden || notifQueue.length === 0) { host.hidden = true; host.innerHTML = ''; return; }
+    host.hidden = false;
+    host.innerHTML = notifQueue.map(function (n) {
+      return '<div class="notif-card ' + (n.tone || '') + '" data-id="' + escapeHtml(n.id) + '">' +
+        '<button class="notif-close" type="button" data-close="' + escapeHtml(n.id) + '" title="' + escapeHtml(t('close')) + '">✕</button>' +
+        '<div class="notif-title">' + n.title + '</div>' +
+        '<div class="notif-body">' + n.body + '</div>' +
+        (n.action ? '<button class="cta small notif-action" type="button" data-action="' + escapeHtml(n.id) + '">' + escapeHtml(n.action) + '</button>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  function dismissNotif(id) {
+    markNotifSeen(id);
+    notifQueue = notifQueue.filter(function (n) { return n.id !== id; });
+    renderNotifs();
+  }
+
+  // ---- Défis : ce qui a bougé pendant notre absence ----
+  // Relit les défis non terminés de l'historique local. Au plus 12 lectures, et pas plus d'une
+  // fois par minute — c'est le seul poste de ce système qui coûte des lectures Firestore.
+  function checkDuelUpdates(force) {
+    if (!db) return;
+    if (!force && Date.now() - duelCheckAt < DUEL_CHECK_MS) return;
+    duelCheckAt = Date.now();
+    const history = loadDuelHistory();
+    if (!history.length) return;
+    history.slice(0, 12).forEach(function (entry) {
+      if (!entry || !entry.id) return;
+      duelDocRef(entry.id, entry.public).get().then(function (snap) {
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const runsMap = data.runs || {};
+        const runs = Object.keys(runsMap).map(function (k) { return Object.assign({ key: k }, runsMap[k]); });
+        const country = COUNTRIES.find(function (c) { return c.id === data.cid; });
+        const circuit = country ? countryName(country) : (data.cid || '');
+        const mine = runs.find(isMyRun);
+        const others = runs.filter(function (r) { return !isMyRun(r); });
+        const duelRef = { id: entry.id, cid: data.cid, diff: data.diff, dir: data.dir, laps: data.laps, public: !!entry.public, runs: runs };
+
+        if (mine && others.length) {
+          // Défi désormais complet : c'est LE cas que le joueur ne pouvait pas connaître s'il
+          // avait couru en premier — il avait quitté l'appli sans jamais voir le résultat.
+          const best = others.slice().sort(function (a, b) { return a.time - b.time; })[0];
+          const iWon = mine.time < best.time;
+          const gap = fmt(Math.abs(mine.time - best.time));
+          pushNotif({
+            id: 'duel-done:' + entry.id + ':' + runs.length,
+            tone: iWon ? 'win' : '',
+            title: iWon ? t('notif_duel_won_title') : t('notif_duel_lost_title'),
+            body: escapeHtml(t(iWon ? 'notif_duel_won_body' : 'notif_duel_lost_body', { name: best.name || '', circuit: circuit, gap: gap })),
+            action: t('notif_see_duel'),
+            run: function () { enterDuel(duelRef); }
+          });
+        } else if (!mine && others.length) {
+          // Quelqu'un attend qu'on relève son défi.
+          pushNotif({
+            id: 'duel-todo:' + entry.id + ':' + runs.length,
+            title: t('notif_duel_waiting_title'),
+            body: escapeHtml(t('notif_duel_waiting_body', { name: others[0].name || '', circuit: circuit })),
+            action: t('notif_play_duel'),
+            run: function () { enterDuel(duelRef); }
+          });
+        }
+      }).catch(function (err) { console.error('Vérification des défis impossible', err); });
+    });
+  }
+
+  // ---- Records repris par quelqu'un d'autre ----
+  // Zéro lecture supplémentaire : on se branche sur les évènements "record battu" déjà reçus en
+  // direct pour le bandeau live, et on ne retient que ceux qui portent sur un réglage dont on
+  // détenait le record cette semaine.
+  function checkRecordsLost() {
+    const held = heldRecords();
+    recentRecordEvents.forEach(function (ev) {
+      if (!ev || !ev.cid) return;
+      if (ev.weekId && ev.weekId !== currentWeekId()) return;
+      const rk = raceKeyFor(ev.cid, ev.diff, ev.dir, ev.laps);
+      if (!held[rk]) return;
+      const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
+      const circuit = country ? countryName(country) : ev.cid;
+      forgetHeldRecord(rk);   // il ne nous appartient plus : on ne préviendra pas deux fois
+      pushNotif({
+        id: 'record-lost:' + rk + ':' + ev.time,
+        tone: 'alert',
+        title: t('notif_record_lost_title'),
+        body: escapeHtml(t('notif_record_lost_body', { name: ev.name || '', circuit: circuit, time: fmt(ev.time) })),
+        action: t('notif_take_back'),
+        run: function () {
+          const idx = COUNTRIES.findIndex(function (c) { return c.id === ev.cid; });
+          if (idx >= 0) { menuIndex = idx; renderCarousel(); }
+          selectedDifficulty = ev.diff; selectedDirection = ev.dir; selectedLaps = ev.laps;
+          syncSegUI();
+          refreshCardBests();
+        }
+      });
+    });
+  }
+
+  // ---- Bilan de la semaine écoulée (podium des champions) ----
+  function checkLastWeekPodium() {
+    if (!db) return;
+    const lastWk = weekIdForDate(new Date(Date.now() - 7 * 24 * 3600 * 1000));
+    let seen = null;
+    try { seen = localStorage.getItem(CHAMP_SEEN_KEY); } catch (e) {}
+    if (seen === lastWk) return;   // bilan de cette semaine-là déjà montré
+    db.collection(CHAMPIONS_COL).doc(lastWk).get().then(function (snap) {
+      try { localStorage.setItem(CHAMP_SEEN_KEY, lastWk); } catch (e) {}
+      if (!snap.exists) return;
+      const rows = championRows(snap.data() || {});
+      const myKeys = playerRunKeys();
+      const rank = rows.findIndex(function (r) { return myKeys.indexOf(r.key) !== -1; });
+      if (rank < 0 || rank > 2) return;   // podium uniquement
+      pushNotif({
+        id: 'champ:' + lastWk,
+        tone: 'win',
+        title: t(rank === 0 ? 'notif_champion_title' : 'notif_podium_title'),
+        body: escapeHtml(t('notif_podium_body', { rank: rank + 1, n: rows[rank].count })),
+        action: null
+      });
+    }).catch(function (err) { console.error('Podium de la semaine passée : lecture impossible', err); });
+  }
+
+  // Transforme la carte "réglage -> détenteur" en classement par nombre de records détenus.
+  function championRows(data) {
+    const holders = (data && data.holders) || {};
+    const byKey = {};
+    Object.keys(holders).forEach(function (rk) {
+      const h = holders[rk];
+      if (!h || !h.key) return;
+      if (!byKey[h.key]) byKey[h.key] = { key: h.key, name: h.name || '', count: 0 };
+      byKey[h.key].count += 1;
+      if (h.name) byKey[h.key].name = h.name;
+    });
+    return Object.keys(byKey).map(function (k) { return byKey[k]; })
+      .sort(function (a, b) { return b.count - a.count; });
+  }
+
   // ---------------- Bandeau live (bas de l'accueil) ----------------
   // Un bandeau orange en bas de l'écran d'accueil qui fait tourner quelques messages pour
   // donner un sentiment de vie/activité à l'app : records tout juste battus, écart au record
@@ -1204,6 +1431,17 @@
             weekId: wk,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           }).catch(function (err) { console.error('Évènement "record battu" : écriture impossible', err); });
+          // On note localement les réglages dont on détient le record : c'est ce qui permet de
+          // prévenir le joueur quand quelqu'un le lui reprend, sans aucune lecture Firestore
+          // supplémentaire (l'écoute des "records battus" du bandeau live tourne déjà).
+          rememberHeldRecord(rk);
+          // Et on inscrit le détenteur dans le document unique de la semaine : c'est lui qui
+          // alimente le classement des champions, lisible ensuite en UNE seule lecture au lieu
+          // d'interroger les centaines de combinaisons circuit/réglages une par une.
+          const champUpdate = {};
+          champUpdate['holders.' + rk] = { name: name, key: currentRunKey(), at: Date.now() };
+          db.collection(CHAMPIONS_COL).doc(wk).set(champUpdate, { merge: true })
+            .catch(function (err) { console.error('Champions de la semaine : écriture impossible', err); });
         }
       }).catch(function (err) { console.error('Vérification de record impossible', err); });
   }
@@ -1248,6 +1486,7 @@
   let recentRecordEvents = [];   // derniers évènements "record battu" reçus en direct (onSnapshot)
   let latestPublicDuelMsg = null;
   let trendingCircuitMsg = null;
+  let trendingCircuitAt = 0;
   let leaderGapMsg = null;
 
   // Vitesse de défilement du bandeau, en pixels par seconde — un message plus long défile donc
@@ -1352,6 +1591,7 @@
         const rows = [];
         snap.forEach(function (d) { rows.push(d.data()); });
         recentRecordEvents = rows.slice(0, 5);
+        checkRecordsLost();
         rebuildTickerMessages();
       }, function (err) {
         // Index composite pas encore créé, ou lecture indisponible — le bandeau continue de
@@ -1379,7 +1619,7 @@
     const requestToken = (refreshLeaderGapMessageNow._token = (refreshLeaderGapMessageNow._token || 0) + 1);
     const cacheKey = wk + '|' + rk;
     const cached = leaderGapCache[cacheKey];
-    const fetchRows = (cached && Date.now() - cached.at < 60000) ? Promise.resolve(cached.rows) :
+    const fetchRows = (cached && Date.now() - cached.at < LEADER_GAP_CACHE_MS) ? Promise.resolve(cached.rows) :
       db.collection(RACES_COL).where('weekId', '==', wk).where('raceKey', '==', rk)
         .orderBy('time', 'asc').limit(20).get().then(function (snap) {
           const rows = [];
@@ -1429,6 +1669,11 @@
   function refreshTrendingCircuitMessage() {
     if (!db) { trendingCircuitMsg = null; return; }
     const wk = currentWeekId();
+    // 50 lectures par appel pour une phrase décorative : c'était de loin le plus gros poste de
+    // consommation du quota Firestore (2 000 lectures/heure/joueur au rythme précédent de 90 s).
+    // Une "tendance de la semaine" n'a aucun besoin d'être fraîche à la minute.
+    if (trendingCircuitAt && Date.now() - trendingCircuitAt < TRENDING_CACHE_MS) return;
+    trendingCircuitAt = Date.now();
     db.collection(RACES_COL).where('weekId', '==', wk).orderBy('createdAt', 'desc').limit(50).get()
       .then(function (snap) {
         const counts = {};
@@ -1459,6 +1704,42 @@
       '<span class="val">' + fmt(entry.time) + '</span></div>';
   }
 
+  // Classement des champions de la semaine : UNE seule lecture (document unique par semaine),
+  // au lieu d'interroger les centaines de combinaisons circuit/réglages une par une. Mis en
+  // cache quelques minutes : ce classement bouge lentement.
+  let championsCache = null;
+  function renderChampions() {
+    const host = document.getElementById('championsList');
+    if (!host) return;
+    if (!db) { host.innerHTML = '<div class="history-empty">' + t('leaderboard_offline') + '</div>'; return; }
+    const wk = currentWeekId();
+    if (championsCache && championsCache.wk === wk && Date.now() - championsCache.at < 5 * 60000) {
+      paintChampions(host, championsCache.rows);
+      return;
+    }
+    host.innerHTML = '<div class="history-empty">' + t('leaderboard_loading') + '</div>';
+    db.collection(CHAMPIONS_COL).doc(wk).get().then(function (snap) {
+      const rows = snap.exists ? championRows(snap.data() || {}) : [];
+      championsCache = { wk: wk, at: Date.now(), rows: rows };
+      paintChampions(host, rows);
+    }).catch(function (err) {
+      console.error('Champions de la semaine : lecture impossible', err);
+      host.innerHTML = '<div class="history-empty">' + t('leaderboard_load_error') + '</div>';
+    });
+  }
+
+  function paintChampions(host, rows) {
+    if (!rows.length) { host.innerHTML = '<div class="history-empty">' + t('champions_empty') + '</div>'; return; }
+    const medals = ['🥇', '🥈', '🥉'];
+    const myKeys = playerRunKeys();
+    host.innerHTML = rows.slice(0, 5).map(function (r, i) {
+      const isMe = myKeys.indexOf(r.key) !== -1;
+      return '<div class="history-row' + (isMe ? ' is-me' : '') + '">' +
+        '<span class="history-date">' + (medals[i] || (i + 1) + '.') + ' ' + escapeHtml(r.name || t('default_player_name')) + '</span>' +
+        '<span class="history-time">' + t('champions_count', { n: r.count }) + '</span></div>';
+    }).join('');
+  }
+
   function renderLeaderboard(cid, diff, dir, laps) {
     if (!leaderboardList) return;
     if (!db) {
@@ -1472,7 +1753,7 @@
     // Une ligne par JOUEUR (son meilleur temps), pas par course : un joueur qui roule 20 fois
     // n'occupe plus tout le tableau. On lit jusqu'à 100 courses triées, dédupliquées par clé.
     db.collection(RACES_COL).where('weekId', '==', wk).where('raceKey', '==', rk)
-      .orderBy('time', 'asc').limit(100).get().then(function (snap) {
+      .orderBy('time', 'asc').limit(LEADERBOARD_FETCH).get().then(function (snap) {
         if (requestToken !== renderLeaderboard._token) return; // une requête plus récente a pris le relais
         if (snap.empty) {
           leaderboardList.innerHTML = '<div class="history-empty">' + t('leaderboard_nobody') + '</div>';
@@ -1509,6 +1790,7 @@
   const DUEL_COLORS = ['#ff7a3d', '#4dd9ff', '#c792ff', '#ffe066'];
   const DUEL_TELE_POINTS = 150; // le lien ne contient plus le tracé : on peut se permettre plus de points
   let activeDuel = null;        // { id, cid, diff, dir, laps, runs:[{key,name,time,pen,tele}] } ou null
+  let preDuelSettings = null;   // réglages du joueur avant d'ouvrir un défi, restaurés en le quittant
   // Ids des défis pour lesquels la fanfare de victoire a déjà été jouée : renderDuelPanel() est
   // rappelée à chaque mise à jour Firestore du défi (l'arrivée de son propre temps, puis celle
   // de l'adversaire, un rafraîchissement...), donc sans ce suivi la fanfare rejouerait à chaque
@@ -1544,6 +1826,22 @@
     m = /pdefi=([A-Za-z0-9_-]+)/.exec(hash);
     if (m) return { id: m[1], isPublic: true };
     return null;
+  }
+
+  // Quitter le contexte d'un défi : on rend au joueur les réglages qu'il avait avant de
+  // l'ouvrir. Sans ça, refermer un défi laissait le menu figé sur les réglages du défi.
+  function leaveDuelContext() {
+    stopWatchingDuel();
+    activeDuel = null;
+    if (preDuelSettings) {
+      selectedDifficulty = preDuelSettings.diff;
+      selectedDirection = preDuelSettings.dir;
+      selectedLaps = preDuelSettings.laps;
+      menuIndex = preDuelSettings.menuIndex;
+      preDuelSettings = null;
+      syncSegUI();
+      renderCarousel();
+    }
   }
 
   function stopWatchingDuel() {
@@ -1860,7 +2158,7 @@
     if (!db) { container.innerHTML = '<div class="history-empty">' + t('leaderboard_offline') + '</div>'; return; }
     // Petit délai : notre propre écriture vient juste de partir.
     setTimeout(function () {
-      db.collection(DAILY_COL).where('dayId', '==', dayId).orderBy('time', 'asc').limit(100).get().then(function (snap) {
+      db.collection(DAILY_COL).where('dayId', '==', dayId).orderBy('time', 'asc').limit(LEADERBOARD_FETCH).get().then(function (snap) {
         const rows = [], seen = {};
         let rank = 0;
         snap.forEach(function (doc) {
@@ -2174,6 +2472,10 @@
     screenDuel.hidden = true;
     screenMenu.hidden = false;
     renderCarousel();
+    // La file d'avis attend l'accueil pour se montrer : ce qui est arrivé pendant une course ou
+    // un défi s'affiche donc ici, au retour, jamais en plein geste.
+    renderNotifs();
+    checkDuelUpdates();
     // Les canevas d'aperçu des circuits sont vides tant que l'écran menu était caché (ils
     // n'ont jamais pu se dessiner) — on les redessine explicitement en revenant sur ce menu,
     // plutôt que d'attendre qu'un changement de difficulté ne le déclenche par effet de bord.
@@ -3078,6 +3380,7 @@
       ? historyRowsHtml(history)
       : '<div class="history-empty">' + t('history_empty') + '</div>');
     renderLeaderboard(c.id, selectedDifficulty, selectedDirection, selectedLaps);
+    renderChampions();
     historyOverlay.classList.add('show');
   }
 
@@ -3608,8 +3911,21 @@
   // "courses qui ne sont pas prises en compte" une fois un défi déjà réalisé. Utilisée à la
   // fois par "Lancer la course" (menu principal) et par finishRun() : les deux doivent tomber
   // d'accord sur la même décision, sinon l'UI et le résultat réel se contrediraient.
-  function shouldAttachRunToActiveDuel(cid) {
-    return !!(activeDuel && activeDuel.cid === cid && !playerHasRunDuel(activeDuel));
+  // Le circuit ne suffit PAS : un défi porte sur un circuit ET des réglages précis (difficulté,
+  // sens, nombre de tours). Sans cette comparaison complète, changer la difficulté au menu puis
+  // lancer la course était compris comme "je relève le défi" — les réglages du défi étaient
+  // alors réimposés de force par startDuelRace() (le joueur voyait ses changements ignorés) et
+  // le temps obtenu venait écraser celui du défi, dans des conditions qui n'étaient pas les
+  // siennes.
+  function duelSettingsMatch(duel, cid, diff, dir, laps) {
+    return !!duel && duel.cid === cid && duel.diff === diff && duel.dir === dir && duel.laps === laps;
+  }
+
+  function shouldAttachRunToActiveDuel(cid, diff, dir, laps) {
+    const d = arguments.length > 1 ? diff : selectedDifficulty;
+    const r = arguments.length > 1 ? dir : selectedDirection;
+    const l = arguments.length > 1 ? laps : selectedLaps;
+    return !!(activeDuel && duelSettingsMatch(activeDuel, cid, d, r, l) && !playerHasRunDuel(activeDuel));
   }
 
   function renderDuelPanel() {
@@ -3830,6 +4146,13 @@
     // un id) — dans les deux cas on se réabonne en direct à Firestore, qui reste la source de
     // vérité. On affiche d'abord ce qu'on a sous la main pour éviter un écran vide le temps
     // que le premier instantané arrive.
+    // Les réglages du défi s'imposent le temps de le consulter/relever, mais on garde de côté
+    // ceux du joueur pour les lui rendre en quittant : sinon, après avoir simplement ouvert un
+    // défi puis l'avoir refermé, le menu restait bloqué sur la difficulté/le sens/les tours du
+    // défi, sans que rien n'explique pourquoi.
+    if (!preDuelSettings) {
+      preDuelSettings = { diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, menuIndex: menuIndex };
+    }
     selectedDifficulty = duelRef.diff || selectedDifficulty;
     selectedDirection = duelRef.dir || selectedDirection;
     selectedLaps = duelRef.laps || selectedLaps;
@@ -4027,6 +4350,30 @@
     duelResultPanel.hidden = false;
     duelResultParticipants.innerHTML = duelRowsHtml(activeDuel.runs);
     duelResultReplayBtn.hidden = activeDuel.runs.length < 2;
+    // Verdict explicite : la liste des temps seule laissait le joueur faire la comparaison
+    // lui-même. Quand l'adversaire n'a pas encore couru, on le dit aussi — sinon on ne sait pas
+    // si le défi est gagné ou simplement en attente.
+    const verdict = document.getElementById('duelResultVerdict');
+    if (!verdict) return;
+    const runs = activeDuel.runs || [];
+    const mine = runs.find(isMyRun);
+    const others = runs.filter(function (r) { return !isMyRun(r); });
+    if (!mine) { verdict.hidden = true; return; }
+    verdict.hidden = false;
+    if (!others.length) {
+      verdict.className = 'duel-verdict pending';
+      verdict.textContent = t('duel_verdict_pending');
+      return;
+    }
+    const best = others.slice().sort(function (a, b) { return a.time - b.time; })[0];
+    const gap = fmt(Math.abs(mine.time - best.time));
+    if (mine.time < best.time) {
+      verdict.className = 'duel-verdict win';
+      verdict.textContent = t('duel_verdict_win', { gap: gap });
+    } else {
+      verdict.className = 'duel-verdict lose';
+      verdict.textContent = t('duel_verdict_lose', { name: best.name || '', gap: gap });
+    }
   }
 
   function applyHashDuel() {
@@ -4182,7 +4529,11 @@
     runsUpdate['runs.' + key] = runForFirestore;
     console.log('[F1 Finger Race] addRunToActiveDuel — clé:', key, '— défi actif:', activeDuel && activeDuel.id, '— circuit couru:', current && current.id);
 
-    if (activeDuel && activeDuel.cid === current.id && activeDuel.id) {
+    // Même comparaison complète qu'à shouldAttachRunToActiveDuel() : dernier garde-fou avant
+    // l'écriture, pour qu'un temps ne puisse jamais atterrir sur un défi couru dans d'autres
+    // conditions (difficulté/sens/tours différents), même si une erreur de logique en amont
+    // avait laissé passer la course jusqu'ici.
+    if (activeDuel && activeDuel.id && duelSettingsMatch(activeDuel, current.id, selectedDifficulty, selectedDirection, selectedLaps)) {
       // Un défi est déjà en cours sur ce circuit : on y ajoute/actualise notre temps.
       // On met à jour l'affichage tout de suite (sans attendre le direct Firestore) pour que
       // le joueur voie immédiatement son temps posé, même si le direct met du temps à revenir.
@@ -4493,8 +4844,7 @@
     startGhostReplay(activeDuel);
   });
   duelCloseBtn.addEventListener('click', () => {
-    stopWatchingDuel();
-    activeDuel = null;
+    leaveDuelContext();
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
     renderDuelScreen();
   });
@@ -4806,6 +5156,10 @@
       navGuardActive = false;
       document.querySelectorAll('.overlay.show').forEach((el) => el.classList.remove('show'));
       langOpenedFromAccount = false;
+      // Revenir à l'accueil par le bouton retour du téléphone doit quitter le défi aussi
+      // franchement que le bouton "Fermer" de l'écran Défis — sinon le joueur repartait à
+      // l'accueil avec les réglages du défi encore imposés, sans écran pour le lui rappeler.
+      if (!screenDuel.hidden) leaveDuelContext();
       showMenu();
     }
   });
@@ -4814,6 +5168,18 @@
   // chemins). Le court délai laisse le clic terminer son propre traitement avant qu'on regarde
   // l'état résultant.
   document.addEventListener('click', () => { setTimeout(syncNavGuard, 0); }, true);
+
+  document.getElementById('notifStack').addEventListener('click', (ev) => {
+    const closeId = ev.target.getAttribute('data-close');
+    if (closeId) { dismissNotif(closeId); return; }
+    const actionId = ev.target.getAttribute('data-action');
+    if (!actionId) return;
+    const notif = notifQueue.find((n) => n.id === actionId);
+    if (!notif) return;
+    // Agir sur un avis vaut acquittement : il ne doit pas réapparaître ensuite.
+    dismissNotif(actionId);
+    if (typeof notif.run === 'function') notif.run();
+  });
 
   buildDifficultySeg();
   buildDirectionSeg();
@@ -4829,16 +5195,21 @@
     });
   }
   watchRecordEvents();
+  checkDuelUpdates(true);
+  checkLastWeekPodium();
   refreshRecentPublicDuelMessage();
   refreshTrendingCircuitMessage();
   // Les messages du bandeau live qui viennent d'une requête Firestore (défi récent, tendance,
   // écart au record) sont réactualisés de temps en temps ; le compte à rebours, lui, doit
   // simplement continuer d'avancer même sans nouvelle donnée.
   setInterval(function () {
+    // Uniquement quand l'accueil est visible : inutile de consommer du quota pendant une course,
+    // un défi ou un rejeu, où le bandeau n'est de toute façon pas à l'écran.
+    if (screenMenu.hidden) return;
     refreshRecentPublicDuelMessage();
     refreshTrendingCircuitMessage();
     refreshLeaderGapMessage();
-  }, 90000);
+  }, TICKER_POLL_MS);
   setInterval(rebuildTickerMessages, 5 * 60000);
   applyHashDuel();
   // Si l'appli est déjà ouverte dans cet onglet et qu'un nouveau lien de défi n'y arrive

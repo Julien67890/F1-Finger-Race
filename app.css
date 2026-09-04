@@ -1,4 +1,4 @@
-:root {
+  :root {
     --bg: #0e131a;
     --bg-soft: #141b25;
     --surface: #1b2330;
@@ -1458,3 +1458,78 @@ body.lefty .review-back { left: auto; right: 12px; }
 .flag-chip .flag-img { width: 30px; margin-right: 0; }
 .duel-history-flag .flag-img { margin-right: 0; }
 .lang-flag .flag-img { margin-right: 0; }
+
+/* ==================== Avis au joueur (accueil) + champions ==================== */
+
+.notif-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 20px;
+  margin: 10px 0 2px;
+}
+.notif-stack[hidden] { display: none; }
+
+.notif-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 12px 34px 12px 14px;
+  text-align: left;
+  animation: notifIn 0.28s ease-out;
+}
+.notif-card.win { border-left-color: var(--ok, #33d38a); }
+.notif-card.alert { border-left-color: var(--danger); }
+
+@keyframes notifIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notif-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+.notif-body { font-size: 12.5px; color: var(--text-dim); line-height: 1.4; }
+
+.notif-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.notif-close:hover { background: var(--surface-2); color: var(--text); }
+
+.notif-action {
+  margin-top: 10px;
+  width: auto;
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
+/* Ma ligne dans le classement des champions, comme dans le classement hebdo. */
+.history-row.is-me .history-date,
+.history-row.is-me .history-time { color: var(--accent); font-weight: 700; }
+
+/* Verdict de fin de défi (gagné / perdu / en attente de l'adversaire). */
+.duel-verdict {
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.duel-verdict[hidden] { display: none; }
+.duel-verdict.win { background: rgba(51, 211, 138, 0.16); color: #6ef0b0; }
+.duel-verdict.lose { background: rgba(240, 72, 63, 0.14); color: #ff9a92; }
+.duel-verdict.pending { background: var(--surface-2); color: var(--text-dim); font-weight: 600; }

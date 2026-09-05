@@ -712,17 +712,18 @@
     "duel_verdict_win": "🏆 Tu remportes le défi de {gap} !",
     "duel_verdict_lose": "{name} te devance de {gap}.",
     "duel_verdict_pending": "Temps enregistré — en attente de ton adversaire.",
+    "notif_more": "+{n} autre(s)",
     "notif_duel_won_title": "🏆 Défi remporté !",
     "notif_duel_won_body": "Tu bats {name} de {gap} sur {circuit}.",
-    "notif_duel_lost_title": "Défi terminé",
+    "notif_duel_lost_title": "⚔️ Défi terminé",
     "notif_duel_lost_body": "{name} te devance de {gap} sur {circuit}.",
     "notif_duel_waiting_title": "⚔️ Un défi t’attend",
     "notif_duel_waiting_body": "{name} a posé son temps sur {circuit}. À toi de jouer !",
-    "notif_record_lost_title": "Ton record est tombé",
+    "notif_record_lost_title": "💥 Ton record est tombé",
     "notif_record_lost_body": "{name} a repris {circuit} en {time}.",
-    "notif_see_duel": "Voir le défi",
-    "notif_play_duel": "Relever le défi",
-    "notif_take_back": "Reprendre le record",
+    "notif_see_duel": "👀 Voir le défi",
+    "notif_play_duel": "🏁 Relever le défi",
+    "notif_take_back": "🔥 Reprendre le record",
     "notif_champion_title": "🥇 Champion de la semaine !",
     "notif_podium_title": "🏅 Podium de la semaine !",
     "notif_podium_body": "Tu finis {rank}e la semaine dernière avec {n} record(s).",
@@ -1265,14 +1266,23 @@
     // Accueil uniquement : pendant une course/un défi/un rejeu, la file attend sagement.
     if (screenMenu.hidden || notifQueue.length === 0) { host.hidden = true; host.innerHTML = ''; return; }
     host.hidden = false;
-    host.innerHTML = notifQueue.map(function (n) {
-      return '<div class="notif-card ' + (n.tone || '') + '" data-id="' + escapeHtml(n.id) + '">' +
-        '<button class="notif-close" type="button" data-close="' + escapeHtml(n.id) + '" title="' + escapeHtml(t('close')) + '">✕</button>' +
-        '<div class="notif-title">' + n.title + '</div>' +
-        '<div class="notif-body">' + n.body + '</div>' +
-        (n.action ? '<button class="cta small notif-action" type="button" data-action="' + escapeHtml(n.id) + '">' + escapeHtml(n.action) + '</button>' : '') +
-        '</div>';
-    }).join('');
+    // Une seule carte à la fois : la file s'empile derrière comme un jeu de cartes, et la
+    // suivante remonte quand celle du dessus est traitée ou rejetée. Empiler verticalement
+    // plusieurs avis d'un coup poussait tout le menu vers le bas et noyait l'information.
+    const n = notifQueue[0];
+    const behind = Math.min(notifQueue.length - 1, 2);   // au plus 2 épaisseurs visibles
+    let html = '';
+    for (let i = behind; i >= 1; i--) {
+      html += '<div class="notif-ghost" style="--depth:' + i + '"></div>';
+    }
+    html += '<div class="notif-card ' + (n.tone || '') + '" data-id="' + escapeHtml(n.id) + '">' +
+      '<button class="notif-close" type="button" data-close="' + escapeHtml(n.id) + '" title="' + escapeHtml(t('close')) + '">✕</button>' +
+      '<div class="notif-title">' + n.title + '</div>' +
+      '<div class="notif-body">' + n.body + '</div>' +
+      (n.action ? '<button class="cta small notif-action" type="button" data-action="' + escapeHtml(n.id) + '">' + escapeHtml(n.action) + '</button>' : '') +
+      (notifQueue.length > 1 ? '<span class="notif-count">' + escapeHtml(t('notif_more', { n: notifQueue.length - 1 })) + '</span>' : '') +
+      '</div>';
+    host.innerHTML = html;
   }
 
   function dismissNotif(id) {

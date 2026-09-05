@@ -1461,17 +1461,31 @@ body.lefty .review-back { left: auto; right: 12px; }
 
 /* ==================== Avis au joueur (accueil) + champions ==================== */
 
+/* Une seule carte visible ; les suivantes se devinent derrière, comme un jeu de cartes. */
 .notif-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  position: relative;
   padding: 0 20px;
   margin: 10px 0 2px;
 }
 .notif-stack[hidden] { display: none; }
 
+/* Épaisseurs décoratives : bords des cartes suivantes qui dépassent en dessous. */
+.notif-ghost {
+  position: absolute;
+  left: calc(20px + var(--depth) * 7px);
+  right: calc(20px + var(--depth) * 7px);
+  top: calc(var(--depth) * 5px);
+  bottom: calc(var(--depth) * -5px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  opacity: calc(0.55 / var(--depth));
+  z-index: 0;
+}
+
 .notif-card {
   position: relative;
+  z-index: 1;
   background: var(--surface);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
@@ -1479,6 +1493,19 @@ body.lefty .review-back { left: auto; right: 12px; }
   padding: 12px 34px 12px 14px;
   text-align: left;
   animation: notifIn 0.28s ease-out;
+}
+
+/* Compteur "+2 autres" en bas à droite de la carte du dessus. */
+.notif-count {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 .notif-card.win { border-left-color: var(--ok, #33d38a); }
 .notif-card.alert { border-left-color: var(--danger); }

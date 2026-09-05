@@ -230,16 +230,17 @@
  "duel_verdict_pending": "Waktu tersimpan — menunggu lawanmu.",
  "notif_duel_won_title": "🏆 Duel dimenangkan!",
  "notif_duel_won_body": "Kamu mengalahkan {name} dengan {gap} di {circuit}.",
- "notif_duel_lost_title": "Duel selesai",
+ "notif_duel_lost_title": "⚔️ Duel selesai",
  "notif_duel_lost_body": "{name} unggul {gap} darimu di {circuit}.",
  "notif_duel_waiting_title": "⚔️ Ada duel menantimu",
  "notif_duel_waiting_body": "{name} mencatat waktu di {circuit}. Giliranmu!",
- "notif_record_lost_title": "Rekormu telah dipecahkan",
+ "notif_record_lost_title": "💥 Rekormu telah dipecahkan",
  "notif_record_lost_body": "{name} merebut {circuit} dengan {time}.",
- "notif_see_duel": "Lihat duel",
- "notif_play_duel": "Terima tantangan",
- "notif_take_back": "Rebut kembali rekor",
+ "notif_see_duel": "👀 Lihat duel",
+ "notif_play_duel": "🏁 Terima tantangan",
+ "notif_take_back": "🔥 Rebut kembali rekor",
  "notif_champion_title": "🥇 Juara minggu ini!",
  "notif_podium_title": "🏅 Podium minggu ini!",
- "notif_podium_body": "Kamu finis ke-{rank} minggu lalu dengan {n} rekor."
+ "notif_podium_body": "Kamu finis ke-{rank} minggu lalu dengan {n} rekor.",
+ "notif_more": "+{n} lagi"
 }

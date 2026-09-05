@@ -230,16 +230,17 @@
  "duel_verdict_pending": "Time saved — waiting for your opponent.",
  "notif_duel_won_title": "🏆 Duel won!",
  "notif_duel_won_body": "You beat {name} by {gap} on {circuit}.",
- "notif_duel_lost_title": "Duel finished",
+ "notif_duel_lost_title": "⚔️ Duel finished",
  "notif_duel_lost_body": "{name} beat you by {gap} on {circuit}.",
  "notif_duel_waiting_title": "⚔️ A duel awaits you",
  "notif_duel_waiting_body": "{name} set a time on {circuit}. Your turn!",
- "notif_record_lost_title": "Your record has fallen",
+ "notif_record_lost_title": "💥 Your record has fallen",
  "notif_record_lost_body": "{name} took {circuit} with {time}.",
- "notif_see_duel": "See the duel",
- "notif_play_duel": "Take the challenge",
- "notif_take_back": "Take it back",
+ "notif_see_duel": "👀 See the duel",
+ "notif_play_duel": "🏁 Take the challenge",
+ "notif_take_back": "🔥 Take it back",
  "notif_champion_title": "🥇 Champion of the week!",
  "notif_podium_title": "🏅 Podium of the week!",
- "notif_podium_body": "You finished #{rank} last week with {n} record(s)."
+ "notif_podium_body": "You finished #{rank} last week with {n} record(s).",
+ "notif_more": "+{n} more"
 }

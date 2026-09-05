@@ -230,16 +230,17 @@
  "duel_verdict_pending": "タイム登録済み — 相手を待っています。",
  "notif_duel_won_title": "🏆 デュエル勝利！",
  "notif_duel_won_body": "{circuit} で {name} に {gap} 差で勝利。",
- "notif_duel_lost_title": "デュエル終了",
+ "notif_duel_lost_title": "⚔️ デュエル終了",
  "notif_duel_lost_body": "{circuit} で {name} に {gap} 差で敗北。",
  "notif_duel_waiting_title": "⚔️ デュエルの挑戦が届いています",
  "notif_duel_waiting_body": "{name} が {circuit} でタイムを出しました。あなたの番です！",
- "notif_record_lost_title": "記録が破られました",
+ "notif_record_lost_title": "💥 記録が破られました",
  "notif_record_lost_body": "{name} が {circuit} を {time} で奪取。",
- "notif_see_duel": "デュエルを見る",
- "notif_play_duel": "挑戦する",
- "notif_take_back": "記録を取り返す",
+ "notif_see_duel": "👀 デュエルを見る",
+ "notif_play_duel": "🏁 挑戦する",
+ "notif_take_back": "🔥 記録を取り返す",
  "notif_champion_title": "🥇 今週のチャンピオン！",
  "notif_podium_title": "🏅 今週の表彰台！",
- "notif_podium_body": "先週は {n} 記録で {rank} 位でした。"
+ "notif_podium_body": "先週は {n} 記録で {rank} 位でした。",
+ "notif_more": "他 {n} 件"
 }

@@ -230,16 +230,17 @@
  "duel_verdict_pending": "Tijd opgeslagen — wachten op je tegenstander.",
  "notif_duel_won_title": "🏆 Duel gewonnen!",
  "notif_duel_won_body": "Je verslaat {name} met {gap} op {circuit}.",
- "notif_duel_lost_title": "Duel afgelopen",
+ "notif_duel_lost_title": "⚔️ Duel afgelopen",
  "notif_duel_lost_body": "{name} was {gap} sneller op {circuit}.",
  "notif_duel_waiting_title": "⚔️ Een duel wacht op je",
  "notif_duel_waiting_body": "{name} zette een tijd neer op {circuit}. Jouw beurt!",
- "notif_record_lost_title": "Je record is verbroken",
+ "notif_record_lost_title": "💥 Je record is verbroken",
  "notif_record_lost_body": "{name} nam {circuit} over met {time}.",
- "notif_see_duel": "Bekijk het duel",
- "notif_play_duel": "Duel aangaan",
- "notif_take_back": "Record heroveren",
+ "notif_see_duel": "👀 Bekijk het duel",
+ "notif_play_duel": "🏁 Duel aangaan",
+ "notif_take_back": "🔥 Record heroveren",
  "notif_champion_title": "🥇 Kampioen van de week!",
  "notif_podium_title": "🏅 Podium van de week!",
- "notif_podium_body": "Je eindigde vorige week als {rank}e met {n} record(s)."
+ "notif_podium_body": "Je eindigde vorige week als {rank}e met {n} record(s).",
+ "notif_more": "+{n} meer"
 }

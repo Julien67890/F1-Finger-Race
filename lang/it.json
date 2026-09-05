@@ -230,16 +230,17 @@
  "duel_verdict_pending": "Tempo salvato — in attesa dell’avversario.",
  "notif_duel_won_title": "🏆 Sfida vinta!",
  "notif_duel_won_body": "Batti {name} di {gap} su {circuit}.",
- "notif_duel_lost_title": "Sfida conclusa",
+ "notif_duel_lost_title": "⚔️ Sfida conclusa",
  "notif_duel_lost_body": "{name} ti batte di {gap} su {circuit}.",
  "notif_duel_waiting_title": "⚔️ Una sfida ti aspetta",
  "notif_duel_waiting_body": "{name} ha segnato il tempo su {circuit}. Tocca a te!",
- "notif_record_lost_title": "Il tuo record è caduto",
+ "notif_record_lost_title": "💥 Il tuo record è caduto",
  "notif_record_lost_body": "{name} ha preso {circuit} in {time}.",
- "notif_see_duel": "Vedi la sfida",
- "notif_play_duel": "Accetta la sfida",
- "notif_take_back": "Riprenditi il record",
+ "notif_see_duel": "👀 Vedi la sfida",
+ "notif_play_duel": "🏁 Accetta la sfida",
+ "notif_take_back": "🔥 Riprenditi il record",
  "notif_champion_title": "🥇 Campione della settimana!",
  "notif_podium_title": "🏅 Podio della settimana!",
- "notif_podium_body": "Hai chiuso {rank}° la scorsa settimana con {n} record."
+ "notif_podium_body": "Hai chiuso {rank}° la scorsa settimana con {n} record.",
+ "notif_more": "+{n} altro/i"
 }

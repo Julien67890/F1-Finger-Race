@@ -230,16 +230,17 @@
  "duel_verdict_pending": "成绩已保存 — 等待对手。",
  "notif_duel_won_title": "🏆 决斗获胜！",
  "notif_duel_won_body": "你在 {circuit} 以 {gap} 击败 {name}。",
- "notif_duel_lost_title": "决斗结束",
+ "notif_duel_lost_title": "⚔️ 决斗结束",
  "notif_duel_lost_body": "{name} 在 {circuit} 快你 {gap}。",
  "notif_duel_waiting_title": "⚔️ 有人向你发起决斗",
  "notif_duel_waiting_body": "{name} 已在 {circuit} 完成成绩，轮到你了！",
- "notif_record_lost_title": "你的纪录被打破",
+ "notif_record_lost_title": "💥 你的纪录被打破",
  "notif_record_lost_body": "{name} 以 {time} 夺走了 {circuit}。",
- "notif_see_duel": "查看决斗",
- "notif_play_duel": "接受挑战",
- "notif_take_back": "夺回纪录",
+ "notif_see_duel": "👀 查看决斗",
+ "notif_play_duel": "🏁 接受挑战",
+ "notif_take_back": "🔥 夺回纪录",
  "notif_champion_title": "🥇 本周冠军！",
  "notif_podium_title": "🏅 本周领奖台！",
- "notif_podium_body": "你上周以 {n} 项纪录排名第 {rank}。"
+ "notif_podium_body": "你上周以 {n} 项纪录排名第 {rank}。",
+ "notif_more": "还有 {n} 条"
 }

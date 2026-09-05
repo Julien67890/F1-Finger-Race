@@ -230,16 +230,17 @@
  "duel_verdict_pending": "تم حفظ وقتك — بانتظار خصمك.",
  "notif_duel_won_title": "🏆 فزت بالتحدي!",
  "notif_duel_won_body": "تغلبت على {name} بفارق {gap} في {circuit}.",
- "notif_duel_lost_title": "انتهى التحدي",
+ "notif_duel_lost_title": "⚔️ انتهى التحدي",
  "notif_duel_lost_body": "{name} تقدم عليك بفارق {gap} في {circuit}.",
  "notif_duel_waiting_title": "⚔️ هناك تحدٍ بانتظارك",
  "notif_duel_waiting_body": "سجّل {name} وقته في {circuit}. دورك الآن!",
- "notif_record_lost_title": "سقط رقمك القياسي",
+ "notif_record_lost_title": "💥 سقط رقمك القياسي",
  "notif_record_lost_body": "استحوذ {name} على {circuit} بزمن {time}.",
- "notif_see_duel": "عرض التحدي",
- "notif_play_duel": "قبول التحدي",
- "notif_take_back": "استعد الرقم القياسي",
+ "notif_see_duel": "👀 عرض التحدي",
+ "notif_play_duel": "🏁 قبول التحدي",
+ "notif_take_back": "🔥 استعد الرقم القياسي",
  "notif_champion_title": "🥇 بطل الأسبوع!",
  "notif_podium_title": "🏅 منصة تتويج الأسبوع!",
- "notif_podium_body": "أنهيت الأسبوع الماضي في المركز {rank} بـ {n} رقم قياسي."
+ "notif_podium_body": "أنهيت الأسبوع الماضي في المركز {rank} بـ {n} رقم قياسي.",
+ "notif_more": "+{n} أخرى"
 }

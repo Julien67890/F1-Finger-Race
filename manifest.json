@@ -35,28 +35,5 @@
   "categories": [
     "games",
     "sports"
-  ],
-  "screenshots": [
-    {
-      "src": "store/screenshot-fr-1.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Trace le circuit au doigt"
-    },
-    {
-      "src": "store/screenshot-fr-2.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Défie tes amis avec un fantôme"
-    },
-    {
-      "src": "store/screenshot-fr-3.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Classement de la semaine"
-    }
   ]
 }

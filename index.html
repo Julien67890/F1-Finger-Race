@@ -419,6 +419,14 @@
     try {
       if (typeof firebase.appCheck === 'function' && APP_CHECK_SITE_KEY.indexOf('REMPLACER') === -1) {
         firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), true);
+        console.log('[F1 Finger Race] App Check actif.');
+      } else {
+        // Tant que la clé n'est pas renseignée, Firestore reste ouvert aux appels REST bruts et
+        // aux scripts lancés depuis la console : n'importe qui peut écrire un temps fantaisiste
+        // dans le classement. Ce n'est pas un bug du code, mais une étape de configuration
+        // restée en plan — d'où cet avertissement bien visible plutôt qu'un silence total.
+        console.warn('[F1 Finger Race] App Check INACTIF : APP_CHECK_SITE_KEY n\'est pas renseignée. ' +
+          'Le classement partagé n\'est pas protégé contre les écritures hors application.');
       }
     } catch (e) {
       console.error('Firebase App Check : activation impossible', e);
@@ -434,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-09-01-v2';
+  const BUILD_TAG = '2026-09-05-fixes';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -561,7 +569,6 @@
     "duel_create_fail": "Impossible de créer le défi ({error}).",
     "duel_create_public_fail": "Impossible de créer le défi public ({error}).",
     "duel_save_run_fail_conn": "Impossible d’enregistrer ce temps dans un défi : la connexion au service de défis est indisponible (vérifie ta connexion internet).",
-    "duel_supprimer_confirm": "Retirer ce défi de ta liste ? (il reste accessible à l’adversaire qui a le lien)",
     "start_hint_html": "👆 Pose le doigt sur la ligne <strong>DÉPART / ARRIVÉE</strong> et reste immobile jusqu’à ce que les feux s’éteignent",
     "banner_touch_start": "Pose le doigt sur le point blanc DÉPART / ARRIVÉE (D/A)",
     "banner_wait_start": "Reste immobile... départ imminent",
@@ -703,9 +710,9 @@
     "star_hint_clean": "2 ★ : terminer sans sortie de piste",
     "stars_earned": "Étoiles sur ce circuit : {n}/3",
     "result_offtrack_time": "Temps hors piste",
-    "result_penalty_detail": "{n} × {s} s + hors piste × 2",
     "name_forbidden": "Ce pseudo n’est pas autorisé.",
     "auth_fill_fields": "Renseigne ton e-mail et ton mot de passe.",
+    "auth_need_name": "Choisis d’abord ton prénom ci-dessus.",
     "champions_title": "Champions de la semaine",
     "champions_count": "{n} record(s)",
     "champions_empty": "Aucun record posé cette semaine pour l’instant.",
@@ -759,7 +766,21 @@
     return fetch('lang/' + lg + '.json', { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
-    }).then(function (d) { STRINGS[lg] = d; return d; });
+    }).then(function (d) {
+      STRINGS[lg] = d;
+      // t() est censé retomber sur l'anglais avant le français quand une clé manque — mais
+      // l'anglais n'était chargé QUE s'il était la langue active, donc ce repli n'existait pas :
+      // un joueur japonais tombait directement sur du français. On préchauffe donc l'anglais en
+      // arrière-plan dès qu'une autre langue est demandée (le service worker le sert depuis son
+      // cache, donc ça ne coûte quasiment rien), sans bloquer l'affichage.
+      if (lg !== 'en' && !STRINGS.en) {
+        fetch('lang/en.json', { cache: 'no-cache' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (en) { if (en) STRINGS.en = en; })
+          .catch(function () {});
+      }
+      return d;
+    });
   }
 
   function t(key, vars) {
@@ -1448,8 +1469,15 @@
           // Et on inscrit le détenteur dans le document unique de la semaine : c'est lui qui
           // alimente le classement des champions, lisible ensuite en UNE seule lecture au lieu
           // d'interroger les centaines de combinaisons circuit/réglages une par une.
-          const champUpdate = {};
-          champUpdate['holders.' + rk] = { name: name, key: currentRunKey(), at: Date.now() };
+          // ATTENTION : objet réellement IMBRIQUÉ, pas une clé à point. La notation "a.b" n'est
+          // interprétée comme un chemin de champ que par .update() ; avec .set(..., {merge:true})
+          // Firestore crée un champ racine littéralement nommé "holders.<raceKey>" et la map
+          // "holders" reste vide — c'est ce qui laissait le classement des champions
+          // désespérément vide (et le bilan du dimanche muet). {merge:true} fusionne
+          // récursivement dans "holders" sans toucher aux autres détenteurs, et fonctionne même
+          // si le document de la semaine n'existe pas encore (contrairement à .update()).
+          const champUpdate = { holders: {} };
+          champUpdate.holders[rk] = { name: name, key: currentRunKey(), at: Date.now() };
           db.collection(CHAMPIONS_COL).doc(wk).set(champUpdate, { merge: true })
             .catch(function (err) { console.error('Champions de la semaine : écriture impossible', err); });
         }
@@ -1683,9 +1711,16 @@
     // consommation du quota Firestore (2 000 lectures/heure/joueur au rythme précédent de 90 s).
     // Une "tendance de la semaine" n'a aucun besoin d'être fraîche à la minute.
     if (trendingCircuitAt && Date.now() - trendingCircuitAt < TRENDING_CACHE_MS) return;
-    trendingCircuitAt = Date.now();
+    // L'horodatage du cache n'est posé qu'une fois la réponse REÇUE : le poser avant la requête
+    // faisait qu'un échec (réseau coupé, index manquant) verrouillait le message pour tout
+    // TRENDING_CACHE_MS sans jamais réessayer. Un jeton de requête évite en parallèle qu'un
+    // appel concurrent ne parte en double pendant que celui-ci est en vol.
+    if (refreshTrendingCircuitMessage._inFlight) return;
+    refreshTrendingCircuitMessage._inFlight = true;
     db.collection(RACES_COL).where('weekId', '==', wk).orderBy('createdAt', 'desc').limit(50).get()
       .then(function (snap) {
+        refreshTrendingCircuitMessage._inFlight = false;
+        trendingCircuitAt = Date.now();
         const counts = {};
         snap.forEach(function (d) {
           const cid = (d.data() || {}).cid;
@@ -1697,7 +1732,10 @@
         const label = country ? countryName(country) : top;
         trendingCircuitMsg = t('ticker_trending_circuit', { label: label, n: counts[top] });
         rebuildTickerMessages();
-      }).catch(function () { trendingCircuitMsg = null; });
+      }).catch(function () {
+        refreshTrendingCircuitMessage._inFlight = false;
+        trendingCircuitMsg = null;
+      });
   }
 
   function refreshLiveTicker() {
@@ -1814,7 +1852,7 @@
   let replayCarEls = [];
   let lastReplayDuel = null; // pour pouvoir relancer la même lecture avec "Rejouer la lecture"
   let replayReturnToResult = false; // le rejeu a été lancé depuis l'écran de résultat : "Fermer" doit y revenir
-  let savedHudCountryText = '';
+  let savedHudCountryHtml = ''; // contenu HTML du chip circuit (drapeau compris), le temps d'un rejeu
 
   // Les défis "entre amis" (lien privé) vivent dans la collection "duels" ; les défis
   // "publics" (visibles de tous, n'importe qui peut les relever) vivent dans une collection
@@ -2212,7 +2250,10 @@
     renderCarousel();
     dailyMode = info.dayId;
     enterRace(info.country);
-    hudCountryChip.textContent += t('daily_hud_suffix');
+    // enterRace() vient de construire ce chip en innerHTML, avec une vraie <img> de drapeau
+    // (Twemoji). Un "+=" sur .textContent lisait le texte seul et le réécrivait en texte brut :
+    // le drapeau du circuit disparaissait du HUD dès qu'on lançait le défi du jour.
+    hudCountryChip.innerHTML += escapeHtml(t('daily_hud_suffix'));
     logEvent('daily_start', { day: info.dayId, cid: info.country.id });
   }
 
@@ -2612,7 +2653,14 @@
     ghostPenaltyTimesArr = [];
     ghostTime = 0;
     ghostOff = null;
-    if (activeDuel && activeDuel.cid === country.id && activeDuel.runs && activeDuel.runs.length) {
+    // duelSettingsMatch() et pas seulement le circuit : un défi porte sur un circuit ET des
+    // réglages précis. Avec un défi actif sur Monaco/difficile, une course libre lancée sur
+    // Monaco/débutant affichait le fantôme de l'adversaire enregistré sur une piste deux fois
+    // plus étroite — tracé incohérent avec le décor, et libellé "⏱ <adversaire>" trompeur dans
+    // le HUD alors que ce temps n'était pas comparable. Même critère que partout ailleurs
+    // (shouldAttachRunToActiveDuel, addRunToActiveDuel).
+    const isDuelRun = !!(activeDuel && duelSettingsMatch(activeDuel, country.id, selectedDifficulty, selectedDirection, selectedLaps));
+    if (isDuelRun && activeDuel.runs && activeDuel.runs.length) {
       const others = activeDuel.runs.filter(r => !isMyRun(r) && r.tele && r.tele.length);
       const pool = others.length ? others : activeDuel.runs.filter(r => r.tele && r.tele.length);
       if (pool.length) {
@@ -2634,7 +2682,11 @@
     }
     ghostPenaltyTimesArr = ghostPenaltyEvents(ghostTele, ghostOff);
     hudCountryChip.innerHTML = flagImg(country.flag) + ' ' + escapeHtml(countryName(country)) + ' · ' + escapeHtml(diffLabel(diff)) +
-      (activeDuel ? escapeHtml(t('hud_duel_suffix')) : '') + (ghostTele ? escapeHtml(t('hud_ghost_prefix', { label: ghostLabel })) : '');
+      // Même exigence que pour le fantôme : la mention "Défi" ne s'affiche que si cette course
+      // compte vraiment pour le défi actif (mêmes circuit ET réglages). Sinon, une course libre
+      // lancée avec un défi encore ouvert en mémoire s'annonçait comme un défi alors que son
+      // temps n'y serait jamais rattaché (voir shouldAttachRunToActiveDuel).
+      (isDuelRun ? escapeHtml(t('hud_duel_suffix')) : '') + (ghostTele ? escapeHtml(t('hud_ghost_prefix', { label: ghostLabel })) : '');
     drawMask();
     resizeCanvas();
     resetRun();
@@ -3396,7 +3448,12 @@
 
   function abortRun(message) {
     state = 'aborted';
-    dailyMode = null;
+    // On NE remet PAS dailyMode à null ici (contrairement à finishRun, où la tentative du jour
+    // vient d'être consommée). Un faux départ ou un doigt relevé trop tôt n'enregistre aucun
+    // temps : "Recommencer" doit donc relancer le défi du jour, pas une course libre. Avant, la
+    // course suivante n'était plus rattachée au classement quotidien et rien ne le signalait au
+    // joueur. Le contexte est de toute façon bien effacé en quittant l'écran de course
+    // (showMenu() remet dailyMode à null).
     if (rafId) cancelAnimationFrame(rafId);
     clearTimeout(countdownTimer);
     countdownAbort = true;
@@ -4020,11 +4077,21 @@
   }
 
   function populatePublicDuelFilter() {
-    // Rempli une seule fois : "Tous les circuits" en tête, puis un par circuit dans l'ordre
-    // du jeu — permet de retrouver un défi public sans devoir parcourir le carrousel circuit
-    // par circuit.
-    if (!publicDuelFilter || publicDuelFilter.dataset.filled) return;
-    publicDuelFilter.dataset.filled = '1';
+    // "Tous les circuits" en tête, puis un par circuit dans l'ordre du jeu — permet de
+    // retrouver un défi public sans devoir parcourir le carrousel circuit par circuit.
+    //
+    // Deux choses bien distinctes ici, et c'est tout l'objet du correctif :
+    //   - la LISTE d'options doit être reconstruite à chaque changement de langue (les noms de
+    //     circuits sont traduits) : on vide donc le <select> avant de le remplir. Sans ce
+    //     vidage, applyLanguage() empilait 21 options de plus à chaque passage (63 options et
+    //     trois "Tous les circuits" après deux changements de langue) ;
+    //   - les ÉCOUTEURS 'change', eux, ne doivent être posés qu'une seule fois pour toute la
+    //     vie de la page. Ils étaient réenregistrés en même temps que les options, si bien
+    //     qu'un simple choix dans la liste déclenchait renderPublicDuelBoard() deux, trois,
+    //     quatre fois — autant de lectures Firestore inutiles.
+    if (!publicDuelFilter) return;
+    const selected = publicDuelFilter.value;
+    publicDuelFilter.innerHTML = '';
     const optAll = document.createElement('option');
     optAll.value = '';
     optAll.textContent = t('filter_all_circuits');
@@ -4035,6 +4102,12 @@
       opt.textContent = c.flag + ' ' + countryName(c);
       publicDuelFilter.appendChild(opt);
     });
+    // On restitue la sélection en cours : reconstruire la liste la remet sinon sur "Tous les
+    // circuits" sans que le joueur ait rien demandé.
+    publicDuelFilter.value = selected || '';
+
+    if (publicDuelFilter.dataset.wired) return;
+    publicDuelFilter.dataset.wired = '1';
     publicDuelFilter.addEventListener('change', function () {
       publicDuelFilterCid = publicDuelFilter.value; // '' = tous ; sinon un id de circuit précis
       renderPublicDuelBoard(publicDuelFilterCid);
@@ -4700,7 +4773,9 @@
       // défi) : "Fermer le rejeu" doit y ramener, pas quitter la course vers le menu principal.
       replayReturnToResult = false;
       state = 'finished';
-      hudCountryChip.textContent = savedHudCountryText;
+      // .innerHTML et non .textContent : ce chip contient une <img> de drapeau, qu'un
+      // aller-retour par le texte seul faisait disparaitre au retour du rejeu.
+      hudCountryChip.innerHTML = savedHudCountryHtml;
       lightsEl.classList.remove('show');
       drawScene();
       overlay.classList.add('show');
@@ -4787,7 +4862,7 @@
   function startSoloReplay() {
     if (!current || !telemetry.length) return;
     const runs = [{
-      name: 'Toi', time: lastResult ? lastResult.time : 0, pen: lastResult ? lastResult.penalties : 0,
+      name: t('label_you'), time: lastResult ? lastResult.time : 0, pen: lastResult ? lastResult.penalties : 0,
       tele: telemetry.slice(), off: offFlags.slice(), key: 'solo-me'
     }];
     if (ghostTele && ghostTele.length) {
@@ -4810,7 +4885,7 @@
 
   viewRunBtn.addEventListener('click', () => {
     replayReturnToResult = true;
-    savedHudCountryText = hudCountryChip.textContent;
+    savedHudCountryHtml = hudCountryChip.innerHTML;
     startSoloReplay();
   });
 
@@ -4871,7 +4946,7 @@
   duelResultReplayBtn.addEventListener('click', () => {
     if (!activeDuel) return;
     replayReturnToResult = true;
-    savedHudCountryText = hudCountryChip.textContent;
+    savedHudCountryHtml = hudCountryChip.innerHTML;
     startGhostReplay(activeDuel);
   });
 
@@ -4880,17 +4955,44 @@
     accountOverlay.classList.add('show');
     playerNameInput.focus();
   });
-  closeAccountBtn.addEventListener('click', () => {
-    playerName = playerNameInput.value.trim();
+  // Point d'entrée unique pour tout ce qui enregistre le prénom saisi dans le panneau "Mon
+  // compte". Avant, la fermeture du panneau et l'évènement 'change' du champ écrivaient
+  // directement dans playerName + localStorage, sans passer par isNameAllowed() : un pseudo
+  // refusé par le filtre (toast "nom interdit") s'enregistrait quand même en refermant
+  // simplement le panneau, et surtout vider le champ effaçait le pseudo pour de bon — la porte
+  // d'entrée ne se rouvrant qu'au démarrage suivant, toutes les courses repartaient ensuite
+  // sous le nom de repli sans que rien ne l'explique. On refuse donc les deux cas, et on
+  // conserve le pseudo précédent plutôt que de le perdre.
+  function commitPlayerNameFromInput() {
+    const n = (playerNameInput.value || '').trim();
+    if (!n) {
+      // Champ vidé : on ne touche à rien et on remet le pseudo connu dans le champ.
+      if (playerName) { playerNameInput.value = playerName; return true; }
+      return false;   // aucun pseudo connu non plus : il faut vraiment en saisir un
+    }
+    if (!isNameAllowed(n)) {
+      showToast(t('name_forbidden'));
+      playerNameInput.value = playerName;   // on rend le champ à son dernier état valide
+      return false;
+    }
+    playerName = n;
     try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
     updateAccountChip();
+    return true;
+  }
+
+  closeAccountBtn.addEventListener('click', () => {
+    // Un pseudo refusé (interdit, ou aucun pseudo du tout) garde le panneau ouvert : le joueur
+    // voit le toast et peut corriger, au lieu de repartir jouer sous un nom qui n'est pas le sien.
+    if (!commitPlayerNameFromInput()) {
+      playerNameInput.focus();
+      playerNameInput.style.borderColor = 'var(--danger)';
+      setTimeout(() => { playerNameInput.style.borderColor = ''; }, 1500);
+      return;
+    }
     accountOverlay.classList.remove('show');
   });
-  playerNameInput.addEventListener('change', () => {
-    playerName = playerNameInput.value.trim();
-    try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
-    updateAccountChip();
-  });
+  playerNameInput.addEventListener('change', () => { commitPlayerNameFromInput(); });
 
   // ==================== Sélecteur de langue ====================
   // Chaque langue s'affiche dans SA PROPRE langue (nom natif + drapeau), jamais traduite dans la
@@ -4962,7 +5064,8 @@
     // reconstruit pour refléter la nouvelle langue — sinon le carrousel des circuits ou la liste
     // déroulante des circuits des défis publics resteraient figés dans l'ancienne langue.
     buildCarousel();
-    if (publicDuelFilter) delete publicDuelFilter.dataset.filled;
+    // populatePublicDuelFilter() vide et reconstruit la liste à chaque appel (et ne repose plus
+    // ses écouteurs) : plus besoin de bidouiller un marqueur "déjà rempli" avant de l'appeler.
     populatePublicDuelFilter();
     updateAccountChip();
     renderLangList();
@@ -5033,7 +5136,11 @@
     const pass = authPasswordInput.value;
     const name = playerNameInput.value.trim();
     if (!email || !pass) { showAccountAuthError(t('auth_fill_fields')); return; }
-    if (!name) { showAccountAuthError("Choisis d'abord ton prénom ci-dessus."); return; }
+    if (!name) { showAccountAuthError(t('auth_need_name')); return; }
+    // Ce prénom devient le displayName du compte, donc le nom affiché dans tous les classements
+    // et défis : il doit passer le même filtre que partout ailleurs (savePseudo, porte d'entrée,
+    // ensureChallengeName), sinon la création de compte était la porte dérobée du filtre.
+    if (!isNameAllowed(name)) { showAccountAuthError(t('name_forbidden')); return; }
     showAccountAuthError('');
     auth.createUserWithEmailAndPassword(email, pass).then(cred => cred.user.updateProfile({ displayName: name })).then(() => {
       playerName = name;

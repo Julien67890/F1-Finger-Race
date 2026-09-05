@@ -13,18 +13,27 @@
 // direct, bandeau live) : ces requêtes passent toujours en direct sur le réseau, sinon on
 // risquerait de servir des données périmées ou de casser l'authentification.
 
-const CACHE_NAME = 'f1-finger-race-v7';
+const CACHE_NAME = 'f1-finger-race-v8';
 
 // Coquille pré-chargée dès l'installation : l'appli s'ouvre hors-ligne dès la 2e visite, sans
 // dépendre de ce que le joueur a déjà consulté.
-const PRECACHE = ['./', 'index.html', 'app.css', 'manifest.json', 'icon-192.png', 'icon-512.png',
+const PRECACHE = ['./', 'index.html', 'app.css', 'manifest.json', 'privacy.html',
+  'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
   'lang/en.json', 'lang/es.json', 'lang/pt.json', 'lang/de.json', 'lang/it.json', 'lang/nl.json',
   'lang/ar.json', 'lang/ja.json', 'lang/zh.json', 'lang/id.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)).catch(() => {})
-      .then(() => self.skipWaiting())
+    // cache.addAll() est TOUT-OU-RIEN : une seule URL en échec (fichier renommé, 404 passager,
+    // coupure réseau au mauvais moment) faisait échouer l'ensemble du pré-cache, en silence à
+    // cause du .catch() — l'appli n'avait alors plus rien hors-ligne, sans aucun signe visible.
+    // On met donc chaque fichier en cache indépendamment : ce qui passe est gardé, ce qui
+    // échoue est simplement signalé dans la console et sera récupéré au premier accès réseau.
+    caches.open(CACHE_NAME).then((cache) => Promise.all(
+      PRECACHE.map((url) => cache.add(url).catch((err) => {
+        console.warn('[SW] pré-cache impossible pour', url, err);
+      }))
+    )).catch(() => {}).then(() => self.skipWaiting())
   );
 });
 

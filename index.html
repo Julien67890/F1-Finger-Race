@@ -415,7 +415,7 @@
     // dès que l'application ("Enforce") est activée dans la console Firebase. Tant que la clé
     // ci-dessous vaut le texte de remplacement, App Check reste inactif et tout fonctionne
     // comme avant (voir A-FAIRE.txt, étape 3).
-    const APP_CHECK_SITE_KEY = 'REMPLACER_PAR_LA_CLE_SITE_RECAPTCHA_V3';
+    const APP_CHECK_SITE_KEY = '6LclA6stAAAAAKPu48CUHR2pYX_K3zx1KLD0h0Gt';
     try {
       if (typeof firebase.appCheck === 'function' && APP_CHECK_SITE_KEY.indexOf('REMPLACER') === -1) {
         firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), true);

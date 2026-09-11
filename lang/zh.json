@@ -139,7 +139,6 @@
   "ticker_you_hold_record": "👑 本周你在 {circuit} 保持着记录！",
   "ticker_gap_to_record": "🎯 你距离 {circuit} 的记录只差 {gap}——快去打破它吧！",
   "ticker_current_record": "🏁 {circuit} 当前记录：{time}（{name}）",
-  "weekly_reset_countdown": "⏳ 每周排行榜将在 {countdown} 后重置",
   "today_at": "今天 {time}",
   "yesterday_at": "昨天 {time}",
   "unit_day": "天",
@@ -238,8 +237,5 @@
   "notif_see_duel": "👀 查看决斗",
   "notif_play_duel": "🏁 接受挑战",
   "notif_take_back": "🔥 夺回纪录",
-  "notif_champion_title": "🥇 本周冠军！",
-  "notif_podium_title": "🏅 本周领奖台！",
-  "notif_podium_body": "你上周以 {n} 项纪录排名第 {rank}。",
   "notif_more": "还有 {n} 条"
 }

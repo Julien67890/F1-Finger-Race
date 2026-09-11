@@ -139,7 +139,6 @@
   "ticker_you_hold_record": "👑 Kamu memegang rekor di {circuit} minggu ini!",
   "ticker_gap_to_record": "🎯 Kamu tinggal {gap} dari rekor di {circuit} — ayo pecahkan!",
   "ticker_current_record": "🏁 Rekor saat ini di {circuit}: {time} ({name})",
-  "weekly_reset_countdown": "⏳ Papan peringkat mingguan direset dalam {countdown}",
   "today_at": "hari ini pukul {time}",
   "yesterday_at": "kemarin pukul {time}",
   "unit_day": "h",
@@ -238,8 +237,5 @@
   "notif_see_duel": "👀 Lihat duel",
   "notif_play_duel": "🏁 Terima tantangan",
   "notif_take_back": "🔥 Rebut kembali rekor",
-  "notif_champion_title": "🥇 Juara minggu ini!",
-  "notif_podium_title": "🏅 Podium minggu ini!",
-  "notif_podium_body": "Kamu finis ke-{rank} minggu lalu dengan {n} rekor.",
   "notif_more": "+{n} lagi"
 }

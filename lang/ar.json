@@ -139,7 +139,6 @@
   "ticker_you_hold_record": "👑 أنت تحمل الرقم القياسي على {circuit} هذا الأسبوع!",
   "ticker_gap_to_record": "🎯 أنت على بعد {gap} من الرقم القياسي على {circuit} — اذهب وحطّمه!",
   "ticker_current_record": "🏁 الرقم القياسي الحالي على {circuit}: {time} ({name})",
-  "weekly_reset_countdown": "⏳ سيُعاد ضبط الترتيب الأسبوعي خلال {countdown}",
   "today_at": "اليوم الساعة {time}",
   "yesterday_at": "أمس الساعة {time}",
   "unit_day": "ي",
@@ -238,8 +237,5 @@
   "notif_see_duel": "👀 عرض التحدي",
   "notif_play_duel": "🏁 قبول التحدي",
   "notif_take_back": "🔥 استعد الرقم القياسي",
-  "notif_champion_title": "🥇 بطل الأسبوع!",
-  "notif_podium_title": "🏅 منصة تتويج الأسبوع!",
-  "notif_podium_body": "أنهيت الأسبوع الماضي في المركز {rank} بـ {n} رقم قياسي.",
   "notif_more": "+{n} أخرى"
 }

@@ -139,7 +139,6 @@
   "ticker_you_hold_record": "👑 Você tem o recorde de {circuit} esta semana!",
   "ticker_gap_to_record": "🎯 Você está a {gap} do recorde de {circuit} — vá bater esse recorde!",
   "ticker_current_record": "🏁 Recorde atual em {circuit}: {time} ({name})",
-  "weekly_reset_countdown": "⏳ A classificação semanal será zerada em {countdown}",
   "today_at": "hoje às {time}",
   "yesterday_at": "ontem às {time}",
   "unit_day": "d",
@@ -238,8 +237,5 @@
   "notif_see_duel": "👀 Ver o desafio",
   "notif_play_duel": "🏁 Aceitar o desafio",
   "notif_take_back": "🔥 Retomar o recorde",
-  "notif_champion_title": "🥇 Campeão da semana!",
-  "notif_podium_title": "🏅 Pódio da semana!",
-  "notif_podium_body": "Você terminou em {rank}º na semana passada com {n} recorde(s).",
   "notif_more": "+{n} outro(s)"
 }

@@ -139,7 +139,6 @@
   "ticker_you_hold_record": "👑 今週の {circuit} の記録はあなたのものです！",
   "ticker_gap_to_record": "🎯 {circuit} の記録まであと {gap} — 更新しに行こう！",
   "ticker_current_record": "🏁 {circuit} の現在の記録：{time}（{name}）",
-  "weekly_reset_countdown": "⏳ 週間ランキングは {countdown} 後にリセットされます",
   "today_at": "今日 {time}",
   "yesterday_at": "昨日 {time}",
   "unit_day": "日",
@@ -238,8 +237,5 @@
   "notif_see_duel": "👀 デュエルを見る",
   "notif_play_duel": "🏁 挑戦する",
   "notif_take_back": "🔥 記録を取り返す",
-  "notif_champion_title": "🥇 今週のチャンピオン！",
-  "notif_podium_title": "🏅 今週の表彰台！",
-  "notif_podium_body": "先週は {n} 記録で {rank} 位でした。",
   "notif_more": "他 {n} 件"
 }

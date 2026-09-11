@@ -1,4 +1,4 @@
-  :root {
+:root {
     --bg: #0e131a;
     --bg-soft: #141b25;
     --surface: #1b2330;
@@ -1462,10 +1462,23 @@ body.lefty .review-back { left: auto; right: 12px; }
 /* ==================== Avis au joueur (accueil) + champions ==================== */
 
 /* Une seule carte visible ; les suivantes se devinent derrière, comme un jeu de cartes. */
+/* Avant : position:relative, intégré dans le flux de la page — un avis poussait tout le menu
+   vers le bas. Julien voulait un vrai popup flottant : position:fixed, ancré en bas de l'écran
+   au-dessus de la zone de sécurité (même logique que les autres éléments flottants de l'appli),
+   sans jamais déplacer le reste du contenu. pointer-events:none sur le conteneur (la zone vide
+   autour de la carte reste cliquable) et :auto sur la carte elle-même. */
 .notif-stack {
-  position: relative;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   padding: 0 20px;
-  margin: 10px 0 2px;
+  margin: 0;
+  z-index: 40;
+  pointer-events: none;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .notif-stack[hidden] { display: none; }
 
@@ -1493,6 +1506,10 @@ body.lefty .review-back { left: auto; right: 12px; }
   padding: 12px 34px 12px 14px;
   text-align: left;
   animation: notifIn 0.28s ease-out;
+  pointer-events: auto;
+  /* Popup flottant : une ombre nette pour le détacher visuellement du reste de la page,
+     puisqu'il n'est plus intégré au flux normal. */
+  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
 }
 
 /* Compteur "+2 autres" en bas à droite de la carte du dessus. */
@@ -1511,7 +1528,7 @@ body.lefty .review-back { left: auto; right: 12px; }
 .notif-card.alert { border-left-color: var(--danger); }
 
 @keyframes notifIn {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
 

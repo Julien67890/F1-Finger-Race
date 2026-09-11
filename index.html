@@ -442,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-09-05-features';
+  const BUILD_TAG = '2026-09-05-pseudos';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -636,7 +636,6 @@
     "save_pseudo_btn": "Enregistrer le pseudo",
     "pseudo_saved": "Pseudo enregistré !",
     "signout_btn": "Se déconnecter",
-    "name_prompt": "Ton prénom, pour le classement du défi ?",
     "auth_conn_unavailable": "Connexion indisponible (Firebase non chargé).",
     "auth_err_email_in_use": "Un compte existe déjà avec cet e-mail — essaie de te connecter plutôt.",
     "auth_err_invalid_email": "Adresse e-mail invalide.",
@@ -725,6 +724,8 @@
     "stars_earned": "Étoiles sur ce circuit : {n}/3",
     "result_offtrack_time": "Temps hors piste",
     "name_forbidden": "Ce pseudo n’est pas autorisé.",
+    "name_taken": "Ce pseudo est déjà pris par quelqu’un d’autre — choisis-en un autre.",
+    "name_taken_error": "Impossible de vérifier ce pseudo pour l’instant, réessaie.",
     "auth_fill_fields": "Renseigne ton e-mail et ton mot de passe.",
     "auth_need_name": "Choisis d’abord ton prénom ci-dessus.",
     "champions_title": "Meilleurs joueurs",
@@ -2264,6 +2265,65 @@
     return !FORBIDDEN_NAME_PARTS.some(function (w) { return n.indexOf(w.replace(/\s/g, '')) !== -1; });
   }
 
+  // ---------------- Pseudo unique et réservé (invité ou compte) ----------------
+  // Julien : un pseudo doit être unique pour TOUT le monde (invités compris), pas seulement
+  // pour les comptes — "Schafu" ne peut être détenu que par une seule identité à la fois, quel
+  // que soit le circuit ou le classement où il apparaît. Une collection Firestore
+  // "usernames/<pseudo normalisé>" sert de registre : le premier à écrire un pseudo donné le
+  // réserve, personne d'autre ne peut l'écraser (voir la règle "allow update: if false"), et
+  // seul son détenteur peut le libérer. Sur un autre appareil, un invité repart avec une
+  // NOUVELLE clé locale (voir currentRunKey()) : il devra soit se connecter avec le compte qui
+  // a réservé ce pseudo, soit en choisir un autre — exactement ce que Julien voulait.
+  const RESERVED_PSEUDO_KEY = 'sur-la-corde:v2:reservedPseudo';
+
+  function normalizeUsername(name) {
+    // Insensible à la casse et aux accents : "Schafu" et "schafu" (ou "Schâfu") doivent entrer
+    // en collision, sinon la même personne pourrait se dupliquer par une simple variante.
+    return (name || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function myReservedPseudo() {
+    try { return JSON.parse(localStorage.getItem(RESERVED_PSEUDO_KEY) || 'null'); } catch (e) { return null; }
+  }
+
+  // Réserve "name" pour l'identité actuelle (currentRunKey() : uid si connecté, sinon clé
+  // invité). Résout si la réservation a réussi (ou nous appartenait déjà) ; rejette avec un
+  // message à afficher si le pseudo est déjà pris par quelqu'un d'autre.
+  function claimPseudo(name) {
+    if (!db) return Promise.resolve(true); // hors-ligne : impossible à vérifier, on laisse passer localement
+    const norm = normalizeUsername(name);
+    if (!norm) return Promise.reject(t('name_forbidden'));
+    const myKey = currentRunKey();
+    const prev = myReservedPseudo();
+    if (prev && prev.norm === norm) return Promise.resolve(true); // déjà le nôtre
+
+    const newRef = db.collection('usernames').doc(norm);
+    return db.runTransaction(function (tx) {
+      return tx.get(newRef).then(function (snap) {
+        if (snap.exists && snap.data().key !== myKey) {
+          const err = new Error('TAKEN'); err.taken = true; throw err;
+        }
+        // Toutes les lectures Firestore d'une transaction doivent précéder ses écritures : on
+        // lit l'éventuel ANCIEN pseudo réservé avant de programmer la moindre écriture.
+        const oldRef = (prev && prev.norm && prev.norm !== norm) ? db.collection('usernames').doc(prev.norm) : null;
+        const oldGet = oldRef ? tx.get(oldRef) : Promise.resolve(null);
+        return oldGet.then(function (oldSnap) {
+          // Libère l'ancien pseudo s'il nous appartenait encore (jamais s'il a depuis été
+          // repris par quelqu'un d'autre, ni s'il n'existait déjà plus).
+          if (oldSnap && oldSnap.exists && oldSnap.data().key === myKey) tx.delete(oldRef);
+          if (!snap.exists) tx.set(newRef, { key: myKey });
+        });
+      });
+    }).then(function () {
+      try { localStorage.setItem(RESERVED_PSEUDO_KEY, JSON.stringify({ norm: norm, name: name })); } catch (e) {}
+      return true;
+    }).catch(function (err) {
+      if (err && err.taken) throw t('name_taken');
+      console.error('Réservation du pseudo impossible', err);
+      throw t('name_taken_error');
+    });
+  }
+
   // ---------------- Menu / carousel ----------------
 
   function computeEffectiveWidth(country) {
@@ -3801,11 +3861,12 @@
     return tele;
   }
 
+  // Ne fait QUE vérifier qu'un pseudo a déjà été réservé (via claimPseudo, dans le panneau
+  // "Mon compte" ou la porte d'entrée) — ne lit plus le champ brut ni n'assigne playerName
+  // directement, sinon un texte tapé sans jamais passer par claimPseudo() pourrait s'infiltrer
+  // dans une course sans être réservé nulle part.
   function ensurePlayerName() {
-    const n = (playerNameInput.value || '').trim();
-    if (n && !isNameAllowed(n)) { showToast(t('name_forbidden')); return false; }
-    playerName = n;
-    return playerName.length > 0;
+    return !!(playerName && myReservedPseudo());
   }
 
   function flagPlayerNameNeeded() {
@@ -3818,22 +3879,14 @@
     setTimeout(() => { playerNameInput.style.borderColor = ''; }, 1500);
   }
 
+  // Retourne le pseudo déjà réservé du joueur, ou '' s'il n'en a pas encore — dans ce cas on
+  // ouvre le panneau "Mon compte" (flagPlayerNameNeeded) au lieu de proposer une boîte de
+  // dialogue native comme avant : ce raccourci laissait passer un nom qui n'était JAMAIS
+  // réservé dans "usernames", donc invisible du système d'unicité des pseudos.
   function ensureChallengeName() {
-    let name = (playerNameInput.value || playerName || '').trim();
-    if (!name) {
-      // .slice(0, 18) : les trois champs de saisie du pseudo ont un maxlength="18", mais cette
-      // boîte de dialogue native ne le respecte pas — un pseudo à rallonge saisi ici partait tel
-      // quel dans Firestore et cassait la mise en page des classements et des lignes de défi.
-      name = ((typeof window.prompt === 'function' && window.prompt(t('name_prompt'))) || '').trim().slice(0, 18);
-    }
-    if (name && !isNameAllowed(name)) { showToast(t('name_forbidden')); return ''; }
-    if (name) {
-      playerName = name;
-      playerNameInput.value = name;
-      try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
-      updateAccountChip();
-    }
-    return name;
+    if (playerName && myReservedPseudo()) return playerName;
+    flagPlayerNameNeeded();
+    return '';
   }
 
   // Valide la saisie de la porte d'entrée pseudo (voir le commentaire sur #pseudoGateOverlay) :
@@ -3853,11 +3906,20 @@
       setTimeout(() => { pseudoGateInput.style.borderColor = ''; }, 1500);
       return;
     }
-    playerName = name;
-    playerNameInput.value = name;
-    try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
-    updateAccountChip();
-    pseudoGateOverlay.classList.remove('show');
+    pseudoGateConfirmBtn.disabled = true;
+    claimPseudo(name).then(function () {
+      pseudoGateConfirmBtn.disabled = false;
+      playerName = name;
+      playerNameInput.value = name;
+      try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
+      updateAccountChip();
+      pseudoGateOverlay.classList.remove('show');
+    }).catch(function (msg) {
+      pseudoGateConfirmBtn.disabled = false;
+      showToast(msg);
+      pseudoGateInput.style.borderColor = 'var(--danger)';
+      setTimeout(() => { pseudoGateInput.style.borderColor = ''; }, 1500);
+    });
   }
 
   function updateAccountChip() {
@@ -3927,23 +3989,30 @@
     const name = (pseudoInput.value || '').trim();
     if (!name) return;
     if (!isNameAllowed(name)) { showToast(t('name_forbidden')); return; }
-    playerName = name;
-    playerNameInput.value = name;
-    try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
-    updateAccountChip();
-    const user = auth && auth.currentUser;
-    if (user && typeof user.updateProfile === 'function') {
-      // Ne change que le profil Firebase (utilisé pour l'affichage dans le jeu) — pas le vrai
-      // compte Google, qui n'est jamais modifié.
-      user.updateProfile({ displayName: name }).then(renderAccountOverlay).catch(() => {});
-    } else {
-      renderAccountOverlay();
-    }
-    if (savePseudoBtn) {
-      const original = savePseudoBtn.textContent;
-      savePseudoBtn.textContent = t('pseudo_saved');
-      setTimeout(() => { savePseudoBtn.textContent = original; }, 1500);
-    }
+    if (savePseudoBtn) savePseudoBtn.disabled = true;
+    claimPseudo(name).then(function () {
+      if (savePseudoBtn) savePseudoBtn.disabled = false;
+      playerName = name;
+      playerNameInput.value = name;
+      try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
+      updateAccountChip();
+      const user = auth && auth.currentUser;
+      if (user && typeof user.updateProfile === 'function') {
+        // Ne change que le profil Firebase (utilisé pour l'affichage dans le jeu) — pas le vrai
+        // compte Google, qui n'est jamais modifié.
+        user.updateProfile({ displayName: name }).then(renderAccountOverlay).catch(() => {});
+      } else {
+        renderAccountOverlay();
+      }
+      if (savePseudoBtn) {
+        const original = savePseudoBtn.textContent;
+        savePseudoBtn.textContent = t('pseudo_saved');
+        setTimeout(() => { savePseudoBtn.textContent = original; }, 1500);
+      }
+    }).catch(function (msg) {
+      if (savePseudoBtn) savePseudoBtn.disabled = false;
+      showToast(msg);
+    });
   }
 
   function syncSegUI() {
@@ -4970,34 +5039,46 @@
   // d'entrée ne se rouvrant qu'au démarrage suivant, toutes les courses repartaient ensuite
   // sous le nom de repli sans que rien ne l'explique. On refuse donc les deux cas, et on
   // conserve le pseudo précédent plutôt que de le perdre.
+  // Retourne une Promise<boolean> (et non plus un booléen simple) : changer de pseudo passe
+  // maintenant par claimPseudo(), qui vérifie en ligne que personne d'autre ne le détient déjà.
   function commitPlayerNameFromInput() {
     const n = (playerNameInput.value || '').trim();
     if (!n) {
       // Champ vidé : on ne touche à rien et on remet le pseudo connu dans le champ.
-      if (playerName) { playerNameInput.value = playerName; return true; }
-      return false;   // aucun pseudo connu non plus : il faut vraiment en saisir un
+      if (playerName) { playerNameInput.value = playerName; return Promise.resolve(true); }
+      return Promise.resolve(false);   // aucun pseudo connu non plus : il faut vraiment en saisir un
     }
     if (!isNameAllowed(n)) {
       showToast(t('name_forbidden'));
       playerNameInput.value = playerName;   // on rend le champ à son dernier état valide
-      return false;
+      return Promise.resolve(false);
     }
-    playerName = n;
-    try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
-    updateAccountChip();
-    return true;
+    if (n === playerName) return Promise.resolve(true); // rien n'a changé, pas besoin de re-réserver
+    return claimPseudo(n).then(function () {
+      playerName = n;
+      try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
+      updateAccountChip();
+      return true;
+    }).catch(function (msg) {
+      showToast(msg);
+      playerNameInput.value = playerName;   // on rend le champ à son dernier état valide
+      return false;
+    });
   }
 
   closeAccountBtn.addEventListener('click', () => {
-    // Un pseudo refusé (interdit, ou aucun pseudo du tout) garde le panneau ouvert : le joueur
-    // voit le toast et peut corriger, au lieu de repartir jouer sous un nom qui n'est pas le sien.
-    if (!commitPlayerNameFromInput()) {
-      playerNameInput.focus();
-      playerNameInput.style.borderColor = 'var(--danger)';
-      setTimeout(() => { playerNameInput.style.borderColor = ''; }, 1500);
-      return;
-    }
-    accountOverlay.classList.remove('show');
+    // Un pseudo refusé (interdit, déjà pris, ou aucun pseudo du tout) garde le panneau ouvert :
+    // le joueur voit le toast et peut corriger, au lieu de repartir jouer sous un nom qui n'est
+    // pas le sien.
+    commitPlayerNameFromInput().then(function (ok) {
+      if (!ok) {
+        playerNameInput.focus();
+        playerNameInput.style.borderColor = 'var(--danger)';
+        setTimeout(() => { playerNameInput.style.borderColor = ''; }, 1500);
+        return;
+      }
+      accountOverlay.classList.remove('show');
+    });
   });
   playerNameInput.addEventListener('change', () => { commitPlayerNameFromInput(); });
 
@@ -5095,12 +5176,22 @@
 
   if (auth) {
     auth.onAuthStateChanged(function (user) {
-      if (user && user.displayName) {
-        playerName = user.displayName;
-        playerNameInput.value = playerName;
-        try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
-        // Un compte déjà connecté a forcément un pseudo (le sien) : inutile de lui demander à
-        // nouveau, même si la porte s'était affichée avant que Firebase ait confirmé la session.
+      if (user && user.displayName && !playerName) {
+        // Connexion sans aucun pseudo local déjà choisi (ni même comme invité juste avant) :
+        // on essaie SON nom Google comme point de départ, en best-effort — s'il est déjà pris
+        // par quelqu'un d'autre, on ne bloque surtout pas la connexion ; le joueur en choisira
+        // un autre au moment de jouer (ensurePlayerName / flagPlayerNameNeeded s'en chargent).
+        claimPseudo(user.displayName).then(function () {
+          playerName = user.displayName;
+          playerNameInput.value = playerName;
+          try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
+          updateAccountChip();
+        }).catch(function () { /* déjà pris ou hors-ligne : le joueur en choisira un autre plus tard */ });
+      }
+      if (user) {
+        // Un compte déjà connecté a forcément un pseudo (le sien, ou celui qu'il avait déjà
+        // choisi comme invité) : inutile de lui redemander, même si la porte s'était affichée
+        // avant que Firebase ait confirmé la session.
         pseudoGateOverlay.classList.remove('show');
       }
       updateAccountChip();
@@ -5150,10 +5241,20 @@
     if (!isNameAllowed(name)) { showAccountAuthError(t('name_forbidden')); return; }
     showAccountAuthError('');
     auth.createUserWithEmailAndPassword(email, pass).then(cred => cred.user.updateProfile({ displayName: name })).then(() => {
-      playerName = name;
-      try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
-      updateAccountChip();
-      renderAccountOverlay();
+      // Réservation APRÈS la création du compte : currentRunKey() reflète alors le nouvel uid
+      // permanent, pas la clé invité transitoire d'avant l'inscription.
+      return claimPseudo(name).then(function () {
+        playerName = name;
+        try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
+        updateAccountChip();
+        renderAccountOverlay();
+      }).catch(function (msg) {
+        // Le compte est bien créé, mais ce pseudo précis est déjà pris par quelqu'un
+        // d'autre : on le signale sans annuler la création du compte pour autant — le
+        // joueur en choisira un différent depuis "Mon compte".
+        showAccountAuthError(msg);
+        renderAccountOverlay();
+      });
     }).catch(err => showAccountAuthError(authErrorMessage(err)));
   });
 

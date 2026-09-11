@@ -13,7 +13,7 @@
 // direct, bandeau live) : ces requêtes passent toujours en direct sur le réseau, sinon on
 // risquerait de servir des données périmées ou de casser l'authentification.
 
-const CACHE_NAME = 'f1-finger-race-v8';
+const CACHE_NAME = 'f1-finger-race-v9';
 
 // Coquille pré-chargée dès l'installation : l'appli s'ouvre hors-ligne dès la 2e visite, sans
 // dépendre de ce que le joueur a déjà consulté.

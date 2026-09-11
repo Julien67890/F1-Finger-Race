@@ -415,7 +415,7 @@
     // dès que l'application ("Enforce") est activée dans la console Firebase. Tant que la clé
     // ci-dessous vaut le texte de remplacement, App Check reste inactif et tout fonctionne
     // comme avant (voir A-FAIRE.txt, étape 3).
-    const APP_CHECK_SITE_KEY = '6LclA6stAAAAAKPu48CUHR2pYX_K3zx1KLD0h0Gt';
+    const APP_CHECK_SITE_KEY = 'REMPLACER_PAR_LA_CLE_SITE_RECAPTCHA_V3';
     try {
       if (typeof firebase.appCheck === 'function' && APP_CHECK_SITE_KEY.indexOf('REMPLACER') === -1) {
         firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), true);
@@ -442,17 +442,32 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-09-05-fixes';
+  const BUILD_TAG = '2026-09-05-features';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
   const OFF_TRACK_FACTOR = 2;     // + chaque seconde passée hors piste compte double
+  // Effet "caravane" demandé par Julien : la voiture suit le doigt avec un léger retard
+  // constant au lieu de coller pile dessus (CARAVAN_LAG_MS), et se détache complètement du
+  // doigt — reste immobile — pendant PENALTY_SECONDS à chaque sortie de piste, avant un court
+  // rattrapage en douceur (CARAVAN_CATCHUP_MS) vers sa position "à la remorque" habituelle.
+  // Ça ne touche QUE l'affichage : le tracé enregistré (telemetry/offFlags), la détection de
+  // sortie de piste et le calcul du temps de pénalité (penaltyTotal()) sont inchangés — la
+  // voiture peut sembler "en retard" à l'écran, le chrono et l'anti-triche suivent toujours le
+  // doigt en temps réel.
+  const CARAVAN_LAG_MS = 180;
+  const CARAVAN_CATCHUP_MS = 280;
   const SAMPLE_STEP = 3;          // unités logiques entre deux tests hors-piste sur un segment
   const MAX_CONTENT_CSS_W = 430;  // largeur CSS max du circuit : même difficulté physique sur tablette
   const RACES_COL = 'races_v2';
   const RECORD_EVENTS_COL = 'record_events_v2';
   const DAILY_COL = 'daily';
   const CHAMPIONS_COL = 'weekly_champions';
+  // Un seul document permanent désormais (Julien : plus de remise à zéro hebdomadaire) — le
+  // nom du champ et de la collection garde son nom historique "weekly_champions" pour éviter
+  // de toucher aux règles Firestore plus que nécessaire, mais il n'y a plus qu'UN document,
+  // jamais recréé par semaine.
+  const CHAMPIONS_DOC_ID = 'global';
   // Réglages de consommation du quota Firestore (plan gratuit : 50 000 lectures/jour partagées
   // par TOUS les joueurs). Aucun n'est perceptible par le joueur, mais ensemble ils divisent la
   // consommation par ~3 : voir le détail dans A-FAIRE.txt.
@@ -635,7 +650,6 @@
     "ticker_you_hold_record": "👑 Tu détiens le record de {circuit} cette semaine !",
     "ticker_gap_to_record": "🎯 Tu es à {gap} du record de {circuit} — file le battre !",
     "ticker_current_record": "🏁 Record actuel sur {circuit} : {time} ({name})",
-    "weekly_reset_countdown": "⏳ Classement hebdomadaire remis à zéro dans {countdown}",
     "today_at": "aujourd’hui à {time}",
     "yesterday_at": "hier à {time}",
     "unit_day": "j",
@@ -731,9 +745,6 @@
     "notif_see_duel": "👀 Voir le défi",
     "notif_play_duel": "🏁 Relever le défi",
     "notif_take_back": "🔥 Reprendre le record",
-    "notif_champion_title": "🥇 Champion de la semaine !",
-    "notif_podium_title": "🏅 Podium de la semaine !",
-    "notif_podium_body": "Tu finis {rank}e la semaine dernière avec {n} record(s).",
     "duel_save_run_fail": "Impossible d’enregistrer ton temps ({error}).",
     "leaderboard_time_rejected": "temps jugé trop rapide pour ce circuit — reste dans ton historique local",
     "duel_delete_confirm_btn": "Confirmer la suppression",
@@ -1089,6 +1100,10 @@
   }
   let posBuffer = [];
   let lastCarRenderPos = null;
+  let carFreezeUntil = 0;   // performance.now() jusqu'auquel la voiture reste au garage (0 = pas de pénalité en cours)
+  let carFreezePos = null;  // position écran où elle reste immobile pendant ce temps
+  let carCatchupFrom = null; // point de départ du petit rattrapage juste après la fin du gel
+  let carCatchupStartT = 0;
   let rafId = null;
   let countdownTimer = null;
   let countdownAbort = false;
@@ -1193,7 +1208,7 @@
       weekId: currentWeekId(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(function () {
-      delete leaderGapCache[currentWeekId() + '|' + rk];
+      delete leaderGapCache[rk];
       // Vient-on de battre le record de la semaine sur ce circuit/réglages ? Ça alimente le
       // bandeau live en bas de l'accueil (voir maybeAnnounceRecord) — sans Cloud Functions
       // (plan Spark gratuit), c'est le client qui vient de courir qui vérifie et annonce.
@@ -1239,7 +1254,6 @@
 
   const NOTIF_SEEN_KEY = 'sur-la-corde:v2:notifSeen';
   const HELD_RECORDS_KEY = 'sur-la-corde:v2:heldRecords';
-  const CHAMP_SEEN_KEY = 'sur-la-corde:v2:champSeen';
   let notifQueue = [];       // avis en attente d'affichage
   let duelCheckAt = 0;       // dernier passage de checkDuelUpdates (limite les lectures)
   const DUEL_CHECK_MS = 60000;
@@ -1256,21 +1270,22 @@
   }
 
   function heldRecords() {
+    // Plus de remise à zéro hebdomadaire (Julien) : la liste des records qu'on détient
+    // persiste tant qu'on ne les perd pas réellement (voir forgetHeldRecord).
     try {
       const d = JSON.parse(localStorage.getItem(HELD_RECORDS_KEY) || '{}');
-      return (d && d.weekId === currentWeekId() && d.keys) ? d.keys : {};
+      return (d && d.keys) ? d.keys : {};
     } catch (e) { return {}; }
   }
   function rememberHeldRecord(rk) {
-    // Remis à zéro à chaque nouvelle semaine, comme le classement lui-même.
     const keys = heldRecords();
     keys[rk] = Date.now();
-    try { localStorage.setItem(HELD_RECORDS_KEY, JSON.stringify({ weekId: currentWeekId(), keys: keys })); } catch (e) {}
+    try { localStorage.setItem(HELD_RECORDS_KEY, JSON.stringify({ keys: keys })); } catch (e) {}
   }
   function forgetHeldRecord(rk) {
     const keys = heldRecords();
     delete keys[rk];
-    try { localStorage.setItem(HELD_RECORDS_KEY, JSON.stringify({ weekId: currentWeekId(), keys: keys })); } catch (e) {}
+    try { localStorage.setItem(HELD_RECORDS_KEY, JSON.stringify({ keys: keys })); } catch (e) {}
   }
 
   function pushNotif(notif) {
@@ -1367,10 +1382,11 @@
   // direct pour le bandeau live, et on ne retient que ceux qui portent sur un réglage dont on
   // détenait le record cette semaine.
   function checkRecordsLost() {
+    // Plus de filtre de semaine (Julien : records permanents) : un évènement "record battu"
+    // qui porte sur un réglage qu'on détient encore nous concerne, peu importe quand.
     const held = heldRecords();
     recentRecordEvents.forEach(function (ev) {
       if (!ev || !ev.cid) return;
-      if (ev.weekId && ev.weekId !== currentWeekId()) return;
       const rk = raceKeyFor(ev.cid, ev.diff, ev.dir, ev.laps);
       if (!held[rk]) return;
       const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
@@ -1391,30 +1407,6 @@
         }
       });
     });
-  }
-
-  // ---- Bilan de la semaine écoulée (podium des champions) ----
-  function checkLastWeekPodium() {
-    if (!db) return;
-    const lastWk = weekIdForDate(new Date(Date.now() - 7 * 24 * 3600 * 1000));
-    let seen = null;
-    try { seen = localStorage.getItem(CHAMP_SEEN_KEY); } catch (e) {}
-    if (seen === lastWk) return;   // bilan de cette semaine-là déjà montré
-    db.collection(CHAMPIONS_COL).doc(lastWk).get().then(function (snap) {
-      try { localStorage.setItem(CHAMP_SEEN_KEY, lastWk); } catch (e) {}
-      if (!snap.exists) return;
-      const rows = championRows(snap.data() || {});
-      const myKeys = playerRunKeys();
-      const rank = rows.findIndex(function (r) { return myKeys.indexOf(r.key) !== -1; });
-      if (rank < 0 || rank > 2) return;   // podium uniquement
-      pushNotif({
-        id: 'champ:' + lastWk,
-        tone: 'win',
-        title: t(rank === 0 ? 'notif_champion_title' : 'notif_podium_title'),
-        body: escapeHtml(t('notif_podium_body', { rank: rank + 1, n: rows[rank].count })),
-        action: null
-      });
-    }).catch(function (err) { console.error('Podium de la semaine passée : lecture impossible', err); });
   }
 
   // Transforme la carte "réglage -> détenteur" en classement par nombre de records détenus.
@@ -1443,65 +1435,41 @@
   function maybeAnnounceRecord(cid, diff, dir, laps, time, name) {
     if (!db) return;
     const rk = raceKeyFor(cid, diff, dir, laps);
-    const wk = currentWeekId();
-    db.collection(RACES_COL).where('weekId', '==', wk).where('raceKey', '==', rk)
+    // Classement PERMANENT : on compare au meilleur temps de TOUJOURS sur ce circuit/réglages,
+    // pas seulement de la semaine en cours (Julien : plus de remise à zéro).
+    db.collection(RACES_COL).where('raceKey', '==', rk)
       .orderBy('time', 'asc').limit(2).get().then(function (snap) {
         const rows = [];
         snap.forEach(function (d) { rows.push(d.data()); });
-        if (rows.length < 2) return; // rien à battre : première course sur ce circuit/réglages cette semaine
+        if (rows.length < 2) return; // rien à battre : première course jamais enregistrée sur ce circuit/réglages
         const top = rows[0], prev = rows[1];
-        // Le tout meilleur temps de la semaine est-il justement CETTE course ? On compare la
-        // clé joueur (currentRunKey(), écrite dans chaque course) et non le pseudo : deux
-        // joueurs homonymes — cas très possible avec des prénoms courants — pouvaient sinon se
+        // Le tout meilleur temps est-il justement CETTE course ? On compare la clé joueur
+        // (currentRunKey(), écrite dans chaque course) et non le pseudo : deux joueurs
+        // homonymes — cas très possible avec des prénoms courants — pouvaient sinon se
         // déclencher mutuellement la fanfare et l'annonce "record battu" de l'autre.
         if (Math.abs(top.time - time) < 0.001 && top.key === currentRunKey() && prev.time > time) {
           playVictoryFanfare();
           db.collection(RECORD_EVENTS_COL).add({
             cid: cid, diff: diff, dir: dir, laps: laps, name: name, time: time,
             margin: Math.round((prev.time - time) * 100) / 100,
-            weekId: wk,
+            weekId: currentWeekId(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           }).catch(function (err) { console.error('Évènement "record battu" : écriture impossible', err); });
           // On note localement les réglages dont on détient le record : c'est ce qui permet de
           // prévenir le joueur quand quelqu'un le lui reprend, sans aucune lecture Firestore
           // supplémentaire (l'écoute des "records battus" du bandeau live tourne déjà).
           rememberHeldRecord(rk);
-          // Et on inscrit le détenteur dans le document unique de la semaine : c'est lui qui
-          // alimente le classement des champions, lisible ensuite en UNE seule lecture au lieu
-          // d'interroger les centaines de combinaisons circuit/réglages une par une.
-          // ATTENTION : objet réellement IMBRIQUÉ, pas une clé à point. La notation "a.b" n'est
-          // interprétée comme un chemin de champ que par .update() ; avec .set(..., {merge:true})
-          // Firestore crée un champ racine littéralement nommé "holders.<raceKey>" et la map
-          // "holders" reste vide — c'est ce qui laissait le classement des champions
-          // désespérément vide (et le bilan du dimanche muet). {merge:true} fusionne
-          // récursivement dans "holders" sans toucher aux autres détenteurs, et fonctionne même
-          // si le document de la semaine n'existe pas encore (contrairement à .update()).
+          // Et on inscrit le détenteur dans le document UNIQUE et PERMANENT des champions : lu
+          // en une seule lecture pour afficher le top 3 des joueurs qui détiennent le plus de
+          // records EN CE MOMENT. Écrire sous la même clé "rk" écrase automatiquement l'ancien
+          // détenteur de ce circuit/réglages précis — le compte de chacun reflète donc toujours
+          // les records qu'il détient ACTUELLEMENT, jamais un cumul historique.
           const champUpdate = { holders: {} };
           champUpdate.holders[rk] = { name: name, key: currentRunKey(), at: Date.now() };
-          db.collection(CHAMPIONS_COL).doc(wk).set(champUpdate, { merge: true })
-            .catch(function (err) { console.error('Champions de la semaine : écriture impossible', err); });
+          db.collection(CHAMPIONS_COL).doc(CHAMPIONS_DOC_ID).set(champUpdate, { merge: true })
+            .catch(function (err) { console.error('Classement des champions : écriture impossible', err); });
         }
       }).catch(function (err) { console.error('Vérification de record impossible', err); });
-  }
-
-  function msUntilWeeklyReset() {
-    // Même logique approximative que weekIdForDate (lundi 00h00 traité comme un instant UTC) :
-    // suffisant pour un compte à rebours affiché, pas pour une precision à la seconde près.
-    const wk = currentWeekId();
-    const parts = wk.split('-').map(Number);
-    // Minuit lundi prochain, HEURE DE PARIS : on part de l'instant UTC correspondant puis on
-    // retranche le décalage Paris/UTC en vigueur ce jour-là (heure d'été ou d'hiver).
-    const nextMondayUtc = Date.UTC(parts[0], parts[1] - 1, parts[2] + 7);
-    const nextMonday = nextMondayUtc - parisOffsetMs(new Date(nextMondayUtc));
-    return Math.max(0, nextMonday - Date.now());
-  }
-
-  function parisOffsetMs(date) {
-    const p = {};
-    new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Paris', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-      .formatToParts(date).forEach(function (x) { p[x.type] = x.value; });
-    const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
-    return asUtc - Math.floor(date.getTime() / 60000) * 60000;
   }
 
   function formatCountdown(ms) {
@@ -1613,7 +1581,6 @@
     if (leaderGapMsg) msgs.push(leaderGapMsg);
     if (latestPublicDuelMsg) msgs.push(latestPublicDuelMsg);
     if (trendingCircuitMsg) msgs.push(trendingCircuitMsg);
-    msgs.push(t('weekly_reset_countdown', { countdown: formatCountdown(msUntilWeeklyReset()) }));
     tickerMessages = msgs;
     if (!tickerLoopStarted) {
       tickerLoopStarted = true;
@@ -1652,13 +1619,12 @@
     const country = COUNTRIES[menuIndex];
     if (!country) { leaderGapMsg = null; return; }
     const rk = raceKeyFor(country.id, selectedDifficulty, selectedDirection, selectedLaps);
-    const wk = currentWeekId();
 
     const requestToken = (refreshLeaderGapMessageNow._token = (refreshLeaderGapMessageNow._token || 0) + 1);
-    const cacheKey = wk + '|' + rk;
+    const cacheKey = rk;
     const cached = leaderGapCache[cacheKey];
     const fetchRows = (cached && Date.now() - cached.at < LEADER_GAP_CACHE_MS) ? Promise.resolve(cached.rows) :
-      db.collection(RACES_COL).where('weekId', '==', wk).where('raceKey', '==', rk)
+      db.collection(RACES_COL).where('raceKey', '==', rk)
         .orderBy('time', 'asc').limit(20).get().then(function (snap) {
           const rows = [];
           snap.forEach(function (d) { rows.push(d.data()); });
@@ -1760,18 +1726,17 @@
     const host = document.getElementById('championsList');
     if (!host) return;
     if (!db) { host.innerHTML = '<div class="history-empty">' + t('leaderboard_offline') + '</div>'; return; }
-    const wk = currentWeekId();
-    if (championsCache && championsCache.wk === wk && Date.now() - championsCache.at < 5 * 60000) {
+    if (championsCache && Date.now() - championsCache.at < 5 * 60000) {
       paintChampions(host, championsCache.rows);
       return;
     }
     host.innerHTML = '<div class="history-empty">' + t('leaderboard_loading') + '</div>';
-    db.collection(CHAMPIONS_COL).doc(wk).get().then(function (snap) {
+    db.collection(CHAMPIONS_COL).doc(CHAMPIONS_DOC_ID).get().then(function (snap) {
       const rows = snap.exists ? championRows(snap.data() || {}) : [];
-      championsCache = { wk: wk, at: Date.now(), rows: rows };
+      championsCache = { at: Date.now(), rows: rows };
       paintChampions(host, rows);
     }).catch(function (err) {
-      console.error('Champions de la semaine : lecture impossible', err);
+      console.error('Classement des champions : lecture impossible', err);
       host.innerHTML = '<div class="history-empty">' + t('leaderboard_load_error') + '</div>';
     });
   }
@@ -1780,7 +1745,8 @@
     if (!rows.length) { host.innerHTML = '<div class="history-empty">' + t('champions_empty') + '</div>'; return; }
     const medals = ['🥇', '🥈', '🥉'];
     const myKeys = playerRunKeys();
-    host.innerHTML = rows.slice(0, 5).map(function (r, i) {
+    // Top 3 uniquement, comme demandé — plus la liste des 5 premiers d'avant.
+    host.innerHTML = rows.slice(0, 3).map(function (r, i) {
       const isMe = myKeys.indexOf(r.key) !== -1;
       return '<div class="history-row' + (isMe ? ' is-me' : '') + '">' +
         '<span class="history-date">' + (medals[i] || (i + 1) + '.') + ' ' + escapeHtml(r.name || t('default_player_name')) + '</span>' +
@@ -1796,11 +1762,15 @@
     }
     leaderboardList.innerHTML = '<div class="history-empty">' + t('leaderboard_loading') + '</div>';
     const rk = raceKeyFor(cid, diff, dir, laps);
-    const wk = currentWeekId();
     const requestToken = (renderLeaderboard._token = (renderLeaderboard._token || 0) + 1);
-    // Une ligne par JOUEUR (son meilleur temps), pas par course : un joueur qui roule 20 fois
-    // n'occupe plus tout le tableau. On lit jusqu'à 100 courses triées, dédupliquées par clé.
-    db.collection(RACES_COL).where('weekId', '==', wk).where('raceKey', '==', rk)
+    // Classement PERMANENT (Julien : plus de remise à zéro hebdomadaire) : on interroge tout
+    // l'historique de ce circuit/réglages, sans filtre de semaine. Une ligne par JOUEUR (son
+    // meilleur temps), pas par course : un joueur qui roule 20 fois n'occupe plus tout le
+    // tableau. On lit jusqu'à 100 courses triées, dédupliquées par clé.
+    // ⚠️ Nécessite un index composite Firestore sur (raceKey, time) — l'ancien index
+    // (weekId, raceKey, time) ne suffit plus. Si le classement affiche "index manquant", suis
+    // le lien fourni par Firebase dans la console (ou l'erreur de la Console JS) pour le créer.
+    db.collection(RACES_COL).where('raceKey', '==', rk)
       .orderBy('time', 'asc').limit(LEADERBOARD_FETCH).get().then(function (snap) {
         if (requestToken !== renderLeaderboard._token) return; // une requête plus récente a pris le relais
         if (snap.empty) {
@@ -2928,6 +2898,9 @@
     heldPoint = null;
     posBuffer = [];
     lastCarRenderPos = null;
+    carFreezeUntil = 0;
+    carFreezePos = null;
+    carCatchupFrom = null;
     trail = [];
     telemetry = [];
     offFlags = [];
@@ -3536,8 +3509,34 @@
 
   function renderCarSprite() {
     if (posBuffer.length === 0) return;
-    const delayMs = state === 'racing' ? penaltyTotal() * 1000 : 0;
-    const pos = samplePositionAt(performance.now() - delayMs);
+    const now = performance.now();
+    let pos = null;
+
+    if (state === 'racing' && carFreezePos && now < carFreezeUntil) {
+      // Pénalité en cours : la voiture reste au garage, immobile, le temps que la pénalité
+      // s'écoule — elle ne suit plus du tout le doigt pendant ce court instant.
+      pos = carFreezePos;
+    } else if (state === 'racing' && carFreezePos) {
+      // Le gel vient de se terminer : petit rattrapage en douceur vers la position "à la
+      // remorque" habituelle, plutôt qu'un saut brutal (le doigt a bien avancé pendant la
+      // pénalité).
+      if (!carCatchupFrom) { carCatchupFrom = carFreezePos; carCatchupStartT = now; }
+      carFreezePos = null;
+    }
+
+    if (!pos && carCatchupFrom) {
+      const f = Math.min(1, (now - carCatchupStartT) / CARAVAN_CATCHUP_MS);
+      const target = samplePositionAt(now - CARAVAN_LAG_MS) || carCatchupFrom;
+      pos = { x: carCatchupFrom.x + (target.x - carCatchupFrom.x) * f, y: carCatchupFrom.y + (target.y - carCatchupFrom.y) * f };
+      if (f >= 1) carCatchupFrom = null;
+    }
+
+    if (!pos) {
+      // Effet "caravane" : la voiture suit le doigt avec un léger retard constant au lieu de
+      // coller pile dessus, comme si elle était tractée.
+      const delayMs = state === 'racing' ? CARAVAN_LAG_MS : 0;
+      pos = samplePositionAt(now - delayMs);
+    }
     if (!pos) return;
     if (lastCarRenderPos) {
       const dx = pos.x - lastCarRenderPos.x, dy = pos.y - lastCarRenderPos.y;
@@ -3558,6 +3557,14 @@
       updatePenaltyChip();
       flash(x, y);
       setBanner(t('banner_off_track', { s: PENALTY_SECONDS }));
+      // La voiture se détache du doigt pendant PENALTY_SECONDS, immobile là où elle se
+      // trouvait au moment de la faute. Une nouvelle sortie alors qu'elle est déjà au garage
+      // PROLONGE le gel au lieu de le redémarrer depuis une position plus récente — sinon la
+      // voiture "avancerait" pendant sa propre pénalité.
+      const now = performance.now();
+      if (now >= carFreezeUntil) carFreezePos = lastCarRenderPos ? { x: lastCarRenderPos.x, y: lastCarRenderPos.y } : null;
+      carFreezeUntil = Math.max(carFreezeUntil, now) + PENALTY_SECONDS * 1000;
+      carCatchupFrom = null; // une nouvelle faute annule un rattrapage en cours
     } else if (!onTrack && on) {
       if (offSince) { offTimeMs += performance.now() - offSince; offSince = 0; }
       updatePenaltyChip();
@@ -5313,7 +5320,6 @@
   }
   watchRecordEvents();
   checkDuelUpdates(true);
-  checkLastWeekPodium();
   refreshRecentPublicDuelMessage();
   refreshTrendingCircuitMessage();
   // Les messages du bandeau live qui viennent d'une requête Firestore (défi récent, tendance,

@@ -442,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-09-05-pseudos';
+  const BUILD_TAG = '2026-09-11-recordfix';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -1390,6 +1390,11 @@
       if (!ev || !ev.cid) return;
       const rk = raceKeyFor(ev.cid, ev.diff, ev.dir, ev.laps);
       if (!held[rk]) return;
+      // C'est encore NOUS qui détenons ce record après cet évènement (on vient de battre notre
+      // propre temps) : rien à annoncer, on ne s'est rien "repris" à soi-même. Sans cette
+      // vérification, battre son propre record déclenchait la notification "on t'a repris ton
+      // record" avec... son propre nom, faute de pouvoir distinguer les deux cas.
+      if (ev.key && playerRunKeys().indexOf(ev.key) !== -1) return;
       const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
       const circuit = country ? countryName(country) : ev.cid;
       forgetHeldRecord(rk);   // il ne nous appartient plus : on ne préviendra pas deux fois
@@ -1452,6 +1457,11 @@
           playVictoryFanfare();
           db.collection(RECORD_EVENTS_COL).add({
             cid: cid, diff: diff, dir: dir, laps: laps, name: name, time: time,
+            // Indispensable pour checkRecordsLost() : sans ça, impossible de distinguer
+            // "quelqu'un d'autre m'a repris mon record" de "je viens de battre MON PROPRE
+            // record" — les deux cas déclenchaient la même notification "on t'a repris ton
+            // record", même quand le nouveau détenteur c'était encore soi-même.
+            key: currentRunKey(),
             margin: Math.round((prev.time - time) * 100) / 100,
             weekId: currentWeekId(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp()

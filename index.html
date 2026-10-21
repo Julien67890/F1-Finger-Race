@@ -442,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-10-21-defi-arrivee';
+  const BUILD_TAG = '2026-10-21-envoi-defi';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -676,6 +676,7 @@
     "duel_public_none_scope_all": " pour l’instant",
     "duel_public_none_scope_circuit": " sur ce circuit pour l’instant",
     "duel_share_result_btn": "Partager le résultat",
+    "duel_send_friend_btn": "📤 Envoyer le défi à un ami",
     "country_bahrein": "Bahreïn",
     "country_arabie_saoudite": "Arabie saoudite",
     "country_australie": "Australie",
@@ -4558,6 +4559,14 @@
     const runs = activeDuel.runs || [];
     const mine = runs.find(isMyRun);
     const others = runs.filter(function (r) { return !isMyRun(r); });
+    // Défi tout juste créé (seul notre temps) : il reste à choisir à qui l'envoyer. Le bouton
+    // de partage devient l'action principale et ouvre le partage natif (WhatsApp, SMS...) —
+    // au tap seulement, les navigateurs refusant navigator.share sans geste de l'utilisateur.
+    const awaitingFriend = !!mine && !others.length;
+    duelResultCopyBtn.classList.toggle('ghost', !awaitingFriend);
+    duelResultCopyBtn.classList.toggle('small', !awaitingFriend);
+    duelResultCopyBtn.textContent = t(awaitingFriend ? 'duel_send_friend_btn' : 'duel_share_result_btn');
+    delete duelResultCopyBtn.dataset.label;   // sinon shareCurrentDuelLink restaurerait l'ancien libellé
     if (!mine) { verdict.hidden = true; return; }
     verdict.hidden = false;
     if (!others.length) {

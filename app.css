@@ -329,6 +329,10 @@
     transform: translateY(-0.05em);
   }
 
+  /* Le bouton principal n'a pas de marge haute (seuls les .ghost en ont une) : il venait se
+     coller aux boutons "Se connecter" / "Créer un compte". */
+  #closeAccountBtn { margin-top: 18px; }
+
   .account-privacy-link {
     display: block;
     margin-top: 14px;

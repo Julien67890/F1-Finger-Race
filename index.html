@@ -442,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-09-11-recordfix';
+  const BUILD_TAG = '2026-10-21-pistes';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -816,9 +816,11 @@
   // Les libellés affichés ("Débutant"...) viennent de STRINGS via diffLabel(d) — voir plus haut —
   // pas d'un champ ici, pour rester traduisibles dans les 11 langues.
   const DIFFICULTIES = [
-    { id: 'debutant', factor: 1.45, icon: '🟢' },
-    { id: 'intermediaire', factor: 1.0, icon: '🟡' },
-    { id: 'difficile', factor: 0.6, icon: '🔴' }
+    // Pistes élargies (Julien, oct. 2026) : le mode difficile (0.6) était trop étroit.
+    // Ancien : 1.45 / 1.0 / 0.6 — l'écart entre niveaux reste net.
+    { id: 'debutant', factor: 1.7, icon: '🟢' },
+    { id: 'intermediaire', factor: 1.25, icon: '🟡' },
+    { id: 'difficile', factor: 0.9, icon: '🔴' }
   ];
 
   const COUNTRIES = [
@@ -1278,10 +1280,17 @@
       return (d && d.keys) ? d.keys : {};
     } catch (e) { return {}; }
   }
-  function rememberHeldRecord(rk) {
+  // On mémorise QUAND on a pris le record et avec QUEL temps : checkRecordsLost() ne doit
+  // compter comme "record perdu" qu'un évènement postérieur ET plus rapide que notre temps.
+  // Les anciennes entrées (simple horodatage numérique) restent lisibles via heldInfo().
+  function rememberHeldRecord(rk, time) {
     const keys = heldRecords();
-    keys[rk] = Date.now();
+    keys[rk] = { at: Date.now(), time: time };
     try { localStorage.setItem(HELD_RECORDS_KEY, JSON.stringify({ keys: keys })); } catch (e) {}
+  }
+  function heldInfo(v) {
+    if (typeof v === 'number') return { at: v, time: null };
+    return { at: (v && v.at) || 0, time: (v && typeof v.time === 'number') ? v.time : null };
   }
   function forgetHeldRecord(rk) {
     const keys = heldRecords();
@@ -1395,6 +1404,16 @@
       // vérification, battre son propre record déclenchait la notification "on t'a repris ton
       // record" avec... son propre nom, faute de pouvoir distinguer les deux cas.
       if (ev.key && playerRunKeys().indexOf(ev.key) !== -1) return;
+      // Le flux renvoie les 10 derniers évènements, y compris ceux ANTÉRIEURS à la prise de
+      // notre record (l'ancien détenteur qui nous l'avait pris avant qu'on le reprenne, ou nos
+      // propres anciens records écrits sans "key" par une version précédente de l'appli). Ces
+      // évènements-là ne disent pas qu'on a perdu le record : seul compte un temps plus rapide
+      // que le nôtre, posé après qu'on l'a pris.
+      const info = heldInfo(held[rk]);
+      if (info.time !== null && !(ev.time < info.time - 0.001)) return;
+      const evAt = (ev.createdAt && typeof ev.createdAt.toMillis === 'function') ? ev.createdAt.toMillis() : null;
+      if (evAt === null || evAt < info.at - 5000) return;   // marge de 5 s pour l'horloge locale
+      if (!ev.key && ev.name && ev.name === playerName) return; // ancien évènement à nous, sans clé
       const country = COUNTRIES.find(function (c) { return c.id === ev.cid; });
       const circuit = country ? countryName(country) : ev.cid;
       forgetHeldRecord(rk);   // il ne nous appartient plus : on ne préviendra pas deux fois
@@ -1469,7 +1488,7 @@
           // On note localement les réglages dont on détient le record : c'est ce qui permet de
           // prévenir le joueur quand quelqu'un le lui reprend, sans aucune lecture Firestore
           // supplémentaire (l'écoute des "records battus" du bandeau live tourne déjà).
-          rememberHeldRecord(rk);
+          rememberHeldRecord(rk, time);
           // Et on inscrit le détenteur dans le document UNIQUE et PERMANENT des champions : lu
           // en une seule lecture pour afficher le top 3 des joueurs qui détiennent le plus de
           // records EN CE MOMENT. Écrire sous la même clé "rk" écrase automatiquement l'ancien
@@ -2158,12 +2177,24 @@
   // tentative terminée par jour et par appareil, classement séparé (collection "daily").
   let dailyMode = null; // dayId de la tentative en cours, sinon null
   function dailyInfo() {
+    // L'ancien hachage (h*31 + c) ne brassait que les bits de poids faible : la difficulté et
+    // le sens restaient figés des semaines entières et les circuits défilaient dans l'ordre.
+    // On utilise un vrai mélange (FNV-1a + finaliseur murmur3), et la difficulté tourne par
+    // blocs de 3 jours : chaque bloc contient les 3 niveaux, dans un ordre tiré au sort.
     const dayId = parisDayId();
-    let h = 0;
-    for (let i = 0; i < dayId.length; i++) h = (h * 31 + dayId.charCodeAt(i)) >>> 0;
+    const dayNum = Math.floor(Date.UTC(+dayId.slice(0, 4), +dayId.slice(5, 7) - 1, +dayId.slice(8, 10)) / 86400000);
+    const mix = function (str) {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+      h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
+      return h >>> 0;
+    };
+    const h = mix('daily:' + dayId);
     const country = COUNTRIES[h % COUNTRIES.length];
-    const diff = DIFFICULTIES[(h >>> 8) % DIFFICULTIES.length].id;
-    const dir = ((h >>> 16) % 2) ? 'inverse' : 'normal';
+    const PERMS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+    const perm = PERMS[mix('block:' + Math.floor(dayNum / 3)) % PERMS.length];
+    const diff = DIFFICULTIES[perm[dayNum % 3]].id;
+    const dir = (mix('dir:' + dayId) & 1) ? 'inverse' : 'normal';
     return { dayId: dayId, country: country, diff: diff, dir: dir, laps: 1 };
   }
   function dailyDoneKey(dayId) { return 'sur-la-corde:v2:daily:' + dayId; }
@@ -2338,7 +2369,7 @@
 
   function computeEffectiveWidth(country) {
     const diff = DIFFICULTIES.find(d => d.id === selectedDifficulty) || DIFFICULTIES[1];
-    return Math.max(22, Math.round(country.width * diff.factor));
+    return Math.max(28, Math.round(country.width * diff.factor));
   }
 
   function drawPreview(canvas, country) {
@@ -2676,7 +2707,7 @@
     menuIndex = COUNTRIES.indexOf(country);
     current = country;
     const diff = DIFFICULTIES.find(d => d.id === selectedDifficulty) || DIFFICULTIES[1];
-    effectiveWidth = Math.max(22, Math.round(country.width * diff.factor));
+    effectiveWidth = Math.max(28, Math.round(country.width * diff.factor));
     racePoints = computeRacePoints(country, selectedDirection);
     checkpoints = computeCheckpoints(racePoints);
     checkpointAnchors = checkpoints.map(idx => curveAnchor(racePoints, idx).pos);
@@ -4820,7 +4851,7 @@
     if (!country) { return false; }
     current = country;
     const diff = DIFFICULTIES.find(d => d.id === duel.diff) || DIFFICULTIES[1];
-    effectiveWidth = Math.max(22, Math.round(country.width * diff.factor));
+    effectiveWidth = Math.max(28, Math.round(country.width * diff.factor));
     racePoints = computeRacePoints(country, duel.dir);
     checkpoints = computeCheckpoints(racePoints);
     checkpointAnchors = checkpoints.map(idx => curveAnchor(racePoints, idx).pos);

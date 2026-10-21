@@ -442,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-10-21-lien-defi';
+  const BUILD_TAG = '2026-10-21-lien-canonique';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -1863,9 +1863,16 @@
 
   function duelDocRef(id, isPublic) { return db.collection(duelCollectionName(isPublic)).doc(id); }
 
+  // Le lien partagé pointe TOUJOURS vers l'adresse officielle (GitHub Pages, celle qu'ouvre
+  // l'appli Play Store), jamais vers l'adresse courante : joué depuis itch.io, le jeu tourne
+  // dans une iframe hébergée sur le CDN d'itch (html-classic.itch.zone/...), et le lien
+  // envoyait l'ami vers cette copie-là au lieu du vrai jeu. Seul le développement local garde
+  // l'adresse courante, pour pouvoir tester les liens.
+  const CANONICAL_URL = 'https://julien67890.github.io/F1-Finger-Race/';
   function buildDuelShareUrl(id, isPublic) {
-    return window.location.origin + window.location.pathname + window.location.search +
-      (isPublic ? '#pdefi=' : '#duel=') + id;
+    const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+    const base = local ? (window.location.origin + window.location.pathname) : CANONICAL_URL;
+    return base + (isPublic ? '#pdefi=' : '#duel=') + id;
   }
 
   function parseDuelIdFromHash() {

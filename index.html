@@ -259,7 +259,7 @@
             <button class="cta ghost small" id="duelResultReplayBtn" type="button" hidden data-i18n="duel_replay_btn">Revoir en fantôme</button>
           </div>
         </div>
-        <button class="cta ghost" id="challengeResultBtn" hidden data-i18n="challenge_result_btn">Défier un ami avec ce temps</button>
+        <button class="cta ghost" id="challengeResultBtn" hidden data-i18n="duel_create_friend">Défier un ami sur ce circuit</button>
         <div class="history-list" id="historyList" hidden></div>
         <button class="cta" id="retryBtn" data-i18n="retry_btn">Recommencer</button>
         <button class="cta ghost" id="menuBtn">Changer de circuit</button>
@@ -442,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-10-21-pistes';
+  const BUILD_TAG = '2026-10-21-defi-arrivee';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -4641,7 +4641,10 @@
     }
   }
 
-  function startDuelInvite(country) {
+  // opts.autoLaunch : le créateur court immédiatement son unique essai (bouton de l'écran
+  // d'arrivée). Le lien n'est alors partagé qu'après la course, depuis le panneau résultat.
+  function startDuelInvite(country, opts) {
+    const autoLaunch = !!(opts && opts.autoLaunch);
     // Crée un nouveau défi PRIVÉ (document Firestore dans "duels", encore aucun temps posé) et
     // partage le lien — qui ne contient que l'identifiant du document, pas les données de la
     // course. Seul quelqu'un qui reçoit ce lien peut le relever (la collection "duels" refuse
@@ -4656,6 +4659,13 @@
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       runs: {}
     }).then(function () {
+      if (autoLaunch) {
+        applyDuelSnapshot(ref.id, { cid: country.id, diff: selectedDifficulty, dir: selectedDirection, laps: selectedLaps, runs: {} }, false);
+        watchDuel(ref.id, false);
+        startDuelRace();
+        if (opts.onDone) opts.onDone();
+        return;
+      }
       watchDuel(ref.id, false);
       renderDuelScreen();
       shareCurrentDuelLink({ id: ref.id, public: false }, duelCopyBtn, duelLinkFallback, duelLinkInput);
@@ -4664,6 +4674,7 @@
       }
     }).catch(function (err) {
       console.error(err);
+      if (opts && opts.onDone) opts.onDone();
       alert(t('duel_create_fail', { error: err.message }));
     });
   }
@@ -5053,11 +5064,14 @@
   replayCloseBtn.addEventListener('click', closeReplay);
   replayAgainBtn.addEventListener('click', () => { if (lastReplayDuel) startGhostReplay(lastReplayDuel); });
 
+  // Avant : "Défier un ami avec ce temps" envoyait le meilleur de plusieurs essais, alors que
+  // l'ami n'en a qu'un. Désormais on crée un défi neuf sur ce circuit/réglages et on lance
+  // directement l'unique essai du créateur — les deux joueurs partent à égalité.
   challengeResultBtn.addEventListener('click', () => {
-    const name = ensureChallengeName();
-    if (!name || !lastResult) return;
-    addRunToActiveDuel(name, lastResult);
-    challengeResultBtn.hidden = true;
+    if (!current || challengeResultBtn.disabled) return;
+    if (!ensurePlayerName()) { flagPlayerNameNeeded(); return; }
+    challengeResultBtn.disabled = true;
+    startDuelInvite(current, { autoLaunch: true, onDone: function () { challengeResultBtn.disabled = false; } });
   });
   duelResultCopyBtn.addEventListener('click', () => shareCurrentDuelLink(activeDuel, duelResultCopyBtn, null, null));
   duelResultReplayBtn.addEventListener('click', () => {

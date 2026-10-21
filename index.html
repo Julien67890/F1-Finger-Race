@@ -442,7 +442,7 @@
 
   // Étiquette de build : change à chaque envoi. Utile pour vérifier depuis F12 > Console que
   // le navigateur charge bien la dernière version du fichier, et pas une copie en cache.
-  const BUILD_TAG = '2026-10-21-envoi-defi';
+  const BUILD_TAG = '2026-10-21-lien-defi';
   console.log('[F1 Finger Race] build ' + BUILD_TAG);
 
   const PENALTY_SECONDS = 2;      // pénalité fixe par sortie de piste
@@ -1913,6 +1913,23 @@
     };
     if (!screenDuel.hidden) renderDuelScreen();
     if (!screenRace.hidden) renderDuelResultPanel();
+    tryAutoLaunchPendingDuel();
+  }
+
+  // Lien de défi reçu : on veut atterrir DIRECTEMENT dans la course, pas sur l'écran Défis.
+  // Le lancement attend que tout soit prêt — données du défi arrivées (onSnapshot), pseudo
+  // choisi (la porte d'entrée pseudo s'affiche au premier lancement sur un nouvel appareil ou
+  // navigateur) — puis part une seule fois. Si le joueur a déjà couru ce défi, on reste sur
+  // l'écran Défis pour qu'il voie le résultat.
+  let pendingDuelLaunchId = null;
+  function tryAutoLaunchPendingDuel() {
+    if (!pendingDuelLaunchId || !activeDuel || activeDuel.id !== pendingDuelLaunchId || !activeDuel.cid) return;
+    if (pseudoGateOverlay.classList.contains('show') || !playerName) return;   // relancé à la validation du pseudo
+    if (!screenRace.hidden) return;                                            // une course est déjà en cours
+    pendingDuelLaunchId = null;
+    if (playerHasRunDuel(activeDuel)) { if (screenDuel.hidden) showDuelScreen(); return; }
+    if (isDuelComplete(activeDuel)) { if (screenDuel.hidden) showDuelScreen(); return; }
+    startDuelRace();
   }
 
   function watchDuel(id, isPublic) {
@@ -3956,6 +3973,7 @@
       try { localStorage.setItem('sur-la-corde:playerName', name); } catch (e) {}
       updateAccountChip();
       pseudoGateOverlay.classList.remove('show');
+      tryAutoLaunchPendingDuel();   // un lien de défi attendait le pseudo
     }).catch(function (msg) {
       pseudoGateConfirmBtn.disabled = false;
       showToast(msg);
@@ -4597,6 +4615,7 @@
     }
     // Un ami qui ouvre un lien de défi arrive directement sur l'écran Défis, pas sur le menu.
     activeDuel = { id: parsed.id, cid: null, diff: null, dir: null, laps: null, public: parsed.isPublic, runs: [] };
+    pendingDuelLaunchId = parsed.id;
     watchDuel(parsed.id, parsed.isPublic);
     showDuelScreen();
   }
@@ -5250,6 +5269,7 @@
           playerNameInput.value = playerName;
           try { localStorage.setItem('sur-la-corde:playerName', playerName); } catch (e) {}
           updateAccountChip();
+          tryAutoLaunchPendingDuel();
         }).catch(function () { /* déjà pris ou hors-ligne : le joueur en choisira un autre plus tard */ });
       }
       if (user) {
@@ -5257,6 +5277,7 @@
         // choisi comme invité) : inutile de lui redemander, même si la porte s'était affichée
         // avant que Firebase ait confirmé la session.
         pseudoGateOverlay.classList.remove('show');
+        tryAutoLaunchPendingDuel();
       }
       updateAccountChip();
       renderAccountOverlay();
